@@ -70,6 +70,7 @@ Ketuk tombol lampiran > **Foto sekali lihat**. Penerima melihat kotak "Foto seka
 
 ## Diarsipkan
 - Tekan lama percakapan (kontak maupun grup) lalu pilih **Arsipkan obrolan**. Chat pindah dari daftar utama ke baris **Diarsipkan** di paling atas; angka hijau = jumlah chat terarsip yang punya pesan belum dibaca. Toast "Urungkan" muncul sesaat setelah mengarsipkan.
-- Ketuk baris **Diarsipkan** untuk membuka halaman arsip. Di sana: tekan lama chat > **Keluarkan dari arsip**, menu titik tiga > **Keluarkan semua dari arsip**, dan catatan "Chat ini tetap diarsipkan saat pesan baru diterima. Ketuk untuk mengubah." (ketuk untuk menyalakan/mematikan; jika dimatikan, chat otomatis keluar dari arsip saat ada pesan masuk baru).
+- Ketuk baris **Diarsipkan** untuk membuka halaman arsip. Di sana: tekan lama chat > **Keluarkan dari arsip**, atau menu titik tiga > **Keluarkan semua dari arsip**. Chat tetap diarsipkan saat pesan baru diterima.
 - Saat memakai kolom pencarian, chat terarsip ikut muncul dengan label **Diarsipkan**.
 - Data arsip disimpan per akun di perangkat (localStorage, seperti penanda hapus percakapan), jadi **tidak perlu mengubah Rules database** dan tidak perlu deploy ulang Cloud Functions. Cukup unggah ulang `index.html`.
+- Lencana hijau belum dibaca selalu menampilkan **1** per kontak/grup (berapa pun jumlah pesannya); angka di baris Diarsipkan = jumlah chat terarsip yang belum dibaca.

@@ -3661,7 +3661,6 @@
       <button class="arch-icon-btn" id="archMoreBtn" title="Opsi lain" aria-label="Opsi lain"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg></button>
       <div id="archMore"><button id="archUnarchiveAll">Keluarkan semua dari arsip</button></div>
     </div>
-    <button class="arch-note" id="archNote" type="button"></button>
     <div id="archivedList"></div>
   </div>
 
@@ -6419,7 +6418,7 @@ function unreadCount(id) { const n = Number(unreadCache[id]) || 0; return n > 0 
 function unreadBadgeHtml(id) {
   const n = unreadCount(id);
   if (!n || blockedCache[id]) return '';
-  return '<span class="unread-badge">' + (n > 99 ? '99+' : n) + '</span>';
+  return '<span class="unread-badge">1</span>';
 }
 function clearUnreadFor(chatId) {
   if (!myId || !chatId || !unreadCache[chatId]) return;
@@ -6430,7 +6429,7 @@ function clearUnreadFor(chatId) {
 function updateAppBadge() {
   try {
     let total = 0;
-    Object.keys(unreadCache).forEach(k => { if (!blockedCache[k]) total += unreadCount(k); });
+    Object.keys(unreadCache).forEach(k => { if (!blockedCache[k] && unreadCount(k)) total += 1; });
     if (navigator.setAppBadge) { if (total > 0) navigator.setAppBadge(total); else navigator.clearAppBadge(); }
   } catch (e) {}
 }
@@ -6756,14 +6755,8 @@ function closeArchivedView() {
   $('archMore').classList.remove('show');
   $('archivedView').classList.remove('active');
 }
-function updateArchNote() {
-  $('archNote').innerHTML = keepArchived
-    ? 'Chat ini tetap diarsipkan saat pesan baru diterima.<br><b>Ketuk untuk mengubah.</b>'
-    : 'Chat ini keluar dari arsip saat pesan baru diterima.<br><b>Ketuk untuk mengubah.</b>';
-}
 function renderArchivedList() {
   const list = $('archivedList');
-  updateArchNote();
   const ids = Object.keys(archivedCache).filter(id => isGroupId(id) ? (groupsCache[id] && groupsCache[id].members && groupsCache[id].members[myId]) : (!!chatMeta[id] || !!contactsCache[id]));
   const entries = ids.map(id => ({ id, ts: lastTsOf(id) || archivedCache[id] || 0, name: isGroupId(id) ? (groupsCache[id].name || 'Grup') : displayName(id) }));
   entries.sort((a, b) => (b.ts - a.ts) || a.name.localeCompare(b.name));
@@ -6791,12 +6784,6 @@ function buildArchiveRow(unreadChats) {
   return row;
 }
 $('archBack').addEventListener('click', closeArchivedView);
-$('archNote').addEventListener('click', () => {
-  keepArchived = !keepArchived;
-  try { localStorage.setItem(archKeepKey(), keepArchived ? '1' : '0'); } catch (e) {}
-  updateArchNote();
-  showToast(keepArchived ? 'Chat tetap diarsipkan saat ada pesan baru' : 'Chat keluar dari arsip saat ada pesan baru');
-});
 $('archMoreBtn').addEventListener('click', (e) => { e.stopPropagation(); $('archMore').classList.toggle('show'); });
 $('archivedView').addEventListener('click', (e) => { if (!e.target.closest('#archMore') && !e.target.closest('#archMoreBtn')) $('archMore').classList.remove('show'); });
 $('archUnarchiveAll').addEventListener('click', async () => {
