@@ -99,3 +99,6 @@ Kirim link seperti biasa; bila link adalah video, pesan menampilkan pemutar yang
 
 ## Centang biru di grup
 Di grup, centang hanya biru bila pesan Anda adalah **balasan** ke pesan seseorang dan orang itu sudah membuka chat (`readBy/<id>`). Pesan biasa tetap centang abu-abu.
+
+## Anggota baru tidak melihat chat lama
+Saat anggota ditambahkan (oleh pembuat atau lewat link undangan), waktu bergabung disimpan di `groups/<gid>/joined/<id>`. Pesan yang dikirim sebelum waktu itu tidak ditampilkan kepada anggota baru; anggota lama tetap melihat semua pesan. Pesan tidak dihapus dari database. Pastikan Rules mengizinkan menulis `groups/<gid>/joined`.

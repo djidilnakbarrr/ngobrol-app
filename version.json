@@ -1,8 +1,9 @@
 {
-  "version": "1.3.0",
+  "version": "1.3.1",
   "released": "2026-10-16",
   "notes": [
     "Admin dan pembuat grup bisa menghapus pesan siapa pun dan semua pesan grup",
-    "Centang biru grup: biru saat balasan Anda sudah dilihat penerimanya"
+    "Centang biru grup: biru saat balasan Anda sudah dilihat penerimanya",
+    "Anggota baru grup tidak melihat chat sebelum mereka bergabung"
   ]
 }

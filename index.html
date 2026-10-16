@@ -7431,8 +7431,8 @@ function buildGroupRow(gid) {
 
   const g = groupsCache[gid] || {};
 
-  const last = g.last || null;
-
+    let last = g.last || null;
+  { const jt = joinedAtOf(gid); if (last && jt && (last.ts || 0) < jt) last = null; }
   const name = g.name || 'Grup';
 
   const row = document.createElement('div');
@@ -7441,7 +7441,7 @@ function buildGroupRow(gid) {
   if (unreadCount(gid)) row.classList.add('has-unread');
   row.dataset.name = gid;
 
-  let preview = 'Grup dibuat';
+  let preview = joinedAtOf(gid) ? 'Anda bergabung' : 'Grup dibuat';
 
   let previewIcon = '';
 
@@ -8466,7 +8466,7 @@ async function addMemberToGroup() {
 
     if (!(await checkUserExists(id))) { showToast('ID "' + dispId(id) + '" tidak ditemukan'); return; }
 
-    await update(ref(db, 'groups/' + gid + '/members'), { [id]: true });
+    await update(ref(db, 'groups/' + gid), { ['members/' + id]: true, ['joined/' + id]: Date.now() });
 
     $('groupInfoIdInput').value = '';
 
@@ -8526,6 +8526,7 @@ async function leaveGroup(gid) {
 
   } else {
     updates['groups/' + gid + '/members/' + myId] = null;
+    updates['groups/' + gid + '/joined/' + myId] = null;
   }
   updates['unread/' + myId + '/' + gid] = null;
   try {
@@ -8761,13 +8762,19 @@ function openChat(idUser) {
 
 
 
+/* Waktu bergabung saya di grup: pesan sebelum itu tidak ditampilkan (anggota lama tanpa catatan melihat semuanya) */
+function joinedAtOf(gid) {
+  const g = groupsCache[gid];
+  return (g && g.joined && Number(g.joined[myId])) || 0;
+}
 function visibleMsgs() {
 
   if (!currentChat) return [];
 
   const id = chatKey(currentChat);
 
-  return currentMsgsAll.filter(m => !isHidden(id, m.key) && !(m.hiddenFor && m.hiddenFor[myId]));
+  const jt = isGroupId(currentChat) ? joinedAtOf(currentChat) : 0;
+  return currentMsgsAll.filter(m => !isHidden(id, m.key) && !(m.hiddenFor && m.hiddenFor[myId]) && !(jt && (m.ts || 0) < jt));
 
 }
 
@@ -11452,7 +11459,7 @@ async function openJoinPreview(code) {
 
       onOk: async () => {
 
-        await update(ref(db, 'groups/' + gid + '/members'), { [myId]: true });
+        await update(ref(db, 'groups/' + gid), { ['members/' + myId]: true, ['joined/' + myId]: Date.now() });
 
         groupsCache[gid] = Object.assign({}, g, { members: Object.assign({}, g.members || {}, { [myId]: true }) });
 
@@ -11680,7 +11687,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
    Naikkan versi dengan:  node rilis.js 1.2.0 "catatan 1" "catatan 2"   (mengubah APP_VERSION di bawah + version.json) */
 (function () {
   'use strict';
-  const APP_VERSION = '1.3.0';
+  const APP_VERSION = '1.3.1';
   const CHECK_URL = 'version.json';
   const $ = id => document.getElementById(id);
   const ss = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
