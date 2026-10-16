@@ -74,3 +74,16 @@ Ketuk tombol lampiran > **Foto sekali lihat**. Penerima melihat kotak "Foto seka
 - Saat memakai kolom pencarian, chat terarsip ikut muncul dengan label **Diarsipkan**.
 - Data arsip disimpan per akun di perangkat (localStorage, seperti penanda hapus percakapan), jadi **tidak perlu mengubah Rules database** dan tidak perlu deploy ulang Cloud Functions. Cukup unggah ulang `index.html`.
 - Lencana hijau belum dibaca selalu menampilkan **1** per kontak/grup (berapa pun jumlah pesannya); angka di baris Diarsipkan = jumlah chat terarsip yang belum dibaca.
+
+## Pembaruan aplikasi otomatis
+- Aplikasi memeriksa `version.json` di server (tanpa cache) saat dibuka, saat kembali ke aplikasi, saat internet tersambung lagi, dan tiap 10 menit.
+- **Saat aplikasi baru dibuka** dan ada versi baru: langsung muncul layar "Memperbarui aplikasi" (mengunduh, menerapkan, memuat ulang) lalu aplikasi masuk ke versi terbaru tanpa perlu membuka link dulu. Setelah itu muncul pemberitahuan "Aplikasi diperbarui ke versi X".
+- **Saat aplikasi sedang dipakai**: muncul lembar "Pembaruan tersedia" berisi daftar "Yang baru", tombol **Perbarui sekarang** dan **Nanti saja** (muncul lagi 30 menit kemudian).
+- Setelan > **Perbarui Aplikasi** untuk memeriksa manual.
+- Akun/sesi login dan data pesan tidak dihapus saat memperbarui.
+
+### Cara merilis versi baru
+1. Di folder proyek jalankan: `node rilis.js 1.2.0 "Catatan satu" "Catatan dua"` (mengubah `APP_VERSION` di `index.html` dan menulis `version.json`).
+2. Unggah ulang **`index.html`** dan **`version.json`** (dan file lain yang berubah) ke hosting. Selesai; semua pengguna akan mendapat pembaruan.
+- `vercel.json` sudah diberi header `no-cache` untuk `/`, `/index.html`, dan `/version.json`. Jika hosting bukan Vercel, pastikan tiga path itu tidak di-cache (mis. di Firebase Hosting: tambahkan header `Cache-Control: no-cache` untuk `index.html` dan `version.json`).
+- Deploy pertama kali versi ini: pengguna yang masih di versi lama (belum punya fitur ini) harus membuka link sekali; setelah itu seterusnya otomatis.

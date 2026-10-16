@@ -3288,6 +3288,77 @@
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 </style>
 
+<style id="updStyle">
+/* ===== Pembaruan aplikasi ===== */
+#updSheetWrap, #updRun { position: fixed; inset: 0; display: none; font-family: "Inter","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif; -webkit-font-smoothing: antialiased; }
+#updSheetWrap { z-index: 3500; align-items: flex-end; justify-content: center; background: rgba(7,20,24,.58); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); opacity: 0; transition: opacity .25s; }
+#updSheetWrap.on { display: flex; }
+#updSheetWrap.show { opacity: 1; }
+.upd-sheet { width: 100%; max-width: 440px; box-sizing: border-box; background: #fff; border-radius: 28px 28px 0 0; padding: 10px 22px calc(20px + env(safe-area-inset-bottom, 0px)); text-align: center; transform: translateY(100%); transition: transform .38s cubic-bezier(.2,.9,.25,1); box-shadow: 0 -12px 40px rgba(8,22,26,.2); max-height: 92vh; overflow-y: auto; }
+#updSheetWrap.show .upd-sheet { transform: none; }
+.upd-grab { width: 42px; height: 5px; border-radius: 3px; background: #d9e1e3; margin: 0 auto 18px; }
+.upd-badge { position: relative; width: 76px; height: 76px; margin: 22px auto 20px; }
+.upd-badge::before, .upd-badge::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: rgba(11,138,121,.16); animation: updPulse 2.4s ease-out infinite; }
+.upd-badge::after { animation-delay: 1.2s; }
+.upd-badge i { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg,#14ab95 0%,#0b8a79 55%,#054a42 100%); box-shadow: 0 10px 24px rgba(7,94,84,.35); display: flex; align-items: center; justify-content: center; z-index: 1; }
+.upd-badge svg { width: 36px; height: 36px; color: #fff; }
+@keyframes updPulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
+.upd-title { font-size: 21px; font-weight: 800; letter-spacing: -.4px; color: #0f1c22; margin: 0 0 6px; }
+.upd-sub { font-size: 14.5px; line-height: 1.55; color: #667781; margin: 0 auto 16px; max-width: 320px; }
+.upd-flow { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.upd-chip { font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; font-variant-numeric: tabular-nums; letter-spacing: .1px; }
+.upd-chip.old { background: #eef2f3; color: #667781; }
+.upd-chip.new { background: #e8f5f2; color: #075e54; box-shadow: inset 0 0 0 1px rgba(11,138,121,.28); }
+.upd-flow svg { width: 18px; height: 18px; color: #8a99a1; }
+.upd-notes { text-align: left; background: #f6f8f8; border-radius: 18px; padding: 14px 16px 6px; margin: 0 0 18px; }
+.upd-notes h4 { font-size: 12px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: #0b8a79; margin: 0 0 10px; }
+.upd-notes ul { list-style: none; margin: 0; padding: 0; }
+.upd-notes li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: #25343b; margin: 0 0 10px; }
+.upd-notes li svg { flex: 0 0 18px; width: 18px; height: 18px; margin-top: 1px; color: #0b8a79; }
+.upd-btn { display: block; width: 100%; box-sizing: border-box; border: none; cursor: pointer; font-family: inherit; border-radius: 14px; font-size: 15.5px; font-weight: 700; padding: 15px 16px; letter-spacing: .1px; transition: transform .12s, filter .15s; -webkit-tap-highlight-color: transparent; }
+.upd-btn:active { transform: scale(.98); }
+.upd-btn.primary { background: linear-gradient(135deg,#0b8a79,#075e54); color: #fff; box-shadow: 0 8px 20px rgba(7,94,84,.3); }
+.upd-btn.ghost { background: transparent; color: #667781; margin-top: 4px; font-weight: 600; }
+.upd-foot { font-size: 12.5px; color: #8a99a1; margin: 10px 0 2px; line-height: 1.5; }
+
+#updRun { z-index: 4000; flex-direction: column; align-items: center; justify-content: center; padding: 28px; background: linear-gradient(160deg,#0f9d88 0%,#075e54 55%,#043b35 100%); color: #fff; text-align: center; opacity: 0; transition: opacity .3s; }
+#updRun.on { display: flex; }
+#updRun.show { opacity: 1; }
+#updRun::before, #updRun::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255,255,255,.06); pointer-events: none; }
+#updRun::before { width: 420px; height: 420px; top: -140px; right: -150px; }
+#updRun::after { width: 340px; height: 340px; bottom: -120px; left: -130px; }
+.updr-logo { position: relative; width: 92px; height: 92px; border-radius: 26px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 16px 38px rgba(0,0,0,.28); margin-bottom: 26px; z-index: 1; }
+.updr-logo img { width: 66px; height: 66px; border-radius: 16px; display: block; }
+.updr-ring { position: absolute; inset: -18px; border-radius: 50%; border: 3px solid rgba(255,255,255,.22); border-top-color: #fff; animation: updSpin 1s linear infinite; }
+#updRun.err .updr-ring { animation: none; border-color: rgba(255,255,255,.3); }
+@keyframes updSpin { to { transform: rotate(360deg); } }
+.updr-title { font-size: 22px; font-weight: 800; letter-spacing: -.4px; margin: 0 0 6px; z-index: 1; }
+.updr-sub { font-size: 14.5px; color: rgba(255,255,255,.8); margin: 0 0 26px; z-index: 1; font-variant-numeric: tabular-nums; }
+.updr-bar { width: min(280px, 78vw); height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); overflow: hidden; margin: 0 0 24px; z-index: 1; }
+.updr-bar i { display: block; height: 100%; width: 0; border-radius: 3px; background: #fff; transition: width .45s cubic-bezier(.3,.8,.3,1); }
+.updr-steps { list-style: none; margin: 0 0 24px; padding: 0; text-align: left; z-index: 1; width: min(280px, 78vw); }
+.updr-steps li { display: flex; align-items: center; gap: 12px; font-size: 14.5px; font-weight: 600; color: rgba(255,255,255,.55); padding: 7px 0; transition: color .25s; }
+.updr-steps li .dot { width: 22px; height: 22px; flex: 0 0 22px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); box-sizing: border-box; display: flex; align-items: center; justify-content: center; transition: all .25s; }
+.updr-steps li .dot svg { width: 13px; height: 13px; opacity: 0; color: #075e54; }
+.updr-steps li.active { color: #fff; }
+.updr-steps li.active .dot { border-color: #fff; border-top-color: transparent; animation: updSpin .8s linear infinite; }
+.updr-steps li.done { color: rgba(255,255,255,.9); }
+.updr-steps li.done .dot { background: #fff; border-color: #fff; }
+.updr-steps li.done .dot svg { opacity: 1; }
+.updr-note { font-size: 12.5px; color: rgba(255,255,255,.7); z-index: 1; }
+.updr-actions { display: none; width: min(280px, 78vw); z-index: 1; flex-direction: column; gap: 6px; }
+#updRun.err .updr-actions { display: flex; }
+#updRun.err .updr-note, #updRun.err .updr-bar { display: none; }
+.updr-actions .upd-btn.primary { background: #fff; color: #075e54; box-shadow: none; }
+.updr-actions .upd-btn.ghost { color: rgba(255,255,255,.85); }
+#updDone { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translate(-50%,-140%); z-index: 3600; display: flex; align-items: center; gap: 10px; background: #10242b; color: #fff; border-radius: 16px; padding: 11px 16px 11px 12px; font: 600 13.5px "Inter","Segoe UI",system-ui,Roboto,Arial,sans-serif; box-shadow: 0 14px 34px rgba(8,20,26,.35); transition: transform .45s cubic-bezier(.2,.9,.25,1); max-width: 90%; }
+#updDone.show { transform: translate(-50%,0); }
+#updDone svg { width: 22px; height: 22px; flex: 0 0 22px; color: #7fe3c8; }
+.settings-item .upd-pill { display: none; font-size: 11px; font-weight: 700; letter-spacing: .3px; color: #fff; background: #0b8a79; padding: 3px 9px; border-radius: 999px; margin-right: 2px; flex-shrink: 0; }
+.settings-item.has-update .upd-pill { display: inline-block; }
+.settings-item.has-update .settings-body p { color: #0b8a79; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .upd-badge::before, .upd-badge::after, .updr-ring, .updr-steps li.active .dot { animation: none; } .upd-sheet { transition: none; } }
+</style>
 </head>
 
 <body>
@@ -3553,6 +3624,14 @@
             </div>
 <div class="settings-group">
 
+            <div class="settings-item" id="settingsUpdateRow">
+              <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
+              <div class="settings-body">
+                <h4>Perbarui Aplikasi</h4>
+                <p id="updRowSub">Versi - · Ketuk untuk memeriksa pembaruan</p>
+              </div>
+              <span class="upd-pill">BARU</span>
+            </div>
             <div class="settings-item danger" id="logoutSettings">
 
               <div class="settings-icon">
@@ -5572,6 +5651,7 @@ function showToast(msg, action) {
 
 
 
+window.showToast = showToast;
 function generateId() {
 
   const rand = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');   /* 10 angka acak */
@@ -11249,6 +11329,220 @@ setInterval(() => {
 
 
 
+<script>
+/* ===== Pembaruan aplikasi otomatis =====
+   Naikkan versi dengan:  node rilis.js 1.2.0 "catatan 1" "catatan 2"   (mengubah APP_VERSION di bawah + version.json) */
+(function () {
+  'use strict';
+  const APP_VERSION = '1.1.0';
+  const CHECK_URL = 'version.json';
+  const $ = id => document.getElementById(id);
+  const ss = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
+  const ls = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+  const esc = t => String(t == null ? '' : t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const withTimeout = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms))]);
+  window.APP_VERSION = APP_VERSION;
+
+  /* bersihkan penanda ?_u= bekas muat ulang pembaruan (parameter lain, mis. openchat, dipertahankan) */
+  try {
+    const u = new URL(location.href);
+    if (u.searchParams.has('_u')) { u.searchParams.delete('_u'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
+  } catch (e) {}
+
+  const IC_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 11 12 16 17 11"/><path d="M5 20h14"/></svg>';
+  const IC_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  const IC_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  const IC_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9"/></svg>';
+
+  /* ---------- baris di Setelan ---------- */
+  const row = $('settingsUpdateRow');
+  function setRow(state, rv) {
+    if (!row) return;
+    row.classList.toggle('has-update', state === 'new');
+    const p = $('updRowSub');
+    if (!p) return;
+    if (state === 'new') p.textContent = 'Versi ' + rv + ' tersedia · Ketuk untuk memperbarui';
+    else if (state === 'checking') p.textContent = 'Memeriksa pembaruan…';
+    else p.textContent = 'Versi ' + APP_VERSION + ' · Ketuk untuk memeriksa pembaruan';
+  }
+  setRow('idle');
+
+  /* ---------- lembar "Pembaruan tersedia" ---------- */
+  let sheet = null;
+  function buildSheet(info) {
+    if (sheet) sheet.remove();
+    const notes = Array.isArray(info.notes) ? info.notes.filter(Boolean).slice(0, 6) : [];
+    sheet = document.createElement('div');
+    sheet.id = 'updSheetWrap';
+    sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Pembaruan tersedia');
+    sheet.innerHTML =
+      '<div class="upd-sheet">' +
+        '<div class="upd-grab"></div>' +
+        '<div class="upd-badge"><i>' + IC_DOWN + '</i></div>' +
+        '<h3 class="upd-title">Pembaruan tersedia</h3>' +
+        '<p class="upd-sub">Versi terbaru Chat App siap dipasang. Pembaruan hanya butuh beberapa detik.</p>' +
+        '<div class="upd-flow"><span class="upd-chip old">v' + esc(APP_VERSION) + '</span>' + IC_ARROW + '<span class="upd-chip new">v' + esc(info.version) + '</span></div>' +
+        (notes.length ? '<div class="upd-notes"><h4>Yang baru</h4><ul>' + notes.map(n => '<li>' + IC_CHECK + '<span>' + esc(n) + '</span></li>').join('') + '</ul></div>' : '') +
+        '<button class="upd-btn primary" id="updGo" type="button">Perbarui sekarang</button>' +
+        '<button class="upd-btn ghost" id="updLater" type="button">Nanti saja</button>' +
+        '<p class="upd-foot">Akun dan percakapan Anda tetap aman.</p>' +
+      '</div>';
+    document.body.appendChild(sheet);
+    $('updGo').addEventListener('click', () => { hideSheet(); apply(info); });
+    $('updLater').addEventListener('click', () => { snooze(); hideSheet(); });
+    sheet.addEventListener('click', e => { if (e.target === sheet) { snooze(); hideSheet(); } });
+  }
+  function showSheet(info) {
+    if (running) return;
+    buildSheet(info);
+    sheet.classList.add('on');
+    requestAnimationFrame(() => requestAnimationFrame(() => sheet && sheet.classList.add('show')));
+  }
+  function hideSheet() {
+    if (!sheet) return;
+    const el = sheet; el.classList.remove('show');
+    setTimeout(() => { el.classList.remove('on'); }, 320);
+  }
+  function snooze() { ss.set('upd_snooze', String(Date.now() + 30 * 60 * 1000)); }
+  const snoozed = () => Number(ss.get('upd_snooze') || 0) > Date.now();
+
+  /* ---------- layar "Memperbarui…" ---------- */
+  let run = null, running = false;
+  const STEPS = ['Mengunduh versi terbaru', 'Menerapkan pembaruan', 'Memuat ulang aplikasi'];
+  function buildRun(info) {
+    if (run) run.remove();
+    run = document.createElement('div');
+    run.id = 'updRun';
+    run.setAttribute('role', 'alertdialog'); run.setAttribute('aria-live', 'polite');
+    run.innerHTML =
+      '<div class="updr-logo"><span class="updr-ring"></span><img src="icon-192.png" alt=""></div>' +
+      '<h3 class="updr-title" id="updrTitle">Memperbarui aplikasi</h3>' +
+      '<p class="updr-sub" id="updrSub">Ke versi ' + esc(info.version) + '</p>' +
+      '<div class="updr-bar"><i id="updrBar"></i></div>' +
+      '<ul class="updr-steps" id="updrSteps">' + STEPS.map(t => '<li><span class="dot">' + IC_CHECK + '</span><span>' + t + '</span></li>').join('') + '</ul>' +
+      '<p class="updr-note">Mohon jangan tutup aplikasi</p>' +
+      '<div class="updr-actions"><button class="upd-btn primary" id="updRetry" type="button">Coba lagi</button><button class="upd-btn ghost" id="updClose" type="button">Tutup</button></div>';
+    document.body.appendChild(run);
+    run.classList.add('on');
+    requestAnimationFrame(() => requestAnimationFrame(() => run.classList.add('show')));
+    $('updRetry').addEventListener('click', () => apply(info));
+    $('updClose').addEventListener('click', () => { running = false; run.classList.remove('show'); setTimeout(() => run.classList.remove('on'), 300); });
+  }
+  function setStep(i, pct) {
+    const lis = run.querySelectorAll('#updrSteps li');
+    lis.forEach((li, k) => { li.classList.toggle('done', k < i); li.classList.toggle('active', k === i); });
+    $('updrBar').style.width = pct + '%';
+  }
+  async function apply(info) {
+    if (running && run && !run.classList.contains('err')) return;
+    running = true;
+    buildRun(info);
+    run.classList.remove('err');
+    try {
+      /* 1) unduh: paksa ambil ulang halaman, service worker, dan manifest dari server */
+      setStep(0, 12);
+      const base = location.pathname.replace(/[^/]*$/, '');
+      const targets = [location.pathname, base + 'firebase-messaging-sw.js', base + 'manifest.webmanifest', base + CHECK_URL];
+      const got = await Promise.all(targets.map(u => withTimeout(fetch(u, { cache: 'reload' }), 20000).then(r => r.ok, () => false)));
+      if (!got[0]) throw new Error('unduh gagal');
+      await sleep(450);
+      /* 2) terapkan: perbarui service worker & kosongkan cache lama (login & data pesan tidak disentuh) */
+      setStep(1, 52);
+      try {
+        if ('serviceWorker' in navigator) {
+          const regs = await withTimeout(navigator.serviceWorker.getRegistrations(), 4000);
+          await Promise.all(regs.map(r => withTimeout(r.update(), 6000).catch(() => {})));
+        }
+      } catch (e) {}
+      try { if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); } } catch (e) {}
+      await sleep(450);
+      /* 3) muat ulang */
+      setStep(2, 92);
+      ls.set('app_just_updated', info.version);
+      ss.set('upd_target', info.version);
+      await sleep(500);
+      $('updrBar').style.width = '100%';
+      run.querySelectorAll('#updrSteps li').forEach(li => { li.classList.remove('active'); li.classList.add('done'); });
+      await sleep(250);
+      const u = new URL(location.href);
+      u.searchParams.set('_u', Date.now().toString(36));
+      location.replace(u.toString());
+    } catch (e) {
+      run.classList.add('err');
+      $('updrTitle').textContent = 'Pembaruan gagal';
+      $('updrSub').textContent = navigator.onLine === false ? 'Tidak ada koneksi internet. Sambungkan lalu coba lagi.' : 'Terjadi kendala saat mengunduh. Coba lagi.';
+      run.querySelectorAll('#updrSteps li').forEach(li => li.classList.remove('active'));
+    }
+  }
+
+  /* ---------- pemeriksaan versi ---------- */
+  let checking = false, lastCheck = 0, firstCheck = true;
+  async function fetchRemote() {
+    const r = await withTimeout(fetch(CHECK_URL + '?t=' + Date.now(), { cache: 'no-store' }), 12000);
+    if (!r.ok) throw new Error('http ' + r.status);
+    const j = await r.json();
+    if (!j || !j.version) throw new Error('format');
+    return j;
+  }
+  function toast(msg) {
+    if (typeof window.showToast === 'function') window.showToast(msg);
+  }
+  async function check(manual) {
+    if (checking || running) return;
+    if (!manual && Date.now() - lastCheck < 30000) return;
+    checking = true; lastCheck = Date.now();
+    if (manual) setRow('checking');
+    try {
+      const info = await fetchRemote();
+      if (String(info.version) !== APP_VERSION) {
+        setRow('new', info.version);
+        const cold = firstCheck;
+        const alreadyTried = ss.get('upd_target') === String(info.version);
+        if (manual) showSheet(info);
+        else if (cold && !alreadyTried) apply(info);          /* buka aplikasi: langsung diperbarui otomatis */
+        else if (!snoozed()) showSheet(info);
+      } else {
+        setRow('idle');
+        if (manual) toast('Aplikasi sudah versi terbaru (v' + APP_VERSION + ')');
+      }
+    } catch (e) {
+      setRow('idle');
+      if (manual) toast('Tidak dapat memeriksa pembaruan. Periksa koneksi internet.');
+    } finally { checking = false; firstCheck = false; }
+  }
+  window.checkAppUpdate = check;
+  if (row) row.addEventListener('click', () => check(true));
+
+  /* ---------- banner setelah berhasil diperbarui ---------- */
+  function announceUpdated() {
+    const seen = ls.get('app_ver_seen');
+    ls.set('app_ver_seen', APP_VERSION);
+    if (ls.get('app_just_updated') || (seen && seen !== APP_VERSION)) {
+      try { localStorage.removeItem('app_just_updated'); } catch (e) {}
+      try { sessionStorage.removeItem('upd_target'); } catch (e) {}
+      const d = document.createElement('div');
+      d.id = 'updDone';
+      d.innerHTML = IC_OK + '<span>Aplikasi diperbarui ke versi ' + esc(APP_VERSION) + '</span>';
+      document.body.appendChild(d);
+      setTimeout(() => d.classList.add('show'), 700);
+      setTimeout(() => { d.classList.remove('show'); setTimeout(() => d.remove(), 600); }, 4200);
+    }
+  }
+
+  /* ---------- pemicu ---------- */
+  function start() {
+    announceUpdated();
+    setTimeout(() => check(false), 600);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(false); });
+    window.addEventListener('focus', () => check(false));
+    window.addEventListener('online', () => check(false));
+    window.addEventListener('pageshow', e => { if (e.persisted) check(false); });
+    setInterval(() => { if (document.visibilityState === 'visible') check(false); }, 10 * 60 * 1000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+</script>
 </body>
 
 </html>
