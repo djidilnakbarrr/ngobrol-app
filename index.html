@@ -3290,36 +3290,19 @@
 
 <style id="updStyle">
 /* ===== Pembaruan aplikasi ===== */
-#updSheetWrap, #updRun { position: fixed; inset: 0; display: none; font-family: "Inter","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif; -webkit-font-smoothing: antialiased; }
-#updSheetWrap { z-index: 3500; align-items: flex-end; justify-content: center; background: rgba(7,20,24,.58); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); opacity: 0; transition: opacity .25s; }
-#updSheetWrap.on { display: flex; }
-#updSheetWrap.show { opacity: 1; }
-.upd-sheet { width: 100%; max-width: 440px; box-sizing: border-box; background: #fff; border-radius: 28px 28px 0 0; padding: 10px 22px calc(20px + env(safe-area-inset-bottom, 0px)); text-align: center; transform: translateY(100%); transition: transform .38s cubic-bezier(.2,.9,.25,1); box-shadow: 0 -12px 40px rgba(8,22,26,.2); max-height: 92vh; overflow-y: auto; }
-#updSheetWrap.show .upd-sheet { transform: none; }
-.upd-grab { width: 42px; height: 5px; border-radius: 3px; background: #d9e1e3; margin: 0 auto 18px; }
-.upd-badge { position: relative; width: 76px; height: 76px; margin: 22px auto 20px; }
-.upd-badge::before, .upd-badge::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: rgba(11,138,121,.16); animation: updPulse 2.4s ease-out infinite; }
-.upd-badge::after { animation-delay: 1.2s; }
-.upd-badge i { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(135deg,#14ab95 0%,#0b8a79 55%,#054a42 100%); box-shadow: 0 10px 24px rgba(7,94,84,.35); display: flex; align-items: center; justify-content: center; z-index: 1; }
-.upd-badge svg { width: 36px; height: 36px; color: #fff; }
-@keyframes updPulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
-.upd-title { font-size: 21px; font-weight: 800; letter-spacing: -.4px; color: #0f1c22; margin: 0 0 6px; }
-.upd-sub { font-size: 14.5px; line-height: 1.55; color: #667781; margin: 0 auto 16px; max-width: 320px; }
-.upd-flow { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 18px; }
-.upd-chip { font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px; font-variant-numeric: tabular-nums; letter-spacing: .1px; }
-.upd-chip.old { background: #eef2f3; color: #667781; }
-.upd-chip.new { background: #e8f5f2; color: #075e54; box-shadow: inset 0 0 0 1px rgba(11,138,121,.28); }
-.upd-flow svg { width: 18px; height: 18px; color: #8a99a1; }
-.upd-notes { text-align: left; background: #f6f8f8; border-radius: 18px; padding: 14px 16px 6px; margin: 0 0 18px; }
-.upd-notes h4 { font-size: 12px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: #0b8a79; margin: 0 0 10px; }
-.upd-notes ul { list-style: none; margin: 0; padding: 0; }
-.upd-notes li { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: #25343b; margin: 0 0 10px; }
-.upd-notes li svg { flex: 0 0 18px; width: 18px; height: 18px; margin-top: 1px; color: #0b8a79; }
-.upd-btn { display: block; width: 100%; box-sizing: border-box; border: none; cursor: pointer; font-family: inherit; border-radius: 14px; font-size: 15.5px; font-weight: 700; padding: 15px 16px; letter-spacing: .1px; transition: transform .12s, filter .15s; -webkit-tap-highlight-color: transparent; }
-.upd-btn:active { transform: scale(.98); }
-.upd-btn.primary { background: linear-gradient(135deg,#0b8a79,#075e54); color: #fff; box-shadow: 0 8px 20px rgba(7,94,84,.3); }
-.upd-btn.ghost { background: transparent; color: #667781; margin-top: 4px; font-weight: 600; }
-.upd-foot { font-size: 12.5px; color: #8a99a1; margin: 10px 0 2px; line-height: 1.5; }
+#updRun { position: fixed; inset: 0; display: none; font-family: "Inter","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif; -webkit-font-smoothing: antialiased; }
+#updFab { position: fixed; left: 50%; bottom: calc(158px + env(safe-area-inset-bottom, 0px)); z-index: 3500; display: none; align-items: center; gap: 10px; border: none; cursor: pointer; font-family: "Inter","Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif; -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; color: #fff; padding: 9px 20px 9px 10px; border-radius: 999px; background: linear-gradient(135deg,#14ab95 0%,#0b8a79 50%,#075e54 100%); box-shadow: 0 10px 26px rgba(7,94,84,.42), 0 0 0 1px rgba(255,255,255,.18) inset; transform: translate(-50%, 24px) scale(.92); opacity: 0; transition: transform .45s cubic-bezier(.2,.9,.25,1), opacity .3s; }
+#updFab.on { display: flex; }
+#updFab.show { transform: translate(-50%, 0) scale(1); opacity: 1; }
+#updFab:active { transform: translate(-50%, 0) scale(.96); }
+#updFab .ic { position: relative; width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.2); display: flex; align-items: center; justify-content: center; flex: 0 0 34px; }
+#updFab .ic::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255,255,255,.55); animation: updFabPulse 2s ease-out infinite; }
+#updFab .ic svg { width: 19px; height: 19px; }
+#updFab .tx { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.15; text-align: left; }
+#updFab .tx b { font-size: 15px; font-weight: 800; letter-spacing: -.1px; }
+#updFab .tx span { font-size: 11.5px; font-weight: 600; opacity: .85; margin-top: 2px; font-variant-numeric: tabular-nums; }
+body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { display: none !important; }
+@keyframes updFabPulse { 0% { transform: scale(1); opacity: .9; } 100% { transform: scale(1.55); opacity: 0; } }
 
 #updRun { z-index: 4000; flex-direction: column; align-items: center; justify-content: center; padding: 28px; background: linear-gradient(160deg,#0f9d88 0%,#075e54 55%,#043b35 100%); color: #fff; text-align: center; opacity: 0; transition: opacity .3s; }
 #updRun.on { display: flex; }
@@ -3354,10 +3337,7 @@
 #updDone { position: fixed; left: 50%; top: calc(14px + env(safe-area-inset-top, 0px)); transform: translate(-50%,-140%); z-index: 3600; display: flex; align-items: center; gap: 10px; background: #10242b; color: #fff; border-radius: 16px; padding: 11px 16px 11px 12px; font: 600 13.5px "Inter","Segoe UI",system-ui,Roboto,Arial,sans-serif; box-shadow: 0 14px 34px rgba(8,20,26,.35); transition: transform .45s cubic-bezier(.2,.9,.25,1); max-width: 90%; }
 #updDone.show { transform: translate(-50%,0); }
 #updDone svg { width: 22px; height: 22px; flex: 0 0 22px; color: #7fe3c8; }
-.settings-item .upd-pill { display: none; font-size: 11px; font-weight: 700; letter-spacing: .3px; color: #fff; background: #0b8a79; padding: 3px 9px; border-radius: 999px; margin-right: 2px; flex-shrink: 0; }
-.settings-item.has-update .upd-pill { display: inline-block; }
-.settings-item.has-update .settings-body p { color: #0b8a79; font-weight: 600; }
-@media (prefers-reduced-motion: reduce) { .upd-badge::before, .upd-badge::after, .updr-ring, .updr-steps li.active .dot { animation: none; } .upd-sheet { transition: none; } }
+@media (prefers-reduced-motion: reduce) { #updFab .ic::after, .updr-ring, .updr-steps li.active .dot { animation: none; } #updFab { transition: opacity .2s; } }
 </style>
 </head>
 
@@ -3624,14 +3604,6 @@
             </div>
 <div class="settings-group">
 
-            <div class="settings-item" id="settingsUpdateRow">
-              <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
-              <div class="settings-body">
-                <h4>Perbarui Aplikasi</h4>
-                <p id="updRowSub">Versi - · Ketuk untuk memeriksa pembaruan</p>
-              </div>
-              <span class="upd-pill">BARU</span>
-            </div>
             <div class="settings-item danger" id="logoutSettings">
 
               <div class="settings-icon">
@@ -11350,62 +11322,32 @@ setInterval(() => {
     if (u.searchParams.has('_u')) { u.searchParams.delete('_u'); history.replaceState(history.state, '', u.pathname + u.search + u.hash); }
   } catch (e) {}
 
-  const IC_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 11 12 16 17 11"/><path d="M5 20h14"/></svg>';
-  const IC_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
+  const IC_REFRESH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><polyline points="7 11 12 16 17 11"/><path d="M5 20h14"/></svg>';
   const IC_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   const IC_OK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12.5 11 15.5 16 9"/></svg>';
 
-  /* ---------- baris di Setelan ---------- */
-  const row = $('settingsUpdateRow');
-  function setRow(state, rv) {
-    if (!row) return;
-    row.classList.toggle('has-update', state === 'new');
-    const p = $('updRowSub');
-    if (!p) return;
-    if (state === 'new') p.textContent = 'Versi ' + rv + ' tersedia · Ketuk untuk memperbarui';
-    else if (state === 'checking') p.textContent = 'Memeriksa pembaruan…';
-    else p.textContent = 'Versi ' + APP_VERSION + ' · Ketuk untuk memeriksa pembaruan';
-  }
-  setRow('idle');
-
-  /* ---------- lembar "Pembaruan tersedia" ---------- */
-  let sheet = null;
-  function buildSheet(info) {
-    if (sheet) sheet.remove();
-    const notes = Array.isArray(info.notes) ? info.notes.filter(Boolean).slice(0, 6) : [];
-    sheet = document.createElement('div');
-    sheet.id = 'updSheetWrap';
-    sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-modal', 'true'); sheet.setAttribute('aria-label', 'Pembaruan tersedia');
-    sheet.innerHTML =
-      '<div class="upd-sheet">' +
-        '<div class="upd-grab"></div>' +
-        '<div class="upd-badge"><i>' + IC_DOWN + '</i></div>' +
-        '<h3 class="upd-title">Pembaruan tersedia</h3>' +
-        '<p class="upd-sub">Versi terbaru Chat App siap dipasang. Pembaruan hanya butuh beberapa detik.</p>' +
-        '<div class="upd-flow"><span class="upd-chip old">v' + esc(APP_VERSION) + '</span>' + IC_ARROW + '<span class="upd-chip new">v' + esc(info.version) + '</span></div>' +
-        (notes.length ? '<div class="upd-notes"><h4>Yang baru</h4><ul>' + notes.map(n => '<li>' + IC_CHECK + '<span>' + esc(n) + '</span></li>').join('') + '</ul></div>' : '') +
-        '<button class="upd-btn primary" id="updGo" type="button">Perbarui sekarang</button>' +
-        '<button class="upd-btn ghost" id="updLater" type="button">Nanti saja</button>' +
-        '<p class="upd-foot">Akun dan percakapan Anda tetap aman.</p>' +
-      '</div>';
-    document.body.appendChild(sheet);
-    $('updGo').addEventListener('click', () => { hideSheet(); apply(info); });
-    $('updLater').addEventListener('click', () => { snooze(); hideSheet(); });
-    sheet.addEventListener('click', e => { if (e.target === sheet) { snooze(); hideSheet(); } });
-  }
-  function showSheet(info) {
+  /* ---------- tombol "Perbarui" melayang: muncul otomatis saat ada versi baru, hilang setelah diperbarui ---------- */
+  let fab = null, pending = null;
+  function showFab(info) {
+    pending = info;
     if (running) return;
-    buildSheet(info);
-    sheet.classList.add('on');
-    requestAnimationFrame(() => requestAnimationFrame(() => sheet && sheet.classList.add('show')));
+    if (!fab) {
+      fab = document.createElement('button');
+      fab.id = 'updFab'; fab.type = 'button';
+      fab.setAttribute('aria-label', 'Perbarui aplikasi');
+      fab.addEventListener('click', () => { if (pending) apply(pending); });
+      document.body.appendChild(fab);
+    }
+    fab.innerHTML = '<span class="ic">' + IC_REFRESH + '</span><span class="tx"><b>Perbarui</b><span>Versi ' + esc(info.version) + ' tersedia</span></span>';
+    fab.classList.add('on');
+    requestAnimationFrame(() => requestAnimationFrame(() => fab && fab.classList.add('show')));
   }
-  function hideSheet() {
-    if (!sheet) return;
-    const el = sheet; el.classList.remove('show');
-    setTimeout(() => { el.classList.remove('on'); }, 320);
+  function hideFab() {
+    pending = null;
+    if (!fab) return;
+    const el = fab; el.classList.remove('show');
+    setTimeout(() => { if (!pending) el.classList.remove('on'); }, 400);
   }
-  function snooze() { ss.set('upd_snooze', String(Date.now() + 30 * 60 * 1000)); }
-  const snoozed = () => Number(ss.get('upd_snooze') || 0) > Date.now();
 
   /* ---------- layar "Memperbarui…" ---------- */
   let run = null, running = false;
@@ -11427,7 +11369,7 @@ setInterval(() => {
     run.classList.add('on');
     requestAnimationFrame(() => requestAnimationFrame(() => run.classList.add('show')));
     $('updRetry').addEventListener('click', () => apply(info));
-    $('updClose').addEventListener('click', () => { running = false; run.classList.remove('show'); setTimeout(() => run.classList.remove('on'), 300); });
+    $('updClose').addEventListener('click', () => { running = false; run.classList.remove('show'); setTimeout(() => run.classList.remove('on'), 300); showFab(info); });
   }
   function setStep(i, pct) {
     const lis = run.querySelectorAll('#updrSteps li');
@@ -11437,6 +11379,7 @@ setInterval(() => {
   async function apply(info) {
     if (running && run && !run.classList.contains('err')) return;
     running = true;
+    hideFab();
     buildRun(info);
     run.classList.remove('err');
     try {
@@ -11477,7 +11420,7 @@ setInterval(() => {
   }
 
   /* ---------- pemeriksaan versi ---------- */
-  let checking = false, lastCheck = 0, firstCheck = true;
+  let checking = false, lastCheck = 0;
   async function fetchRemote() {
     const r = await withTimeout(fetch(CHECK_URL + '?t=' + Date.now(), { cache: 'no-store' }), 12000);
     if (!r.ok) throw new Error('http ' + r.status);
@@ -11485,34 +11428,18 @@ setInterval(() => {
     if (!j || !j.version) throw new Error('format');
     return j;
   }
-  function toast(msg) {
-    if (typeof window.showToast === 'function') window.showToast(msg);
-  }
   async function check(manual) {
     if (checking || running) return;
     if (!manual && Date.now() - lastCheck < 30000) return;
     checking = true; lastCheck = Date.now();
-    if (manual) setRow('checking');
     try {
       const info = await fetchRemote();
-      if (String(info.version) !== APP_VERSION) {
-        setRow('new', info.version);
-        const cold = firstCheck;
-        const alreadyTried = ss.get('upd_target') === String(info.version);
-        if (manual) showSheet(info);
-        else if (cold && !alreadyTried) apply(info);          /* buka aplikasi: langsung diperbarui otomatis */
-        else if (!snoozed()) showSheet(info);
-      } else {
-        setRow('idle');
-        if (manual) toast('Aplikasi sudah versi terbaru (v' + APP_VERSION + ')');
-      }
-    } catch (e) {
-      setRow('idle');
-      if (manual) toast('Tidak dapat memeriksa pembaruan. Periksa koneksi internet.');
-    } finally { checking = false; firstCheck = false; }
+      if (String(info.version) !== APP_VERSION) showFab(info);
+      else hideFab();
+    } catch (e) { /* offline: biarkan keadaan sekarang */ }
+    finally { checking = false; }
   }
   window.checkAppUpdate = check;
-  if (row) row.addEventListener('click', () => check(true));
 
   /* ---------- banner setelah berhasil diperbarui ---------- */
   function announceUpdated() {

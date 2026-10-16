@@ -77,9 +77,8 @@ Ketuk tombol lampiran > **Foto sekali lihat**. Penerima melihat kotak "Foto seka
 
 ## Pembaruan aplikasi otomatis
 - Aplikasi memeriksa `version.json` di server (tanpa cache) saat dibuka, saat kembali ke aplikasi, saat internet tersambung lagi, dan tiap 10 menit.
-- **Saat aplikasi baru dibuka** dan ada versi baru: langsung muncul layar "Memperbarui aplikasi" (mengunduh, menerapkan, memuat ulang) lalu aplikasi masuk ke versi terbaru tanpa perlu membuka link dulu. Setelah itu muncul pemberitahuan "Aplikasi diperbarui ke versi X".
-- **Saat aplikasi sedang dipakai**: muncul lembar "Pembaruan tersedia" berisi daftar "Yang baru", tombol **Perbarui sekarang** dan **Nanti saja** (muncul lagi 30 menit kemudian).
-- Setelan > **Perbarui Aplikasi** untuk memeriksa manual.
+- Jika ada versi baru, tombol melayang **Perbarui** (dengan nomor versi) muncul sendiri di atas tombol "+". Ketuk: muncul layar "Memperbarui aplikasi" (mengunduh, menerapkan, memuat ulang), lalu aplikasi masuk ke versi terbaru dan tombol otomatis hilang karena sudah terbaru.
+- Tombol disembunyikan saat chat atau halaman Diarsipkan sedang dibuka, dan muncul lagi setelah kembali ke daftar.
 - Akun/sesi login dan data pesan tidak dihapus saat memperbarui.
 
 ### Cara merilis versi baru
