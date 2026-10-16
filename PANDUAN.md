@@ -67,3 +67,9 @@ Ketuk tombol lampiran > **Foto sekali lihat**. Penerima melihat kotak "Foto seka
 - Rules database harus mengizinkan penerima menulis `data`, `viewedAt`, dan `viewedBy` pada `chats/*` dan `groupChats/*`, sama seperti `readAt`/`readBy`.
 - Web tidak bisa memblokir screenshot atau perekaman layar seperti aplikasi native; yang bisa dilakukan hanya menutup tampilan saat aplikasi ke latar belakang dan mematikan menu simpan/tekan lama. Penerima yang nakal tetap bisa memotret layar dengan HP lain.
 - Deploy ulang `functions` agar notifikasi menampilkan "Foto sekali lihat".
+
+## Diarsipkan
+- Tekan lama percakapan (kontak maupun grup) lalu pilih **Arsipkan obrolan**. Chat pindah dari daftar utama ke baris **Diarsipkan** di paling atas; angka hijau = jumlah chat terarsip yang punya pesan belum dibaca. Toast "Urungkan" muncul sesaat setelah mengarsipkan.
+- Ketuk baris **Diarsipkan** untuk membuka halaman arsip. Di sana: tekan lama chat > **Keluarkan dari arsip**, menu titik tiga > **Keluarkan semua dari arsip**, dan catatan "Chat ini tetap diarsipkan saat pesan baru diterima. Ketuk untuk mengubah." (ketuk untuk menyalakan/mematikan; jika dimatikan, chat otomatis keluar dari arsip saat ada pesan masuk baru).
+- Saat memakai kolom pencarian, chat terarsip ikut muncul dengan label **Diarsipkan**.
+- Data arsip disimpan per akun di perangkat (localStorage, seperti penanda hapus percakapan), jadi **tidak perlu mengubah Rules database** dan tidak perlu deploy ulang Cloud Functions. Cukup unggah ulang `index.html`.

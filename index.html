@@ -3244,6 +3244,47 @@
     .chat-row, .contact-row { padding-left: 14px; padding-right: 14px; }
     .ns-sheet { padding-left: 16px; padding-right: 16px; }
   }
+  
+  /* =====================================================================
+     FITUR DIARSIPKAN
+     ===================================================================== */
+  .archive-row { display: flex; align-items: center; gap: 14px; padding: 12px 20px; cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
+  .archive-row:hover { background: #f7fafa; }
+  .archive-row:active { background: #eef4f3; }
+  .archive-row::after { content: ""; position: absolute; left: 88px; right: 0; bottom: 0; height: 1px; background: var(--line); }
+  .archive-ico { width: 54px; height: 30px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+  .archive-ico svg { width: 24px; height: 24px; }
+  .archive-label { flex: 1; font-size: 15.5px; font-weight: 600; color: var(--ink-2); letter-spacing: -.1px; }
+  .archive-count { font-size: 13px; font-weight: 700; color: var(--brand-2); font-variant-numeric: tabular-nums; }
+  .arch-tag { font-size: 11px; font-weight: 600; color: var(--brand-2); background: var(--brand-tint); border-radius: 6px; padding: 2px 7px; flex-shrink: 0; letter-spacing: .1px; }
+  .all-archived-hint { padding: 26px 32px 8px; text-align: center; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+  #archivedView { position: absolute; inset: 0; z-index: 15; display: none; flex-direction: column; background: #fff; }
+  #archivedView.active { display: flex; animation: archIn .22s cubic-bezier(.2,.7,.2,1); }
+  @keyframes archIn { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .arch-head { flex-shrink: 0; display: flex; align-items: center; gap: 6px; height: 60px; padding: 0 6px 0 6px; background: #fff; border-bottom: 1px solid var(--line); position: relative; }
+  .arch-head h2 { flex: 1; font-size: 20px; font-weight: 700; letter-spacing: -.3px; color: var(--ink); line-height: 1.2; }
+  .arch-icon-btn { width: 44px; height: 44px; border: none; background: transparent; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--ink-2); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .arch-icon-btn:hover { background: #f1f5f5; }
+  .arch-icon-btn:active { background: #e6eeee; }
+  .arch-icon-btn svg { width: 24px; height: 24px; }
+  .arch-note { flex-shrink: 0; width: 100%; border: none; border-bottom: 1px solid var(--line); background: var(--surface-2, #f6f8f8); padding: 14px 28px; text-align: center; font-size: 13.5px; line-height: 1.55; color: var(--muted); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .arch-note:active { background: #eef3f3; }
+  .arch-note b { color: var(--brand-2); font-weight: 600; }
+  #archivedList { flex: 1; overflow-y: auto; background: #fff; -webkit-overflow-scrolling: touch; }
+  .arch-empty { padding: 72px 32px; text-align: center; color: var(--muted); }
+  .arch-empty svg { width: 64px; height: 64px; color: #b5c3c8; margin-bottom: 14px; }
+  .arch-empty h3 { font-size: 17px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  .arch-empty p { font-size: 14px; line-height: 1.6; }
+  #archMore { position: absolute; top: 52px; right: 10px; z-index: 5; min-width: 230px; background: #fff; border-radius: 14px; padding: 6px; box-shadow: 0 12px 34px rgba(8,20,26,.22), 0 0 0 1px rgba(15,28,34,.05); display: none; }
+  #archMore.show { display: block; animation: fadeIn .15s; }
+  #archMore button { width: 100%; border: none; background: transparent; text-align: left; padding: 12px 14px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
+  #archMore button:hover { background: #f4f8f8; }
+  #archMore button:active { background: #e9f1f0; }
+  #toast:has(.toast-act) { white-space: nowrap; }
+  #toast .toast-act { margin-left: 8px; border: none; background: transparent; color: #7fe3c8; font-weight: 800; font-size: 13.5px; letter-spacing: .4px; text-transform: uppercase; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+  #toast .toast-act:active { background: rgba(255,255,255,.12); }
+  @media (max-width: 360px) { .archive-row { padding-left: 14px; padding-right: 14px; } }
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 </style>
 
@@ -3612,6 +3653,17 @@
   </div>
 
 
+
+    <div id="archivedView" aria-label="Diarsipkan">
+    <div class="arch-head">
+      <button class="arch-icon-btn" id="archBack" title="Kembali" aria-label="Kembali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+      <h2>Diarsipkan</h2>
+      <button class="arch-icon-btn" id="archMoreBtn" title="Opsi lain" aria-label="Opsi lain"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg></button>
+      <div id="archMore"><button id="archUnarchiveAll">Keluarkan semua dari arsip</button></div>
+    </div>
+    <button class="arch-note" id="archNote" type="button"></button>
+    <div id="archivedList"></div>
+  </div>
 
   <div class="chat-view" id="chatView">
 
@@ -4402,6 +4454,14 @@
 
 
 
+        <button class="chat-menu-option" id="menuArchive">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1.2"/><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+      <span id="menuArchiveText">Arsipkan obrolan</span>
+    </button>
+    <button class="chat-menu-option" id="menuGroupInfo" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      Info grup
+    </button>
     <button class="chat-menu-option" id="menuRename">
 
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -5497,18 +5557,18 @@ async function deleteMyAccount() {
 
 
 
-function showToast(msg) {
-
+function showToast(msg, action) {
   const t = $('toast');
-
   t.textContent = msg;
-
+  if (action && action.label && typeof action.fn === 'function') {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'toast-act'; b.textContent = action.label;
+    b.addEventListener('click', () => { clearTimeout(window._toastTimer); t.classList.remove('show'); action.fn(); });
+    t.appendChild(b);
+  }
   t.classList.add('show');
-
   clearTimeout(window._toastTimer);
-
-  window._toastTimer = setTimeout(() => { t.classList.remove('show'); }, 2400);
-
+  window._toastTimer = setTimeout(() => { t.classList.remove('show'); }, action ? 4800 : 2400);
 }
 
 
@@ -6388,6 +6448,7 @@ function loadUnread() {
   });
 }
 function loadBlocked() {
+  loadArchived();
   loadUnread();
   if (blockedUnsub) blockedUnsub();
 
@@ -6645,6 +6706,133 @@ function loadGroups() {
 
 
 
+
+/* ============= ARSIP (Diarsipkan) =============
+   Disimpan per akun di perangkat ini (localStorage), sama seperti penanda "hapus percakapan".
+   archivedCache = { idChat: waktuDiarsipkan }. Tidak perlu mengubah Rules database. */
+let archivedCache = {};
+let keepArchived = true;
+function archStoreKey() { return 'chat_archived_' + (myId || ''); }
+function archKeepKey() { return 'chat_archive_keep_' + (myId || ''); }
+function loadArchived() {
+  archivedCache = {};
+  keepArchived = true;
+  try { const v = JSON.parse(localStorage.getItem(archStoreKey()) || '{}'); if (v && typeof v === 'object') archivedCache = v; } catch (e) {}
+  try { keepArchived = localStorage.getItem(archKeepKey()) !== '0'; } catch (e) {}
+}
+function saveArchived() { try { localStorage.setItem(archStoreKey(), JSON.stringify(archivedCache)); } catch (e) {} }
+function isArchived(id) { return !!archivedCache[id]; }
+function setArchived(ids, on) {
+  const list = Array.isArray(ids) ? ids : [ids];
+  const now = Date.now();
+  list.forEach(id => { if (on) archivedCache[id] = now; else delete archivedCache[id]; });
+  saveArchived();
+  renderChatList();
+}
+function lastTsOf(id) {
+  if (isGroupId(id)) { const g = groupsCache[id]; return g ? ((g.last && g.last.ts) || 0) : 0; }
+  return chatMeta[id] ? (chatMeta[id].ts || 0) : 0;
+}
+/* bila pengaturan "tetap diarsipkan" mati, chat yang menerima pesan baru keluar dari arsip */
+function pruneArchived() {
+  if (keepArchived) return;
+  let changed = false;
+  Object.keys(archivedCache).forEach(id => {
+    const t = lastTsOf(id);
+    if (t && t > archivedCache[id] && !(chatMeta[id] && chatMeta[id].from === myId && !isGroupId(id))) { delete archivedCache[id]; changed = true; }
+  });
+  if (changed) saveArchived();
+}
+function archiveWithUndo(id) {
+  setArchived(id, true);
+  showToast('1 chat diarsipkan', { label: 'Urungkan', fn: () => setArchived(id, false) });
+}
+function openArchivedView() {
+  $('archMore').classList.remove('show');
+  $('archivedView').classList.add('active');
+  renderArchivedList();
+}
+function closeArchivedView() {
+  $('archMore').classList.remove('show');
+  $('archivedView').classList.remove('active');
+}
+function updateArchNote() {
+  $('archNote').innerHTML = keepArchived
+    ? 'Chat ini tetap diarsipkan saat pesan baru diterima.<br><b>Ketuk untuk mengubah.</b>'
+    : 'Chat ini keluar dari arsip saat pesan baru diterima.<br><b>Ketuk untuk mengubah.</b>';
+}
+function renderArchivedList() {
+  const list = $('archivedList');
+  updateArchNote();
+  const ids = Object.keys(archivedCache).filter(id => isGroupId(id) ? (groupsCache[id] && groupsCache[id].members && groupsCache[id].members[myId]) : (!!chatMeta[id] || !!contactsCache[id]));
+  const entries = ids.map(id => ({ id, ts: lastTsOf(id) || archivedCache[id] || 0, name: isGroupId(id) ? (groupsCache[id].name || 'Grup') : displayName(id) }));
+  entries.sort((a, b) => (b.ts - a.ts) || a.name.localeCompare(b.name));
+  const keepScroll = list.scrollTop;
+  list.innerHTML = '';
+  if (!entries.length) {
+    list.innerHTML = '<div class="arch-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1.2"/><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg><h3>Tidak ada chat diarsipkan</h3><p>Tekan lama sebuah percakapan di daftar chat, lalu pilih <b>Arsipkan obrolan</b>.</p></div>';
+    return;
+  }
+  archListMode = true;
+  try { entries.forEach(en => list.appendChild(isGroupId(en.id) ? buildGroupRow(en.id) : buildChatRow(en.id))); }
+  finally { archListMode = false; }
+  list.scrollTop = keepScroll;
+}
+let archListMode = false;
+function buildArchiveRow(unreadChats) {
+  const row = document.createElement('div');
+  row.className = 'archive-row';
+  row.id = 'archiveRow';
+  row.setAttribute('role', 'button');
+  row.tabIndex = 0;
+  row.innerHTML = '<div class="archive-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1.2"/><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M12 11.5v6"/><polyline points="9.2 14.6 12 17.4 14.8 14.6"/></svg></div><span class="archive-label">Diarsipkan</span>' + (unreadChats > 0 ? '<span class="archive-count">' + unreadChats + '</span>' : '');
+  row.addEventListener('click', openArchivedView);
+  row.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openArchivedView(); } });
+  return row;
+}
+$('archBack').addEventListener('click', closeArchivedView);
+$('archNote').addEventListener('click', () => {
+  keepArchived = !keepArchived;
+  try { localStorage.setItem(archKeepKey(), keepArchived ? '1' : '0'); } catch (e) {}
+  updateArchNote();
+  showToast(keepArchived ? 'Chat tetap diarsipkan saat ada pesan baru' : 'Chat keluar dari arsip saat ada pesan baru');
+});
+$('archMoreBtn').addEventListener('click', (e) => { e.stopPropagation(); $('archMore').classList.toggle('show'); });
+$('archivedView').addEventListener('click', (e) => { if (!e.target.closest('#archMore') && !e.target.closest('#archMoreBtn')) $('archMore').classList.remove('show'); });
+$('archUnarchiveAll').addEventListener('click', async () => {
+  $('archMore').classList.remove('show');
+  const ids = Object.keys(archivedCache);
+  if (!ids.length) { showToast('Tidak ada chat diarsipkan'); return; }
+  const ok = await confirmDialog({ title: 'Keluarkan semua dari arsip?', message: ids.length + ' percakapan akan kembali ke daftar chat.', okText: 'Keluarkan', icon: 'trash', danger: false });
+  if (!ok) return;
+  setArchived(ids, false);
+  showToast(ids.length + ' chat dikeluarkan dari arsip');
+});
+$('menuArchive').addEventListener('click', () => {
+  $('chatMenu').classList.remove('show');
+  const id = currentMenuChatId;
+  if (!id) return;
+  if (isArchived(id)) { setArchived(id, false); showToast('Chat dikeluarkan dari arsip'); }
+  else archiveWithUndo(id);
+});
+$('menuGroupInfo').addEventListener('click', () => {
+  $('chatMenu').classList.remove('show');
+  if (currentMenuChatId) openGroupInfo(currentMenuChatId);
+});
+/* menu tekan-lama: opsi khusus kontak disembunyikan untuk grup */
+function prepareChatMenu(id, name) {
+  const grp = isGroupId(id);
+  currentMenuChatId = id;
+  currentMenuChatName = name;
+  ['menuRename', 'menuShareContact', 'menuDeleteChat', 'menuBlock', 'menuDeleteContact'].forEach(k => { const el = $(k); if (el) el.style.display = grp ? 'none' : ''; });
+  $('menuGroupInfo').style.display = grp ? '' : 'none';
+  $('menuArchiveText').textContent = isArchived(id) ? 'Keluarkan dari arsip' : 'Arsipkan obrolan';
+  $('chatMenuTitle').textContent = name;
+  $('chatMenuSub').textContent = 'Pilih tindakan';
+  if (!grp) $('menuBlockText').textContent = blockedCache[id] ? 'Buka blokir' : 'Blokir kontak';
+  $('chatMenu').classList.add('show');
+}
+
 /* ============= RENDER CHAT LIST ============= */
 
 function renderChatList() {
@@ -6714,9 +6902,26 @@ function renderChatList() {
 
   });
 
-  entries.sort((a, b) => (b.ts - a.ts) || a.name.localeCompare(b.name));
+    entries.sort((a, b) => (b.ts - a.ts) || a.name.localeCompare(b.name));
+
+  pruneArchived();
+  const archivedTotal = Object.keys(archivedCache).filter(id => isGroupId(id) ? (groupsCache[id] && groupsCache[id].members && groupsCache[id].members[myId]) : (!!chatMeta[id] || !!contactsCache[id])).length;
+  const archivedUnread = Object.keys(archivedCache).filter(id => unreadCount(id) && !blockedCache[id]).length;
+  /* saat mencari, chat yang diarsipkan ikut tampil (diberi label); selain itu disembunyikan dari daftar utama */
+  if (!q) { for (let i = entries.length - 1; i >= 0; i--) if (isArchived(entries[i].id)) entries.splice(i, 1); }
 
   list.innerHTML = '';
+
+  if (!q && archivedTotal > 0) list.appendChild(buildArchiveRow(archivedUnread));
+
+  if (entries.length === 0 && !q && archivedTotal > 0) {
+    const hint = document.createElement('div');
+    hint.className = 'all-archived-hint';
+    hint.textContent = 'Semua percakapan Anda ada di Diarsipkan.';
+    list.appendChild(hint);
+    if ($('archivedView').classList.contains('active')) renderArchivedList();
+    return;
+  }
 
   if (entries.length === 0) {
 
@@ -6746,8 +6951,8 @@ function renderChatList() {
 
   }
 
-  entries.forEach(en => list.appendChild(en.kind === 'group' ? buildGroupRow(en.id) : buildChatRow(en.id)));
-
+    entries.forEach(en => list.appendChild(en.kind === 'group' ? buildGroupRow(en.id) : buildChatRow(en.id)));
+  if ($('archivedView').classList.contains('active')) renderArchivedList();
 }
 
 
@@ -6823,8 +7028,8 @@ function buildChatRow(idUser) {
 
       <div class="chat-row-bottom">
 
-        <span class="chat-row-preview">${checkMark}${previewIcon}${esc(preview)}</span>
-        ${statusHtml}${unreadBadgeHtml(idUser)}
+                <span class="chat-row-preview">${checkMark}${previewIcon}${esc(preview)}</span>
+        ${(!archListMode && isArchived(idUser)) ? '<span class="arch-tag">Diarsipkan</span>' : ''}${statusHtml}${unreadBadgeHtml(idUser)}
       </div>
 
     </div>
@@ -6896,8 +7101,8 @@ function buildGroupRow(gid) {
 
       <div class="chat-row-bottom">
 
-        <span class="chat-row-preview">${previewIcon}${esc(preview)}</span>
-        ${unreadBadgeHtml(gid)}
+                <span class="chat-row-preview">${previewIcon}${esc(preview)}</span>
+        ${(!archListMode && isArchived(gid)) ? '<span class="arch-tag">Diarsipkan</span>' : ''}${unreadBadgeHtml(gid)}
       </div>
     </div>
   `;
@@ -6917,23 +7122,7 @@ function attachChatRowMenu(row, idUser, name) {
 
   let fired = false;
 
-  const openMenu = () => {
-
-    if (isGroupId(idUser)) { openGroupInfo(idUser); return; }
-
-    currentMenuChatId = idUser;
-
-    currentMenuChatName = name;
-
-    $('chatMenuTitle').textContent = name;
-
-    $('chatMenuSub').textContent = 'Pilih tindakan';
-
-    $('menuBlockText').textContent = blockedCache[idUser] ? 'Buka blokir' : 'Blokir kontak';
-
-    $('chatMenu').classList.add('show');
-
-  };
+    const openMenu = () => prepareChatMenu(idUser, name);
 
   row.addEventListener('contextmenu', (e) => { e.preventDefault(); openMenu(); });
 
@@ -7346,18 +7535,7 @@ $('chatAvatar').addEventListener('click', () => {
 
   if (isGroupId(currentChat)) { openGroupInfo(currentChat); return; }
 
-  currentMenuChatId = currentChat;
-
-  currentMenuChatName = currentChatAlias;
-
-  $('chatMenuTitle').textContent = currentChatAlias;
-
-  $('chatMenuSub').textContent = 'Pilih tindakan';
-
-  $('menuBlockText').textContent = blockedCache[currentChat] ? 'Buka blokir' : 'Blokir kontak';
-
-  $('chatMenu').classList.add('show');
-
+    prepareChatMenu(currentChat, currentChatAlias);
 });
 
 $('menuRename').addEventListener('click', () => {
