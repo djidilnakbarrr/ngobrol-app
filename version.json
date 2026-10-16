@@ -1,9 +1,9 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "released": "2026-10-16",
   "notes": [
-    "Fitur Diarsipkan: simpan chat tanpa menghapusnya",
-    "Lencana pesan belum dibaca lebih ringkas",
-    "Pembaruan aplikasi otomatis dengan tampilan baru"
+    "Kirim link video apa saja: langsung terputar otomatis di chat",
+    "Semua link di chat kini bisa diketuk",
+    "Fitur Diarsipkan dan lencana pesan belum dibaca yang lebih ringkas"
   ]
 }
