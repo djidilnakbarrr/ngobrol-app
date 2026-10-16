@@ -92,3 +92,16 @@ Kirim link seperti biasa; bila link adalah video, pesan menampilkan pemutar yang
 - **Didukung:** YouTube (watch, youtu.be, Shorts, Live, playlist, `t=` waktu mulai), Vimeo, Dailymotion, TikTok (link `/video/`), Instagram (Reels/post/TV), Facebook (video, Reels, fb.watch), Twitch (VOD, klip, channel live), Streamable, Google Drive, Bilibili, dan berkas video langsung (`.mp4 .webm .mov .m4v .ogv .3gp .mkv`, serta siaran `.m3u8`). Link polos tanpa ekstensi juga dicek otomatis: bila ternyata berkas video, langsung diputar.
 - Semua link di chat kini bisa diketuk (dibuka di tab baru).
 - **Batasan:** browser hanya mengizinkan putar otomatis dalam keadaan senyap; Instagram, Google Drive, dan Facebook kadang tetap meminta ketuk tombol putar karena aturan mereka. Link pendek yang perlu diurai server (mis. `vm.tiktok.com`), X/Twitter, dan Rumble tampil sebagai link biasa. Twitch hanya jalan di domain HTTPS yang sama dengan aplikasi. Siaran `.m3u8` di browser selain Safari memuat pustaka hls.js dari jsDelivr.
+
+## Moderasi grup (admin dan pembuat)
+- Admin dan pembuat grup dapat memilih pesan siapa pun di grup lalu **Hapus untuk semua orang**. Di Info Grup juga ada tombol **Hapus semua pesan grup** (hanya admin/pembuat).
+- Rules database harus mengizinkan admin/pembuat menghapus `groupChats/<gid>/*` dan menulis `groups/<gid>/last` serta `unread/*`. Anggota biasa tetap hanya boleh menghapus pesannya sendiri (diatur di tampilan; batasi juga di Rules).
+
+## Centang biru di grup
+Di grup, centang hanya biru bila pesan Anda adalah **balasan** ke pesan seseorang dan orang itu sudah membuka chat (`readBy/<id>`). Pesan biasa tetap centang abu-abu.
+
+## Tugas, PR, jawaban di grup
+- Tombol ikon centang di header grup (atau lampiran > **Tugas, PR, dan lainnya**) membuka layar **Tugas dan kelas**. Jenis: Tugas, PR, Ujian/Kuis, Materi, Jawaban/Pembahasan, Pengumuman. Bisa diberi tenggat, lampiran (foto/berkas maks. 900 KB, 5 per posting), kunci setelah tenggat, dan jawaban rahasia.
+- Anggota mengumpulkan jawaban (teks + hingga 3 lampiran), menandai selesai, atau bertanya di chat. Pemberi tugas dan admin melihat progres, daftar yang belum mengumpulkan, memberi nilai dan catatan, mengedit, menutup pengumpulan, membagikan ulang ke chat, atau menghapus.
+- Pembuat grup dapat membatasi siapa yang boleh memposting (Info Grup > Tugas dan kelas).
+- Path baru di Realtime Database yang harus diizinkan di Rules (anggota grup baca/tulis): `groupTasks/<gid>`, `groupTaskFiles/<gid>`, `groupTaskDone/<gid>/<idPengguna>`. Deploy ulang `functions` agar notifikasi menampilkan "Tugas: judul".

@@ -1,9 +1,9 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "released": "2026-10-16",
   "notes": [
-    "Kirim link video apa saja: langsung terputar otomatis di chat",
-    "Semua link di chat kini bisa diketuk",
-    "Fitur Diarsipkan dan lencana pesan belum dibaca yang lebih ringkas"
+    "Admin dan pembuat grup bisa menghapus pesan siapa pun dan semua pesan grup",
+    "Centang biru grup: biru saat balasan Anda sudah dilihat penerimanya",
+    "Fitur tugas, PR, ujian, materi, jawaban, dan pengumuman di grup"
   ]
 }
