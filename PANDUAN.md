@@ -99,9 +99,3 @@ Kirim link seperti biasa; bila link adalah video, pesan menampilkan pemutar yang
 
 ## Centang biru di grup
 Di grup, centang hanya biru bila pesan Anda adalah **balasan** ke pesan seseorang dan orang itu sudah membuka chat (`readBy/<id>`). Pesan biasa tetap centang abu-abu.
-
-## Tugas, PR, jawaban di grup
-- Tombol ikon centang di header grup (atau lampiran > **Tugas, PR, dan lainnya**) membuka layar **Tugas dan kelas**. Jenis: Tugas, PR, Ujian/Kuis, Materi, Jawaban/Pembahasan, Pengumuman. Bisa diberi tenggat, lampiran (foto/berkas maks. 900 KB, 5 per posting), kunci setelah tenggat, dan jawaban rahasia.
-- Anggota mengumpulkan jawaban (teks + hingga 3 lampiran), menandai selesai, atau bertanya di chat. Pemberi tugas dan admin melihat progres, daftar yang belum mengumpulkan, memberi nilai dan catatan, mengedit, menutup pengumpulan, membagikan ulang ke chat, atau menghapus.
-- Pembuat grup dapat membatasi siapa yang boleh memposting (Info Grup > Tugas dan kelas).
-- Path baru di Realtime Database yang harus diizinkan di Rules (anggota grup baca/tulis): `groupTasks/<gid>`, `groupTaskFiles/<gid>`, `groupTaskDone/<gid>/<idPengguna>`. Deploy ulang `functions` agar notifikasi menampilkan "Tugas: judul".

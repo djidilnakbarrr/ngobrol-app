@@ -18,9 +18,7 @@ const one = (path) => db.ref(path).once('value');
 /* ID berformat 08xxxxxxxxxx */
 const disp = (id) => String(id);
 
-const TASK_LABEL = { tugas: 'Tugas', pr: 'PR', ujian: 'Ujian / Kuis', materi: 'Materi', jawaban: 'Jawaban / Pembahasan', info: 'Pengumuman' };
 function preview(m) {
-  if (m.type === 'task') return (TASK_LABEL[m.kind] || 'Tugas') + ': ' + String(m.text || '').trim().slice(0, 200);
   if (m.type === 'image') return m.viewOnce ? 'Foto sekali lihat' : 'Foto';
   if (m.type === 'audio') return 'Pesan suara';
   return String(m.text || '').trim().slice(0, 240);

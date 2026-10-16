@@ -3377,108 +3377,6 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
 .vid-btn:active { background: rgba(255,255,255,.14); }
 .vid-btn svg { width: 18px; height: 18px; }
 @media (prefers-reduced-motion: reduce) { .vid-load i, .vid-card.playing.ready .vid-name b { animation: none; } }
-
-/* ===== Tugas, PR, jawaban (grup) ===== */
-.gt-open-btn { position: relative; background: transparent; border: none; color: #fff; cursor: pointer; padding: 8px; display: none; align-items: center; justify-content: center; }
-.gt-open-dot { position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: #ffb020; border: 2px solid #075e54; display: none; }
-.gt-open-dot.on { display: block; }
-#gtScreen { display: none; position: fixed; inset: 0; z-index: 255; background: var(--bg, #f3f6f6); flex-direction: column; }
-#gtScreen.show { display: flex; }
-.gt-top { display: flex; align-items: center; gap: 6px; padding: calc(8px + env(safe-area-inset-top, 0px)) 8px 8px; background: linear-gradient(135deg, #0b8a79 0%, #075e54 60%, #054a42 100%); color: #fff; flex-shrink: 0; }
-.gt-top button { background: transparent; border: 0; color: #fff; padding: 8px; display: flex; cursor: pointer; border-radius: 50%; }
-.gt-top button:active { background: rgba(255,255,255,.15); }
-.gt-top-t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.gt-top-t b { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gt-top-t small { font-size: 12px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.gt-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px 12px calc(24px + env(safe-area-inset-bottom, 0px)); max-width: 720px; width: 100%; margin: 0 auto; }
-.gt-chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: none; }
-.gt-chips::-webkit-scrollbar { display: none; }
-.gt-chip-f { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; border-radius: 999px; border: 1px solid #dbe3e5; background: #fff; color: #3b4a54; font: 600 13px/1 inherit; font-family: inherit; cursor: pointer; }
-.gt-chip-f.on { background: #075e54; border-color: #075e54; color: #fff; }
-.gt-chip-f em { font-style: normal; font-size: 11.5px; opacity: .75; }
-.gt-seg { display: flex; background: #e6ecee; border-radius: 12px; padding: 3px; gap: 3px; }
-.gt-seg button { flex: 1; border: 0; background: transparent; padding: 8px 6px; border-radius: 9px; font: 600 13px/1.1 inherit; font-family: inherit; color: #54656f; cursor: pointer; }
-.gt-seg button.on { background: #fff; color: #075e54; box-shadow: 0 1px 3px rgba(15,28,34,.12); }
-.gt-status { margin-bottom: 12px; }
-.gt-empty { text-align: center; color: #667781; padding: 46px 20px; font-size: 14px; line-height: 1.5; }
-.gt-empty svg { display: block; margin: 0 auto 10px; color: #9fb0b6; }
-.gt-row { display: flex; gap: 12px; background: #fff; border: 1px solid #e6eaec; border-radius: 16px; padding: 12px; margin-bottom: 10px; cursor: pointer; box-shadow: 0 1px 3px rgba(17,27,33,.05); }
-.gt-row:active { background: #f6f8f8; }
-.gt-ic { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--gtc, #0b8a79) 14%, #fff); color: var(--gtc, #0b8a79); }
-.gt-row-b { flex: 1; min-width: 0; }
-.gt-row-t { font-size: 15px; font-weight: 650; color: #111b21; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gt-row-s { font-size: 12.5px; color: #667781; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gt-row-m { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.gt-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: #eef2f3; color: #54656f; }
-.gt-chip-ok { background: #e1f5ea; color: #137a43; }
-.gt-chip-late { background: #fdeceb; color: #c4302a; }
-.gt-chip-soon { background: #fff2dc; color: #a86a00; }
-.gt-chip-closed { background: #e6e9ec; color: #54656f; margin-left: 8px; }
-.gt-chip-score { background: #e8f0ff; color: #2a5bd0; }
-.gt-card { margin: 2px 0 4px; min-width: 220px; max-width: 290px; border-left: 4px solid var(--gtc, #0b8a79); background: rgba(255,255,255,.65); border-radius: 10px; padding: 9px 10px; cursor: pointer; }
-.gt-card .gt-card-h { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--gtc, #0b8a79); text-transform: uppercase; letter-spacing: .02em; }
-.gt-card .gt-ic { width: 26px; height: 26px; border-radius: 8px; }
-.gt-card .gt-card-t { font-size: 15px; font-weight: 650; margin-top: 6px; color: #111b21; word-break: break-word; }
-.gt-card .gt-card-s { font-size: 12.5px; color: #54656f; margin-top: 2px; }
-.gt-card .gt-row-m { margin-top: 7px; }
-.gt-card .gt-card-go { margin-top: 8px; font-size: 13px; font-weight: 700; color: #075e54; display: flex; align-items: center; gap: 4px; }
-.gt-card.gone { cursor: default; opacity: .7; }
-.gt-d-card { background: #fff; border: 1px solid #e6eaec; border-radius: 18px; padding: 16px; box-shadow: 0 1px 3px rgba(17,27,33,.05); }
-.gt-d-kind { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 700; color: var(--gtc); }
-.gt-d-title { font-size: 20px; line-height: 1.25; margin: 10px 0 2px; color: #111b21; word-break: break-word; }
-.gt-d-sub { font-size: 14px; color: #3b4a54; font-weight: 600; }
-.gt-d-meta { font-size: 12.5px; color: #667781; margin-top: 4px; }
-.gt-d-due { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: 12px; background: #eef2f3; color: #3b4a54; font-size: 13.5px; }
-.gt-d-due.gt-due-late, .gt-d-due.gt-due-locked { background: #fdeceb; color: #c4302a; }
-.gt-d-due.gt-due-soon, .gt-d-due.gt-due-soon-h { background: #fff2dc; color: #8a5600; }
-.gt-d-desc { white-space: pre-wrap; word-break: break-word; margin-top: 14px; font-size: 14.5px; line-height: 1.5; color: #1d2b33; }
-.gt-files { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
-.gt-fimg { max-width: 100%; max-height: 260px; border-radius: 12px; border: 1px solid #e6eaec; cursor: pointer; object-fit: cover; align-self: flex-start; }
-.gt-file { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: #f3f6f6; border: 1px solid #e6eaec; border-radius: 12px; color: #111b21; text-decoration: none; font-size: 13.5px; }
-.gt-file span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gt-file small { color: #667781; }
-.gt-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-.gt-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 16px; border-radius: 12px; border: 1px solid #d5dde0; background: #fff; color: #1d2b33; font: 600 14px/1.1 inherit; font-family: inherit; cursor: pointer; }
-.gt-btn:active { background: #f0f2f5; }
-.gt-btn.primary { background: linear-gradient(135deg, #0b8a79, #075e54); border-color: transparent; color: #fff; flex: 1 1 100%; }
-.gt-btn.danger { color: #c4302a; border-color: #f2c7c4; }
-.gt-btn:disabled { opacity: .6; }
-.gt-note { flex: 1 1 100%; padding: 10px 12px; border-radius: 12px; background: #eef2f3; color: #54656f; font-size: 13.5px; }
-.gt-sec-title { font-size: 13px; font-weight: 700; color: #3b4a54; margin: 18px 4px 8px; display: flex; justify-content: space-between; align-items: center; }
-.gt-prog { height: 7px; border-radius: 99px; background: #e1e8ea; overflow: hidden; margin: 0 4px 10px; }
-.gt-prog i { display: block; height: 100%; background: #0b8a79; border-radius: 99px; }
-.gt-ans { background: #fff; border: 1px solid #e6eaec; border-radius: 14px; margin-bottom: 8px; overflow: hidden; }
-.gt-ans-h { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; }
-.gt-ans-n { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: #111b21; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gt-ans-n small { display: block; font-weight: 400; color: #667781; font-size: 12px; }
-.gt-ans-b { display: none; padding: 0 12px 12px; border-top: 1px solid #eef2f3; }
-.gt-ans.open .gt-ans-b { display: block; }
-.gt-a-text { white-space: pre-wrap; word-break: break-word; font-size: 14px; line-height: 1.5; padding-top: 10px; color: #1d2b33; }
-.gt-a-text.muted { color: #8a99a1; }
-.gt-a-grade { margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: #e8f0ff; color: #1f4bb0; font-size: 13.5px; }
-.gt-a-grade b { font-size: 16px; }
-#gtSheet { display: none; position: fixed; inset: 0; z-index: 258; background: rgba(0,0,0,.5); align-items: flex-end; justify-content: center; }
-#gtSheet.show { display: flex; }
-.gt-sheet { width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 22px 22px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0px)); }
-@media (min-width: 769px) { #gtSheet { align-items: center; } .gt-sheet { border-radius: 22px; } }
-.gt-sh-t { font-size: 17px; font-weight: 700; color: #111b21; margin-bottom: 12px; }
-.gt-lbl { display: block; font-size: 12.5px; font-weight: 700; color: #3b4a54; margin: 12px 2px 6px; }
-.gt-in { width: 100%; box-sizing: border-box; padding: 12px 13px; border: 1.5px solid #d5dde0; border-radius: 12px; font: 400 15px/1.35 inherit; font-family: inherit; color: #111b21; background: #fff; outline: none; }
-.gt-in:focus { border-color: #0b8a79; box-shadow: 0 0 0 3px rgba(11,138,121,.18); }
-textarea.gt-in { min-height: 96px; resize: vertical; }
-.gt-kinds { display: flex; flex-wrap: wrap; gap: 8px; }
-.gt-kchip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 12px; border: 1.5px solid #d5dde0; background: #fff; font: 600 13px/1 inherit; font-family: inherit; color: #3b4a54; cursor: pointer; }
-.gt-kchip.on { border-color: var(--gtc); background: color-mix(in srgb, var(--gtc) 12%, #fff); color: var(--gtc); }
-.gt-kchip:disabled { opacity: .55; }
-.gt-sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 2px; font-size: 14px; color: #1d2b33; }
-.gt-sw small { display: block; color: #667781; font-size: 12px; margin-top: 2px; }
-.gt-sw input { width: 20px; height: 20px; accent-color: #0b8a79; flex: 0 0 auto; }
-.gt-dfile { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: #f3f6f6; border-radius: 10px; margin-top: 6px; font-size: 13px; }
-.gt-dfile span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gt-dfile button { border: 0; background: transparent; color: #c4302a; cursor: pointer; display: flex; padding: 4px; }
-.gt-sh-act { display: flex; gap: 10px; margin-top: 16px; }
-.gt-sh-act .gt-btn { flex: 1; }
-.gt-sh-act .gt-btn.primary { flex: 1.4; }
 </style>
 </head>
 
@@ -3880,12 +3778,10 @@ textarea.gt-in { min-height: 96px; resize: vertical; }
 
           <h3 id="chatName">-</h3>
 
-                    <p id="chatStatus">online</p>
+          <p id="chatStatus">online</p>
+
         </div>
-        <button id="gtOpenBtn" type="button" title="Tugas dan kelas" aria-label="Tugas dan kelas" class="gt-open-btn" style="display:none;">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          <span class="gt-open-dot" id="gtOpenDot"></span>
-        </button>
+
       </div>
 
 
@@ -4485,18 +4381,8 @@ textarea.gt-in { min-height: 96px; resize: vertical; }
 
 
 
-            <div class="gi-card" id="groupTaskSection">
-        <div class="gi-card-title">Tugas dan kelas</div>
-        <button class="gi-btn" id="giOpenTasks" type="button" style="width:100%;margin-bottom:8px;">Buka daftar tugas</button>
-        <div id="giTaskPermBox">
-          <div class="gi-inv-sub" style="margin-bottom:6px;">Siapa yang boleh memposting tugas, PR, materi, dan pengumuman</div>
-          <div class="gt-seg" id="giTaskPerm">
-            <button type="button" data-perm="all">Semua anggota</button>
-            <button type="button" data-perm="admin">Hanya admin</button>
-          </div>
-        </div>
-      </div>
       <div class="gi-sticky">
+
         <div class="gi-search">
 
           <span class="gi-search-ico">
@@ -4964,7 +4850,6 @@ textarea.gt-in { min-height: 96px; resize: vertical; }
 <div id="voChooser"><div class="vo-sheet">
   <button class="vo-opt" id="voOptNormal" type="button"><span class="vo-ico" style="border-style:solid"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span><b>Foto biasa</b><small>Bisa dilihat berulang kali</small></span></button>
   <button class="vo-opt" id="voOptOnce" type="button"><span class="vo-ico">1</span><span><b>Foto sekali lihat</b><small>Hilang setelah dibuka penerima</small></span></button>
-    <button class="vo-opt" id="voOptTask" type="button" style="display:none;"><span class="vo-ico" style="border-style:solid"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span><b>Tugas, PR, dan lainnya</b><small>Kirim tugas, PR, ujian, materi, jawaban, pengumuman</small></span></button>
   <button class="vo-cancel" id="voOptCancel" type="button">Batal</button>
 </div></div>
 <div id="voViewer">
@@ -4972,23 +4857,6 @@ textarea.gt-in { min-height: 96px; resize: vertical; }
   <div class="vo-stage"><img id="voImg" alt="" draggable="false"></div>
   <div class="vo-note">Foto ini akan hilang setelah ditutup.</div>
 </div>
-<div id="gtScreen">
-  <div class="gt-top">
-    <button type="button" id="gtBack" aria-label="Kembali"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
-    <div class="gt-top-t"><b id="gtTitle">Tugas dan kelas</b><small id="gtSub"></small></div>
-    <button type="button" id="gtAddBtn" aria-label="Tambah tugas"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
-  </div>
-  <div class="gt-body">
-    <div id="gtListView">
-      <div class="gt-chips" id="gtChips"></div>
-      <div class="gt-seg gt-status" id="gtStatusSeg"><button type="button" data-s="all" class="on">Semua</button><button type="button" data-s="todo">Belum selesai</button><button type="button" data-s="done">Selesai</button></div>
-      <div id="gtList"></div>
-    </div>
-    <div id="gtDetailView" style="display:none;"><div id="gtDetail"></div></div>
-  </div>
-</div>
-<div id="gtSheet"><div class="gt-sheet"><div id="gtSheetBody"></div></div></div>
-<input type="file" id="gtFileInput" multiple hidden accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip,.rar">
 <div id="toast"></div>
 
 
@@ -5408,35 +5276,6 @@ let stickBottomOnce = false;
 let usersSubscribed = false;
 
 let metaUnsubs = {};
-/* ===== Tugas, PR, jawaban (grup): konstanta dan helper awal ===== */
-const GT_KINDS = {
-  tugas:   { label: 'Tugas',               color: '#0b8a79', answers: true,  due: true,  dueLabel: 'Tenggat',
-             icon: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/>' },
-  pr:      { label: 'PR',                  color: '#e0892b', answers: true,  due: true,  dueLabel: 'Dikumpulkan paling lambat',
-             icon: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>' },
-  ujian:   { label: 'Ujian / Kuis',        color: '#d63b34', answers: true,  due: true,  dueLabel: 'Waktu / batas',
-             icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>' },
-  materi:  { label: 'Materi',              color: '#3b6fd6', answers: false, due: false, dueLabel: '',
-             icon: '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>' },
-  jawaban: { label: 'Jawaban / Pembahasan', color: '#7b4fd0', answers: false, due: false, dueLabel: '',
-             icon: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' },
-  info:    { label: 'Pengumuman',          color: '#667781', answers: false, due: false, dueLabel: '',
-             icon: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' }
-};
-let gtGid = null, gtUnsubs = [], gtTasks = {}, gtDone = {}, gtLoaded = false;
-let gtFilter = 'all', gtStatus = 'all', gtOpenId = null, gtDraft = null, gtBusy = false;
-function gtKind(k) { return GT_KINDS[k] || GT_KINDS.tugas; }
-function gtKindLabel(k) { return gtKind(k).label; }
-function gtKindIcon(k, size) {
-  const z = size || 18;
-  return '<svg width="' + z + '" height="' + z + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + gtKind(k).icon + '</svg>';
-}
-function isGroupMod(gid) {
-  const g = gid ? groupsCache[gid] : null;
-  if (!g || !g.members) return false;
-  return g.createdBy === myId || g.members[myId] === 'admin';
-}
-
 
 
 
@@ -5700,7 +5539,6 @@ async function showIncoming({ chat, key, title, body }) {
 }
 const imgLabel = m => (m && m.viewOnce ? 'Foto sekali lihat' : 'Foto');
 function previewOf(v) {
-  if (v.type === 'task') return gtKindLabel(v.kind) + ': ' + String(v.text || '').slice(0, 100);
   if (v.type === 'image') return imgLabel(v);
   if (v.type === 'audio') return 'Pesan suara';
   return String(v.text || '').slice(0, 120);
@@ -6070,7 +5908,7 @@ async function deleteMyAccount() {
     const rest = Object.keys(members).filter(x => x !== id).sort();
     if (rest.length === 0) {
       updates['groups/' + gid] = null;
-      updates['groupChats/' + gid] = null; updates['groupTasks/' + gid] = null; updates['groupTaskFiles/' + gid] = null; updates['groupTaskDone/' + gid] = null;
+      updates['groupChats/' + gid] = null;
       if (g.invite) updates['invites/' + g.invite] = null;
     } else {
       updates['groups/' + gid + '/members/' + id] = null;
@@ -7195,7 +7033,6 @@ function senderColor(id) {
 }
 
 function closeCurrentChatView() {
-  gtAttach(null);
 
   exitSelectionMode();
 
@@ -7625,12 +7462,12 @@ function buildGroupRow(gid) {
 
       previewIcon = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>`;
 
-        } else if (last.type === 'task') {
-      preview = who + gtKindLabel(last.kind) + ': ' + (last.text || '');
-      previewIcon = gtKindIcon(last.kind, 15);
     } else preview = who + (last.text || '');
+
   }
+
   row.innerHTML = `
+
     <div class="avatar-lg"></div>
 
     <div class="chat-row-body">
@@ -8542,7 +8379,6 @@ function renderGroupInfo() {
 
     $('leaveGroupBtn').style.display = iAmCreator ? 'none' : '';
   $('clearGroupBtn').style.display = isGroupMod(currentInfoGid) ? '' : 'none';
-  gtRenderPermUI(g, iAmCreator);
 
   $('disbandGroupBtn').style.display = iAmCreator ? '' : 'none';
 
@@ -8684,7 +8520,7 @@ async function leaveGroup(gid) {
 
     updates['groups/' + gid] = null;
 
-    updates['groupChats/' + gid] = null; updates['groupTasks/' + gid] = null; updates['groupTaskFiles/' + gid] = null; updates['groupTaskDone/' + gid] = null;
+    updates['groupChats/' + gid] = null;
 
     if (g.invite) updates['invites/' + g.invite] = null;
 
@@ -8732,7 +8568,7 @@ async function disbandGroup(gid) {
 
   updates['groups/' + gid] = null;
 
-  updates['groupChats/' + gid] = null; updates['groupTasks/' + gid] = null; updates['groupTaskFiles/' + gid] = null; updates['groupTaskDone/' + gid] = null;
+  updates['groupChats/' + gid] = null;
   if (g.invite) updates['invites/' + g.invite] = null;
   Object.keys(g.members || {}).forEach(u => { updates['unread/' + u + '/' + gid] = null; });
   try {
@@ -8871,10 +8707,12 @@ function openChat(idUser) {
 
   }
 
-    updateBlockedBanner();
+  updateBlockedBanner();
+
   resetInputState();
-  gtAttach(isGroup ? idUser : null);
+
   if (msgUnsub) { msgUnsub(); msgUnsub = null; }
+
   currentMsgsAll = [];
   /* Bersihkan tampilan chat sebelumnya SEKETIKA agar pesan kontak lain tidak sempat muncul */
   {
@@ -9044,9 +8882,10 @@ function setReply(msg) {
 
   else if (msg.type === 'image') txt = imgLabel(msg);
 
-    else if (msg.type === 'audio') txt = 'Pesan suara';
-  else if (msg.type === 'task') txt = gtKindLabel(msg.kind) + ': ' + (msg.text || '');
+  else if (msg.type === 'audio') txt = 'Pesan suara';
+
   else txt = msg.text || '';
+
   $('replyPreviewText').textContent = txt;
 
   $('replyPreview').classList.add('show');
@@ -9087,6 +8926,12 @@ function isReadMsg(m) {
   }
   return !!m.readAt;
 }
+/* Admin dan pembuat grup */
+function isGroupMod(gid) {
+  const g = gid && typeof gid === 'string' ? groupsCache[gid] : null;
+  if (!g || !g.members) return false;
+  return g.createdBy === myId || g.members[myId] === 'admin';
+}
 /* Tandai pesan masuk sebagai dibaca HANYA saat chat terbuka dan website terlihat di layar */
 function markCurrentRead() {
   if (!currentChat || !myId || document.visibilityState !== 'visible') return;
@@ -9114,8 +8959,7 @@ function msgSig(m) {
 
   if (!isSent && currentChat && isGroupId(currentChat)) sig += '|n' + displayName(m.from);
 
-    if (isSent) sig += '|rd' + (isReadMsg(m) ? 1 : 0);
-  if (m.type === 'task') sig += '|tk' + gtCardSig(m);
+  if (isSent) sig += '|rd' + (isReadMsg(m) ? 1 : 0);
   if (m.type === 'audio') sig += '|p' + String(getPhotoFor(isSent ? myId : m.from) || '').length + (isSent ? myName : displayName(m.from));
 
   return sig;
@@ -9188,8 +9032,8 @@ function buildMsgWrap(m) {
 
       else if (m.replyTo.type === 'image') qTxt = m.replyTo.text || 'Foto';
 
-            else if (m.replyTo.type === 'audio') qTxt = 'Pesan suara';
-      else if (m.replyTo.type === 'task') qTxt = 'Tugas: ' + (m.replyTo.text || '');
+      else if (m.replyTo.type === 'audio') qTxt = 'Pesan suara';
+
       else qTxt = m.replyTo.text || '';
 
       q.innerHTML = `<span class="reply-name">${esc(qFrom)}</span><span class="reply-text">${esc(qTxt)}</span>`;
@@ -9255,14 +9099,9 @@ function buildMsgWrap(m) {
 
       div.appendChild(img);
 
-        } else if (m.type === 'task') {
-
-      div.appendChild(gtBuildCard(m));
-
     } else if (m.type === 'audio') {
 
       div.appendChild(buildVNPlayer(m, isSent));
-
 
     } else {
 
@@ -9781,8 +9620,7 @@ function showDeleteModal() {
   const selectedEls = Array.from(document.querySelectorAll('.msg.selected'));
 
     const allMine = selectedEls.length > 0 && selectedEls.every(el => el.dataset.from === myId);
-  const mod = isGroupMod(currentChat);
-  const canAll = allMine || (mod && selectedEls.length > 0);
+  const canAll = allMine || (isGroupMod(currentChat) && selectedEls.length > 0);
 
 
   const n = selectedEls.length;
@@ -9839,8 +9677,7 @@ async function fixGroupLast(gid) {
 
     type: latest.deleted ? 'deleted' : (latest.type || 'text'),
 
-        text: (latest.type === 'text' || latest.type === 'task') && !latest.deleted ? String(latest.text || '').slice(0, 80) : '',
-    kind: latest.type === 'task' && !latest.deleted ? (latest.kind || 'tugas') : null,
+    text: latest.type === 'text' && !latest.deleted ? String(latest.text || '').slice(0, 80) : '',
     viewOnce: !!latest.viewOnce,
     deleted: !!latest.deleted
   });
@@ -9948,10 +9785,6 @@ $('actDeleteAll').addEventListener('click', async () => {
       const m = currentMsgsAll.find(x => x.key === k);
             if (!m || m.deleted) return;
       if (m.from !== myId && !(isGroupId(target) && isGroupMod(target))) return;
-      if (m.type === 'task' && m.taskId && isGroupId(target)) {
-        updates['groupTasks/' + target + '/' + m.taskId] = null;
-        updates['groupTaskFiles/' + target + '/' + m.taskId] = null;
-      }
       if (isGroupId(target)) {
         const mem = Object.keys((groupsCache[target] && groupsCache[target].members) || {}).filter(u => u !== m.from);
         mem.forEach(u => { if (!(m.readBy && m.readBy[u])) dec['unread/' + u + '/' + target] = (dec['unread/' + u + '/' + target] || 0) - 1; });
@@ -10878,8 +10711,7 @@ async function sendGroupMessage(payload) {
 
     const key = push(ref(db, 'groupChats/' + gid)).key;
 
-    const last = { key, from: myId, ts: msg.ts, type: msg.type || 'text', text: (msg.type === 'text' || msg.type === 'task') ? String(msg.text || '').slice(0, 80) : '', viewOnce: !!msg.viewOnce };
-    if (msg.type === 'task') last.kind = msg.kind || 'tugas';
+    const last = { key, from: myId, ts: msg.ts, type: msg.type || 'text', text: msg.type === 'text' ? String(msg.text || '').slice(0, 80) : '', viewOnce: !!msg.viewOnce };
 
     const updates = {};
 
@@ -11048,7 +10880,6 @@ $('attachBtn').addEventListener('click', () => {
 
   if (currentChat && blockedCache[currentChat]) { showToast('Buka blokir kontak untuk mengirim pesan'); return; }
 
-    $('voOptTask').style.display = (currentChat && isGroupId(currentChat)) ? '' : 'none';
   $('voChooser').classList.add('show');
 });
 async function compressImage(file) {
@@ -11766,611 +11597,10 @@ setInterval(() => {
 }, 30000);
 
 
-/* ============= TUGAS, PR, JAWABAN (GRUP) ============= */
-const GT_SVG = {
-  clock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
-  file: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
-  x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-  clip: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
-  go: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
-  list: '<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>'
-};
-const gtPad = n => String(n).padStart(2, '0');
-function gtToLocalInput(ts) { const d = new Date(ts); return d.getFullYear() + '-' + gtPad(d.getMonth() + 1) + '-' + gtPad(d.getDate()) + 'T' + gtPad(d.getHours()) + ':' + gtPad(d.getMinutes()); }
-function gtFmtDate(ts) { try { return new Date(ts).toLocaleString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
-function gtRemain(ms) { const m = Math.floor(ms / 60000); if (m < 60) return Math.max(m, 1) + ' menit'; const h = Math.floor(m / 60); if (h < 24) return h + ' jam'; return Math.floor(h / 24) + ' hari'; }
-function gtDueInfo(t) {
-  if (!t || !t.due) return { cls: '', label: '' };
-  if (t.closed) return { cls: 'closed', label: 'Ditutup' };
-  const d = t.due - Date.now();
-  if (d < 0) return t.lock ? { cls: 'locked', label: 'Pengumpulan berakhir' } : { cls: 'late', label: 'Lewat tenggat' };
-  if (d < 3600e3) return { cls: 'soon-h', label: 'Sisa ' + gtRemain(d) };
-  if (d < 86400e3) return { cls: 'soon', label: 'Sisa ' + gtRemain(d) };
-  return { cls: 'ok', label: 'Sisa ' + gtRemain(d) };
-}
-function gtCanPost() {
-  const g = groupsCache[gtGid];
-  if (!g || !g.members || !g.members[myId]) return false;
-  return g.taskPerm === 'admin' ? isGroupMod(gtGid) : true;
-}
-function gtCanManage(t) { return !!t && (t.by === myId || isGroupMod(gtGid)); }
-function gtCanSubmit(t) {
-  if (!t || !gtKind(t.kind).answers || t.by === myId || t.closed) return false;
-  if (t.lock && t.due && Date.now() > t.due) return false;
-  return true;
-}
-function gtIsDone(id, t) { return !!gtDone[id] || !!(t && t.answers && t.answers[myId]); }
-function gtCardSig(m) {
-  if (!gtLoaded) return 'l';
-  const t = gtTasks[m.taskId];
-  if (!t) return 'x';
-  const a = t.answers || {};
-  return [t.title, t.kind, t.subject || '', t.due || 0, t.closed ? 1 : 0, gtDueInfo(t).cls, Object.keys(a).length, a[myId] ? 1 : 0, gtDone[m.taskId] ? 1 : 0].join('~');
-}
-function gtUpdateDot() {
-  let n = 0;
-  Object.keys(gtTasks).forEach(id => { const t = gtTasks[id]; if (gtCanSubmit(t) && !gtIsDone(id, t)) n++; });
-  $('gtOpenDot').classList.toggle('on', n > 0);
-}
-function gtAttach(gid) {
-  gid = gid || null;
-  $('gtOpenBtn').style.display = gid ? 'flex' : 'none';
-  if (gid === gtGid) return;
-  gtUnsubs.forEach(f => { try { f(); } catch (e) {} });
-  gtUnsubs = [];
-  gtCloseScreen();
-  gtTasks = {}; gtDone = {}; gtLoaded = false; gtGid = gid;
-  gtUpdateDot();
-  if (!gid) return;
-  gtUnsubs.push(onValue(ref(db, 'groupTasks/' + gid), sn => { if (gtGid !== gid) return; gtTasks = sn.val() || {}; gtLoaded = true; gtOnData(); }, () => { gtLoaded = true; gtOnData(); }));
-  gtUnsubs.push(onValue(ref(db, 'groupTaskDone/' + gid + '/' + myId), sn => { if (gtGid !== gid) return; gtDone = sn.val() || {}; gtOnData(); }, () => {}));
-}
-function gtOnData() {
-  gtUpdateDot();
-  if ($('gtScreen').classList.contains('show')) gtRender();
-  if (currentChat && currentChat === gtGid) rerenderCurrent();
-}
-
-/* ---------- kartu di chat ---------- */
-function gtBuildCard(m) {
-  const t = gtTasks[m.taskId];
-  const kind = (t && t.kind) || m.kind || 'tugas';
-  const K = gtKind(kind);
-  const el = document.createElement('div');
-  el.className = 'gt-card';
-  el.style.setProperty('--gtc', K.color);
-  if (gtLoaded && !t) {
-    el.classList.add('gone');
-    el.innerHTML = '<div class="gt-card-h"><span class="gt-ic">' + gtKindIcon(kind, 15) + '</span>' + esc(K.label) + '</div><div class="gt-card-s" style="margin-top:6px;">Sudah dihapus</div>';
-    return el;
-  }
-  const title = (t && t.title) || m.text || '';
-  const st = gtDueInfo(t);
-  let meta = '';
-  if (t && t.due) meta += '<span class="gt-chip ' + (st.cls === 'late' || st.cls === 'locked' ? 'gt-chip-late' : (st.cls === 'soon' || st.cls === 'soon-h' ? 'gt-chip-soon' : '')) + '">' + esc(st.label) + '</span>';
-  if (t && K.answers && t.by !== myId) {
-    const mine = t.answers && t.answers[myId];
-    meta += mine ? '<span class="gt-chip gt-chip-ok">Sudah dikumpulkan</span>' : '<span class="gt-chip">Belum dikumpulkan</span>';
-  }
-  el.innerHTML = '<div class="gt-card-h"><span class="gt-ic">' + gtKindIcon(kind, 15) + '</span>' + esc(K.label) + '</div>' +
-    '<div class="gt-card-t">' + esc(title) + '</div>' +
-    (t && t.subject ? '<div class="gt-card-s">' + esc(t.subject) + '</div>' : '') +
-    (meta ? '<div class="gt-row-m">' + meta + '</div>' : '') +
-    '<div class="gt-card-go">Buka ' + GT_SVG.go + '</div>';
-  el.onclick = (e) => {
-    if (selectedKeys.size > 0 || Date.now() < suppressClickUntil) return;
-    e.stopPropagation();
-    gtOpenScreen(m.taskId);
-  };
-  return el;
-}
-
-/* ---------- layar utama ---------- */
-function gtOpenScreen(tid) {
-  if (!gtGid) return;
-  gtOpenId = tid || null;
-  $('gtScreen').classList.add('show');
-  gtRender();
-}
-function gtCloseScreen() {
-  $('gtScreen').classList.remove('show');
-  gtOpenId = null;
-  gtCloseSheet();
-}
-function gtRender() {
-  const g = groupsCache[gtGid];
-  $('gtSub').textContent = g ? (g.name || '') : '';
-  if (gtOpenId) {
-    const t = gtTasks[gtOpenId];
-    if (!t) { if (gtLoaded) { gtOpenId = null; gtRender(); } return; }
-    $('gtListView').style.display = 'none';
-    $('gtDetailView').style.display = '';
-    $('gtAddBtn').style.display = 'none';
-    $('gtTitle').textContent = gtKindLabel(t.kind);
-    gtRenderDetail();
-  } else {
-    $('gtListView').style.display = '';
-    $('gtDetailView').style.display = 'none';
-    $('gtAddBtn').style.display = '';
-    $('gtTitle').textContent = 'Tugas dan kelas';
-    gtRenderList();
-  }
-}
-function gtRenderList() {
-  const all = Object.keys(gtTasks).map(id => Object.assign({ id }, gtTasks[id]));
-  const counts = { all: all.length };
-  Object.keys(GT_KINDS).forEach(k => { counts[k] = all.filter(t => t.kind === k).length; });
-  const chips = $('gtChips');
-  chips.innerHTML = '';
-  ['all'].concat(Object.keys(GT_KINDS)).forEach(k => {
-    const b = document.createElement('button');
-    b.type = 'button';
-    b.className = 'gt-chip-f' + (gtFilter === k ? ' on' : '');
-    b.innerHTML = (k === 'all' ? 'Semua' : esc(GT_KINDS[k].label)) + ' <em>' + (counts[k] || 0) + '</em>';
-    b.onclick = () => { gtFilter = k; gtRenderList(); };
-    chips.appendChild(b);
-  });
-  $('gtStatusSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === gtStatus));
-  let items = all.filter(t => gtFilter === 'all' || t.kind === gtFilter);
-  if (gtStatus === 'todo') items = items.filter(t => gtKind(t.kind).answers && t.by !== myId && !gtIsDone(t.id, t));
-  if (gtStatus === 'done') items = items.filter(t => gtKind(t.kind).answers && gtIsDone(t.id, t));
-  items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  const box = $('gtList');
-  box.innerHTML = '';
-  if (!gtLoaded) { box.innerHTML = '<div class="gt-empty">Memuat...</div>'; return; }
-  if (!items.length) {
-    box.innerHTML = '<div class="gt-empty">' + GT_SVG.list + (all.length ? 'Tidak ada yang cocok dengan filter ini.' : 'Belum ada tugas, PR, atau materi di grup ini.' + (gtCanPost() ? '<br>Ketuk tombol + di atas untuk membuat.' : '')) + '</div>';
-    return;
-  }
-  items.forEach(t => {
-    const K = gtKind(t.kind), st = gtDueInfo(t);
-    const row = document.createElement('div');
-    row.className = 'gt-row';
-    row.style.setProperty('--gtc', K.color);
-    let meta = '<span class="gt-chip">' + esc(K.label) + '</span>';
-    if (t.due) meta += '<span class="gt-chip ' + (st.cls === 'late' || st.cls === 'locked' ? 'gt-chip-late' : (st.cls === 'soon' || st.cls === 'soon-h' ? 'gt-chip-soon' : '')) + '">' + esc(st.label) + '</span>';
-    if (K.answers && t.by !== myId) {
-      const a = t.answers && t.answers[myId];
-      if (a && a.score != null) meta += '<span class="gt-chip gt-chip-score">Nilai ' + esc(a.score) + '</span>';
-      else if (a) meta += '<span class="gt-chip gt-chip-ok">' + (a.late ? 'Dikumpulkan terlambat' : 'Sudah dikumpulkan') + '</span>';
-      else if (gtDone[t.id]) meta += '<span class="gt-chip gt-chip-ok">Selesai</span>';
-    }
-    if (K.answers && gtCanManage(t)) {
-      const g = groupsCache[gtGid] || {};
-      const total = Object.keys(g.members || {}).filter(u => u !== t.by).length;
-      meta += '<span class="gt-chip">' + Object.keys(t.answers || {}).length + '/' + total + ' mengumpulkan</span>';
-    }
-    row.innerHTML = '<span class="gt-ic">' + gtKindIcon(t.kind, 20) + '</span><div class="gt-row-b"><div class="gt-row-t">' + esc(t.title) + '</div><div class="gt-row-s">' + esc((t.subject ? t.subject + ' - ' : '') + (t.by === myId ? 'Anda' : displayName(t.by))) + '</div><div class="gt-row-m">' + meta + '</div></div>';
-    row.onclick = () => { gtOpenId = t.id; gtRender(); $('gtScreen').querySelector('.gt-body').scrollTop = 0; };
-    box.appendChild(row);
-  });
-}
-
-/* ---------- lampiran ---------- */
-async function gtFetchFiles(tid, bucket) {
-  const sn = await get(ref(db, 'groupTaskFiles/' + gtGid + '/' + tid + '/' + bucket));
-  const v = sn.val() || {};
-  return Object.keys(v).sort((a, b) => a - b).map(k => v[k]);
-}
-function gtFmtSize(n) { return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
-function gtRenderFiles(box, files) {
-  box.innerHTML = '';
-  files.forEach(f => {
-    const data = String(f.data || '');
-    if (data.indexOf('data:image') === 0) {
-      const img = document.createElement('img');
-      img.className = 'gt-fimg'; img.src = data; img.alt = f.name || '';
-      img.onclick = () => window.viewImage && window.viewImage(data);
-      box.appendChild(img);
-    } else {
-      const a = document.createElement('a');
-      a.className = 'gt-file'; a.href = data; a.download = f.name || 'lampiran';
-      a.innerHTML = GT_SVG.file + '<span></span><small></small>';
-      a.querySelector('span').textContent = f.name || 'Lampiran';
-      a.querySelector('small').textContent = gtFmtSize(f.size || 0);
-      box.appendChild(a);
-    }
-  });
-}
-
-/* ---------- detail ---------- */
-function gtRenderDetail() {
-  const id = gtOpenId, t = gtTasks[id];
-  const K = gtKind(t.kind), manage = gtCanManage(t), mine = t.answers && t.answers[myId];
-  const st = gtDueInfo(t), box = $('gtDetail');
-  const by = t.by === myId ? 'Anda' : displayName(t.by);
-  const canSubmit = gtCanSubmit(t);
-  let h = '<div class="gt-d-card" style="--gtc:' + K.color + '">' +
-    '<div class="gt-d-kind"><span class="gt-ic">' + gtKindIcon(t.kind, 18) + '</span>' + esc(K.label) + (t.closed ? '<span class="gt-chip gt-chip-closed">Ditutup</span>' : '') + '</div>' +
-    '<h2 class="gt-d-title">' + esc(t.title) + '</h2>' +
-    (t.subject ? '<div class="gt-d-sub">' + esc(t.subject) + '</div>' : '') +
-    '<div class="gt-d-meta">Diposting oleh ' + esc(by) + ' - ' + esc(gtFmtDate(t.ts)) + '</div>' +
-    (t.due ? '<div class="gt-d-due gt-due-' + st.cls + '">' + GT_SVG.clock + '<span>' + esc(K.dueLabel) + ': ' + esc(gtFmtDate(t.due)) + ' <b>(' + esc(st.label) + ')</b></span></div>' : '') +
-    (t.desc ? '<div class="gt-d-desc">' + esc(t.desc) + '</div>' : '') +
-    '<div class="gt-files" id="gtDFiles"></div></div>';
-  h += '<div class="gt-actions">';
-  if (K.answers && t.by !== myId) {
-    if (canSubmit) {
-      if (mine && mine.score != null) h += '<div class="gt-note">Jawaban Anda sudah dinilai dan tidak dapat diubah.</div>';
-      else h += '<button type="button" class="gt-btn primary" id="gtActAnswer">' + (mine ? 'Ubah jawaban' : 'Kumpulkan jawaban') + '</button>';
-    } else h += '<div class="gt-note">' + (t.closed ? 'Pengumpulan ditutup.' : 'Pengumpulan sudah berakhir.') + '</div>';
-    if (!mine) h += '<button type="button" class="gt-btn" id="gtActDone">' + (gtDone[id] ? 'Batalkan tanda selesai' : 'Tandai selesai') + '</button>';
-  }
-  h += '<button type="button" class="gt-btn" id="gtActAsk">Tanya di chat</button>';
-  if (manage) {
-    h += '<button type="button" class="gt-btn" id="gtActEdit">Edit</button>';
-    if (K.answers) h += '<button type="button" class="gt-btn" id="gtActClose">' + (t.closed ? 'Buka pengumpulan' : 'Tutup pengumpulan') + '</button>';
-    h += '<button type="button" class="gt-btn" id="gtActShare">Bagikan ke chat</button>';
-    h += '<button type="button" class="gt-btn danger" id="gtActDel">Hapus</button>';
-  }
-  h += '</div><div id="gtAnsBox"></div>';
-  box.innerHTML = h;
-  const bind = (sel, fn) => { const b = box.querySelector(sel); if (b) b.onclick = fn; };
-  bind('#gtActAnswer', () => gtOpenAnswer(id));
-  bind('#gtActDone', () => set(ref(db, 'groupTaskDone/' + gtGid + '/' + myId + '/' + id), gtDone[id] ? null : true).catch(e => showToast('Gagal: ' + e.message)));
-  bind('#gtActAsk', () => {
-    const m = currentMsgsAll.find(x => x.key === t.msgKey && !x.deleted);
-    gtCloseScreen();
-    if (m) setReply(m); else { showToast('Tulis pertanyaan Anda di chat'); setTimeout(() => msgInput.focus(), 100); }
-  });
-  bind('#gtActEdit', () => gtOpenComposer(id));
-  bind('#gtActClose', () => update(ref(db, 'groupTasks/' + gtGid + '/' + id), { closed: !t.closed }).catch(e => showToast('Gagal: ' + e.message)));
-  bind('#gtActShare', () => gtShareCard(id));
-  bind('#gtActDel', () => gtDeleteTask(id));
-  if (t.files && t.files.length) {
-    const fb = $('gtDFiles');
-    const token = id;
-    gtFetchFiles(id, 'post').then(fs => { if (gtOpenId === token && $('gtDFiles') === fb) gtRenderFiles(fb, fs); }).catch(() => { fb.textContent = 'Lampiran gagal dimuat'; });
-  }
-  if (K.answers) gtRenderAnswers(id, t, manage);
-}
-function gtRenderAnswers(id, t, manage) {
-  const box = $('gtAnsBox');
-  const g = groupsCache[gtGid] || {};
-  const answers = t.answers || {};
-  const members = Object.keys(g.members || {}).filter(u => u !== t.by);
-  const seeAll = manage || !t.secret;
-  let html = '';
-  if (seeAll) {
-    const done = members.filter(u => answers[u]).length;
-    html += '<div class="gt-sec-title"><span>Pengumpulan jawaban</span><span>' + done + ' dari ' + members.length + '</span></div>';
-    html += '<div class="gt-prog"><i style="width:' + (members.length ? Math.round(done * 100 / members.length) : 0) + '%"></i></div>';
-  } else {
-    html += '<div class="gt-sec-title"><span>Jawaban Anda</span></div>';
-  }
-  box.innerHTML = html;
-  const list = document.createElement('div');
-  box.appendChild(list);
-  const order = members.slice().sort((a, b) => (answers[b] ? 1 : 0) - (answers[a] ? 1 : 0) || displayName(a).localeCompare(displayName(b)));
-  const shown = seeAll ? order : members.filter(u => u === myId);
-  shown.forEach(u => list.appendChild(gtAnsRow(id, t, u, answers[u], manage, !seeAll)));
-  if (!seeAll) {
-    if (!answers[myId] && members.indexOf(myId) !== -1) list.insertAdjacentHTML('beforeend', '<div class="gt-note">Anda belum mengumpulkan jawaban.</div>');
-    box.insertAdjacentHTML('beforeend', '<div class="gt-note" style="margin-top:8px;">Jawaban hanya dapat dilihat oleh pemberi tugas dan admin.</div>');
-  }
-}
-function gtAnsRow(tid, t, uid, a, manage, openNow) {
-  const row = document.createElement('div');
-  row.className = 'gt-ans' + (openNow && a ? ' open' : '');
-  const name = uid === myId ? 'Anda' : displayName(uid);
-  let sub = 'Belum mengumpulkan', chip = '';
-  if (a) {
-    sub = 'Dikumpulkan ' + gtFmtDate(a.ts);
-    chip = a.score != null ? '<span class="gt-chip gt-chip-score">Nilai ' + esc(a.score) + '</span>' : (a.late ? '<span class="gt-chip gt-chip-late">Terlambat</span>' : '<span class="gt-chip gt-chip-ok">Sudah</span>');
-  } else chip = '<span class="gt-chip">Belum</span>';
-  row.innerHTML = '<div class="gt-ans-h"><div class="gt-ans-n">' + esc(name) + '<small>' + esc(sub) + '</small></div>' + chip + '</div><div class="gt-ans-b"></div>';
-  const body = row.querySelector('.gt-ans-b');
-  let filled = false;
-  const fill = async () => {
-    if (filled || !a) return;
-    filled = true;
-    let h = a.text ? '<div class="gt-a-text">' + esc(a.text) + '</div>' : '<div class="gt-a-text muted">Tanpa teks</div>';
-    if (a.score != null || a.note) h += '<div class="gt-a-grade">' + (a.score != null ? 'Nilai: <b>' + esc(a.score) + '</b>' : 'Catatan pengajar') + (a.note ? '<div style="margin-top:4px;white-space:pre-wrap;">' + esc(a.note) + '</div>' : '') + '</div>';
-    h += '<div class="gt-files"></div>';
-    if (manage && uid !== myId) h += '<div class="gt-actions" style="margin-bottom:0;"><button type="button" class="gt-btn">' + (a.score != null || a.note ? 'Ubah nilai' : 'Beri nilai') + '</button></div>';
-    body.innerHTML = h;
-    const gb = body.querySelector('.gt-actions .gt-btn');
-    if (gb) gb.onclick = () => gtOpenGrade(tid, uid);
-    if (a.files && a.files.length) {
-      const fb = body.querySelector('.gt-files');
-      try { gtRenderFiles(fb, await gtFetchFiles(tid, 'a_' + uid)); } catch (e) { fb.textContent = 'Lampiran gagal dimuat'; }
-    }
-  };
-  if (openNow && a) fill();
-  row.querySelector('.gt-ans-h').onclick = () => { if (!a) return; row.classList.toggle('open'); fill(); };
-  return row;
-}
-
-/* ---------- sheet (formulir) ---------- */
-function gtOpenSheet(html) { $('gtSheetBody').innerHTML = html; $('gtSheet').classList.add('show'); $('gtSheet').querySelector('.gt-sheet').scrollTop = 0; }
-function gtCloseSheet() { $('gtSheet').classList.remove('show'); $('gtSheetBody').innerHTML = ''; gtDraft = null; }
-function gtRenderDraftFiles() {
-  const box = $('gtfFiles');
-  if (!box || !gtDraft) return;
-  box.innerHTML = '';
-  gtDraft.files.forEach((f, i) => {
-    const r = document.createElement('div');
-    r.className = 'gt-dfile';
-    r.innerHTML = GT_SVG.file + '<span></span><small>' + gtFmtSize(f.size || 0) + '</small><button type="button" aria-label="Hapus lampiran">' + GT_SVG.x + '</button>';
-    r.querySelector('span').textContent = f.name;
-    r.querySelector('button').onclick = () => { gtDraft.files.splice(i, 1); gtRenderDraftFiles(); };
-    box.appendChild(r);
-  });
-}
-$('gtFileInput').addEventListener('change', async e => {
-  const list = Array.from(e.target.files || []);
-  e.target.value = '';
-  if (!gtDraft) return;
-  const max = gtDraft.answerFor ? 3 : 5;
-  for (const f of list) {
-    if (gtDraft.files.length >= max) { showToast('Maksimal ' + max + ' lampiran'); break; }
-    try {
-      const isImg = /^image\//.test(f.type);
-      let data;
-      if (isImg) {
-        if (f.size > 20 * 1024 * 1024) { showToast('Ukuran gambar maksimal 20 MB'); continue; }
-        data = await compressImage(f);
-      } else {
-        if (f.size > 900 * 1024) { showToast('Ukuran file maksimal 900 KB: ' + f.name); continue; }
-        data = await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = no; r.readAsDataURL(f); });
-      }
-      gtDraft.files.push({ name: f.name, type: isImg ? 'image/jpeg' : (f.type || 'application/octet-stream'), size: Math.round(data.length * 0.75), data });
-    } catch (err) { showToast('File tidak bisa diproses'); }
-  }
-  gtRenderDraftFiles();
-});
-function gtFilesPayload(files) {
-  const meta = files.map(f => ({ n: f.name, t: f.type, s: f.size }));
-  const obj = {};
-  files.forEach((f, i) => { obj[i] = { name: f.name, type: f.type, size: f.size, data: f.data }; });
-  return { meta: meta.length ? meta : null, obj: files.length ? obj : null };
-}
-
-/* ---------- kirim kartu ke chat grup ---------- */
-function gtCardUpdates(gid, tid, rec, updates) {
-  const g = groupsCache[gid];
-  const mkey = push(ref(db, 'groupChats/' + gid)).key;
-  const ts = Date.now();
-  const text = String(rec.title || '').slice(0, 120);
-  updates['groupChats/' + gid + '/' + mkey] = { from: myId, ts, type: 'task', taskId: tid, kind: rec.kind, text };
-  updates['groups/' + gid + '/last'] = { key: mkey, from: myId, ts, type: 'task', kind: rec.kind, text: text.slice(0, 80), viewOnce: false };
-  Object.keys((g && g.members) || {}).forEach(u => { if (u !== myId) updates['unread/' + u + '/' + gid] = increment(1); });
-  return mkey;
-}
-async function gtShareCard(id) {
-  const t = gtTasks[id];
-  if (!t || gtBusy) return;
-  gtBusy = true;
-  try {
-    const updates = {};
-    const mkey = gtCardUpdates(gtGid, id, t, updates);
-    updates['groupTasks/' + gtGid + '/' + id + '/msgKey'] = mkey;
-    await update(ref(db), updates);
-    stickBottomOnce = true;
-    showToast('Dibagikan ke chat grup');
-  } catch (err) { showToast('Gagal membagikan: ' + err.message); }
-  gtBusy = false;
-}
-
-/* ---------- buat / edit ---------- */
-async function gtOpenComposer(editId) {
-  if (!editId && !gtCanPost()) { showToast('Hanya admin atau pembuat grup yang dapat memposting'); return; }
-  const t = editId ? gtTasks[editId] : null;
-  if (editId && !t) return;
-  gtDraft = { editId: editId || null, kind: t ? t.kind : 'tugas', files: [] };
-  const kinds = Object.keys(GT_KINDS).map(k => '<button type="button" class="gt-kchip' + (gtDraft.kind === k ? ' on' : '') + '" data-k="' + k + '" style="--gtc:' + GT_KINDS[k].color + '"' + (editId ? ' disabled' : '') + '>' + gtKindIcon(k, 16) + esc(GT_KINDS[k].label) + '</button>').join('');
-  gtOpenSheet(
-    '<div class="gt-sh-t">' + (editId ? 'Edit ' + esc(gtKindLabel(t.kind)) : 'Buat baru') + '</div>' +
-    '<div class="gt-kinds" id="gtfKinds">' + kinds + '</div>' +
-    '<label class="gt-lbl" for="gtfTitle">Judul</label><input class="gt-in" id="gtfTitle" maxlength="120" placeholder="Contoh: Latihan soal bab 3" value="' + esc(t ? t.title : '') + '">' +
-    '<label class="gt-lbl" for="gtfSubject">Mata pelajaran / topik (opsional)</label><input class="gt-in" id="gtfSubject" maxlength="60" placeholder="Contoh: Matematika" value="' + esc(t && t.subject ? t.subject : '') + '">' +
-    '<label class="gt-lbl" for="gtfDesc">Keterangan</label><textarea class="gt-in" id="gtfDesc" maxlength="3000" placeholder="Tulis instruksi, soal, atau isi pengumuman">' + esc(t && t.desc ? t.desc : '') + '</textarea>' +
-    '<div id="gtfDueRow"><label class="gt-lbl" for="gtfDue" id="gtfDueLbl">Tenggat</label><input class="gt-in" type="datetime-local" id="gtfDue" value="' + (t && t.due ? gtToLocalInput(t.due) : '') + '"></div>' +
-    '<label class="gt-lbl">Lampiran (maksimal 5; foto atau berkas hingga 900 KB)</label><div id="gtfFiles"></div>' +
-    '<button type="button" class="gt-btn" id="gtfAddFile" style="margin-top:8px;">' + GT_SVG.clip + ' Tambah lampiran</button>' +
-    '<div id="gtfOpts">' +
-      '<label class="gt-sw"><span>Kunci pengumpulan setelah tenggat<small>Anggota tidak bisa mengumpulkan lagi setelah waktunya lewat</small></span><input type="checkbox" id="gtfLock"' + (t && t.lock ? ' checked' : '') + '></label>' +
-      '<label class="gt-sw"><span>Jawaban rahasia<small>Hanya pemberi tugas dan admin yang bisa melihat jawaban anggota</small></span><input type="checkbox" id="gtfSecret"' + (!t || t.secret ? ' checked' : '') + '></label>' +
-    '</div>' +
-    (editId ? '' : '<label class="gt-sw"><span>Kirim juga ke chat grup<small>Anggota mendapat notifikasi</small></span><input type="checkbox" id="gtfShare" checked></label>') +
-    '<div class="gt-sh-act"><button type="button" class="gt-btn" id="gtfCancel">Batal</button><button type="button" class="gt-btn primary" id="gtfSave">' + (editId ? 'Simpan' : 'Kirim') + '</button></div>'
-  );
-  const applyKind = () => {
-    const K = gtKind(gtDraft.kind);
-    $('gtfDueRow').style.display = K.due ? '' : 'none';
-    $('gtfOpts').style.display = K.answers ? '' : 'none';
-    $('gtfDueLbl').textContent = K.dueLabel || 'Tenggat';
-    $('gtfKinds').querySelectorAll('.gt-kchip').forEach(b => b.classList.toggle('on', b.dataset.k === gtDraft.kind));
-  };
-  applyKind();
-  $('gtfKinds').onclick = e => { const b = e.target.closest('.gt-kchip'); if (!b || b.disabled) return; gtDraft.kind = b.dataset.k; applyKind(); };
-  $('gtfAddFile').onclick = () => { gtDraft.answerFor = null; $('gtFileInput').click(); };
-  $('gtfCancel').onclick = gtCloseSheet;
-  $('gtfSave').onclick = gtSaveComposer;
-  if (editId && t.files && t.files.length) {
-    try { const fs = await gtFetchFiles(editId, 'post'); if (gtDraft && gtDraft.editId === editId) { gtDraft.files = fs; gtRenderDraftFiles(); } } catch (e) { showToast('Lampiran lama gagal dimuat'); }
-  }
-}
-async function gtSaveComposer() {
-  if (gtBusy || !gtDraft) return;
-  const gid = gtGid, d = gtDraft, K = gtKind(d.kind);
-  const title = $('gtfTitle').value.trim();
-  if (!title) { showToast('Judul wajib diisi'); return; }
-  const subject = $('gtfSubject').value.trim(), desc = $('gtfDesc').value.trim();
-  let due = null;
-  if (K.due) {
-    const v = $('gtfDue').value;
-    if (v) { due = new Date(v).getTime(); if (isNaN(due)) { showToast('Tanggal tenggat tidak valid'); return; } }
-  }
-  if (due && !d.editId && due < Date.now()) { showToast('Tenggat sudah lewat, pilih waktu yang akan datang'); return; }
-  const lock = !!(K.answers && due && $('gtfLock').checked), secret = !!(K.answers && $('gtfSecret').checked);
-  const fp = gtFilesPayload(d.files);
-  const btn = $('gtfSave');
-  gtBusy = true; btn.disabled = true;
-  try {
-    const updates = {};
-    let tid = d.editId;
-    if (tid) {
-      const base = 'groupTasks/' + gid + '/' + tid;
-      updates[base + '/title'] = title;
-      updates[base + '/subject'] = subject || null;
-      updates[base + '/desc'] = desc || null;
-      updates[base + '/due'] = due;
-      updates[base + '/lock'] = lock;
-      updates[base + '/secret'] = secret;
-      updates[base + '/files'] = fp.meta;
-      updates[base + '/editedTs'] = Date.now();
-      updates['groupTaskFiles/' + gid + '/' + tid + '/post'] = fp.obj;
-    } else {
-      tid = push(ref(db, 'groupTasks/' + gid)).key;
-      const rec = { kind: d.kind, title, subject: subject || null, desc: desc || null, due, by: myId, ts: Date.now(), lock, secret, closed: false, files: fp.meta };
-      if ($('gtfShare').checked) rec.msgKey = gtCardUpdates(gid, tid, rec, updates);
-      updates['groupTasks/' + gid + '/' + tid] = rec;
-      if (fp.obj) updates['groupTaskFiles/' + gid + '/' + tid + '/post'] = fp.obj;
-    }
-    await update(ref(db), updates);
-    const wasEdit = !!d.editId;
-    gtCloseSheet();
-    stickBottomOnce = true;
-    showToast(wasEdit ? 'Perubahan disimpan' : gtKindLabel(d.kind) + ' terkirim');
-  } catch (err) { showToast('Gagal menyimpan: ' + err.message); if ($('gtfSave')) $('gtfSave').disabled = false; }
-  gtBusy = false;
-}
-
-/* ---------- hapus ---------- */
-async function gtDeleteTask(id) {
-  const t = gtTasks[id];
-  if (!t || !gtCanManage(t)) return;
-  const ok = await confirmDialog({ title: 'Hapus ' + gtKindLabel(t.kind).toLowerCase() + '?', message: '"' + t.title + '" beserta lampiran dan semua jawaban anggota akan dihapus permanen.', okText: 'Hapus' });
-  if (!ok) return;
-  const gid = gtGid, updates = {};
-  updates['groupTasks/' + gid + '/' + id] = null;
-  updates['groupTaskFiles/' + gid + '/' + id] = null;
-  if (t.msgKey) updates['groupChats/' + gid + '/' + t.msgKey] = null;
-  try {
-    await update(ref(db), updates);
-    if (t.msgKey) { try { await fixGroupLast(gid); } catch (e) {} }
-    gtOpenId = null;
-    showToast('Dihapus');
-    gtRender();
-  } catch (err) { showToast('Gagal menghapus: ' + err.message); }
-}
-
-/* ---------- jawaban anggota ---------- */
-async function gtOpenAnswer(tid) {
-  const t = gtTasks[tid];
-  if (!t || !gtCanSubmit(t)) { showToast('Pengumpulan sudah ditutup'); return; }
-  const mine = t.answers && t.answers[myId];
-  if (mine && mine.score != null) { showToast('Jawaban sudah dinilai dan tidak dapat diubah'); return; }
-  gtDraft = { answerFor: tid, files: [] };
-  gtOpenSheet(
-    '<div class="gt-sh-t">' + (mine ? 'Ubah jawaban' : 'Kumpulkan jawaban') + '</div>' +
-    '<div style="font-size:13.5px;color:#667781;margin-bottom:4px;">' + esc(t.title) + '</div>' +
-    '<label class="gt-lbl" for="gtaText">Jawaban</label><textarea class="gt-in" id="gtaText" maxlength="5000" placeholder="Tulis jawaban Anda">' + esc(mine && mine.text ? mine.text : '') + '</textarea>' +
-    '<label class="gt-lbl">Lampiran (maksimal 3; foto pekerjaan atau berkas hingga 900 KB)</label><div id="gtfFiles"></div>' +
-    '<button type="button" class="gt-btn" id="gtaAddFile" style="margin-top:8px;">' + GT_SVG.clip + ' Tambah lampiran</button>' +
-    (t.due && Date.now() > t.due ? '<div class="gt-note" style="margin-top:12px;">Tenggat sudah lewat, jawaban akan ditandai terlambat.</div>' : '') +
-    '<div class="gt-sh-act"><button type="button" class="gt-btn" id="gtaCancel">Batal</button>' + (mine ? '<button type="button" class="gt-btn danger" id="gtaDel">Hapus</button>' : '') + '<button type="button" class="gt-btn primary" id="gtaSave">Kumpulkan</button></div>'
-  );
-  $('gtaAddFile').onclick = () => $('gtFileInput').click();
-  $('gtaCancel').onclick = gtCloseSheet;
-  $('gtaSave').onclick = () => gtSaveAnswer(tid);
-  if ($('gtaDel')) $('gtaDel').onclick = () => gtDeleteAnswer(tid);
-  if (mine && mine.files && mine.files.length) {
-    try { const fs = await gtFetchFiles(tid, 'a_' + myId); if (gtDraft && gtDraft.answerFor === tid) { gtDraft.files = fs; gtRenderDraftFiles(); } } catch (e) { showToast('Lampiran lama gagal dimuat'); }
-  }
-}
-async function gtSaveAnswer(tid) {
-  if (gtBusy || !gtDraft) return;
-  const t = gtTasks[tid];
-  if (!t || !gtCanSubmit(t)) { showToast('Pengumpulan sudah ditutup'); return; }
-  const text = $('gtaText').value.trim();
-  if (!text && !gtDraft.files.length) { showToast('Tulis jawaban atau lampirkan berkas'); return; }
-  const fp = gtFilesPayload(gtDraft.files);
-  gtBusy = true; $('gtaSave').disabled = true;
-  try {
-    const rec = { text: text || null, ts: Date.now(), late: !!(t.due && Date.now() > t.due), files: fp.meta };
-    const updates = {};
-    updates['groupTasks/' + gtGid + '/' + tid + '/answers/' + myId] = rec;
-    updates['groupTaskFiles/' + gtGid + '/' + tid + '/a_' + myId] = fp.obj;
-    await update(ref(db), updates);
-    gtCloseSheet();
-    showToast('Jawaban terkumpul');
-  } catch (err) { showToast('Gagal mengumpulkan: ' + err.message); if ($('gtaSave')) $('gtaSave').disabled = false; }
-  gtBusy = false;
-}
-async function gtDeleteAnswer(tid) {
-  const ok = await confirmDialog({ title: 'Hapus jawaban?', message: 'Jawaban Anda akan dihapus dan Anda dapat mengumpulkannya lagi.', okText: 'Hapus' });
-  if (!ok) return;
-  try {
-    const updates = {};
-    updates['groupTasks/' + gtGid + '/' + tid + '/answers/' + myId] = null;
-    updates['groupTaskFiles/' + gtGid + '/' + tid + '/a_' + myId] = null;
-    await update(ref(db), updates);
-    gtCloseSheet();
-    showToast('Jawaban dihapus');
-  } catch (err) { showToast('Gagal menghapus: ' + err.message); }
-}
-
-/* ---------- penilaian ---------- */
-function gtOpenGrade(tid, uid) {
-  const t = gtTasks[tid], a = t && t.answers && t.answers[uid];
-  if (!a || !gtCanManage(t)) return;
-  gtDraft = { files: [] };
-  gtOpenSheet(
-    '<div class="gt-sh-t">Nilai jawaban ' + esc(displayName(uid)) + '</div>' +
-    '<label class="gt-lbl" for="gtgScore">Nilai (0 sampai 100, boleh dikosongkan)</label><input class="gt-in" id="gtgScore" type="number" min="0" max="100" inputmode="decimal" value="' + (a.score != null ? esc(a.score) : '') + '">' +
-    '<label class="gt-lbl" for="gtgNote">Catatan untuk anggota</label><textarea class="gt-in" id="gtgNote" maxlength="1000" placeholder="Komentar atau koreksi">' + esc(a.note || '') + '</textarea>' +
-    '<div class="gt-sh-act"><button type="button" class="gt-btn" id="gtgCancel">Batal</button><button type="button" class="gt-btn primary" id="gtgSave">Simpan nilai</button></div>'
-  );
-  $('gtgCancel').onclick = gtCloseSheet;
-  $('gtgSave').onclick = async () => {
-    const raw = $('gtgScore').value.trim();
-    let score = null;
-    if (raw !== '') { score = Number(raw); if (isNaN(score) || score < 0 || score > 100) { showToast('Nilai harus 0 sampai 100'); return; } }
-    const note = $('gtgNote').value.trim();
-    try {
-      await update(ref(db, 'groupTasks/' + gtGid + '/' + tid + '/answers/' + uid), { score, note: note || null, gradedBy: myId, gradedTs: Date.now() });
-      gtCloseSheet();
-      showToast('Nilai disimpan');
-    } catch (err) { showToast('Gagal menyimpan nilai: ' + err.message); }
-  };
-}
-
-/* ---------- pengaturan grup & tombol ---------- */
-function gtRenderPermUI(g, iAmCreator) {
-  $('giTaskPermBox').style.display = iAmCreator ? '' : 'none';
-  const p = g.taskPerm === 'admin' ? 'admin' : 'all';
-  $('giTaskPerm').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.perm === p));
-}
-$('giTaskPerm').addEventListener('click', async e => {
-  const b = e.target.closest('button[data-perm]');
-  if (!b) return;
-  const gid = currentInfoGid, g = groupsCache[gid];
-  if (!g || g.createdBy !== myId) return;
-  try {
-    await update(ref(db, 'groups/' + gid), { taskPerm: b.dataset.perm });
-    g.taskPerm = b.dataset.perm;
-    renderGroupInfo();
-    showToast(b.dataset.perm === 'admin' ? 'Hanya admin yang dapat memposting tugas' : 'Semua anggota dapat memposting tugas');
-  } catch (err) { showToast('Gagal mengubah: ' + err.message); }
-});
-$('giOpenTasks').addEventListener('click', () => {
-  const gid = currentInfoGid;
-  if (!gid) return;
-  closeGroupInfo();
-  if (currentChat !== gid) openChat(gid);
-  gtOpenScreen();
-});
-$('gtOpenBtn').addEventListener('click', () => gtOpenScreen());
-$('gtBack').addEventListener('click', () => { if (gtOpenId) { gtOpenId = null; gtRender(); } else gtCloseScreen(); });
-$('gtAddBtn').addEventListener('click', () => gtOpenComposer());
-$('gtStatusSeg').addEventListener('click', e => { const b = e.target.closest('button[data-s]'); if (!b) return; gtStatus = b.dataset.s; gtRenderList(); });
-$('voOptTask').addEventListener('click', () => { $('voChooser').classList.remove('show'); gtOpenComposer(); });
 $('clearGroupBtn').addEventListener('click', async () => {
   const gid = currentInfoGid, g = groupsCache[gid];
   if (!g || !isGroupMod(gid)) { showToast('Hanya admin dan pembuat grup yang dapat menghapus semua pesan'); return; }
-  const ok = await confirmDialog({ title: 'Hapus semua pesan?', message: 'Seluruh pesan di grup "' + (g.name || 'grup') + '" akan dihapus permanen untuk semua anggota. Daftar tugas tidak ikut terhapus.', okText: 'Hapus semua' });
+  const ok = await confirmDialog({ title: 'Hapus semua pesan?', message: 'Seluruh pesan di grup "' + (g.name || 'grup') + '" akan dihapus permanen untuk semua anggota.', okText: 'Hapus semua' });
   if (!ok) return;
   const updates = {};
   updates['groupChats/' + gid] = null;
@@ -12383,7 +11613,6 @@ $('clearGroupBtn').addEventListener('click', async () => {
     showToast('Semua pesan grup dihapus');
   } catch (err) { showToast('Gagal menghapus: ' + err.message); }
 });
-setInterval(() => { if ($('gtScreen').classList.contains('show') && gtLoaded && !gtOpenId) gtRender(); }, 60000);
 </script>
 
 <script>
