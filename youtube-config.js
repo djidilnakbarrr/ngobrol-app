@@ -11,7 +11,7 @@
    Setelah diganti, unggah ulang file ini ke hosting.
    ========================================================================== */
 window.YT_CONFIG = {
-  API_KEY: 'GANTI_DENGAN_API_KEY_ANDA',
+  API_KEY: 'AIzaSyArgLueuY2K5wywQNf7HvdJ3vSOLRU8FpQ',
 
   REGION_CODE: 'ID',        // wilayah untuk video populer (kode negara 2 huruf)
   LANGUAGE: 'id',           // bahasa relevansi hasil pencarian
