@@ -1033,9 +1033,36 @@ function setAlert(boxId, textId, msg, kind) {
 }
 const loginAlert = (m, k) => setAlert('loginAlert', 'loginAlertText', m, k);
 
+/* Status ketersediaan username (mode daftar) */
+const UNAME_IDLE = 'Huruf kecil, angka, titik, dan garis bawah (3–20 karakter)';
+let unameTimer = 0, unameSeq = 0;
+function setUnameStatus(kind, msg) {
+  const el = $('unameStatus'); if (!el) return;
+  el.className = 'uname-status' + (kind ? ' ' + kind : '');
+  el.textContent = msg;
+}
+function checkUsernameLive() {
+  clearTimeout(unameTimer);
+  const seq = ++unameSeq;
+  if (loginMode !== 'register') return;
+  const u = normUsername($('usernameInput').value);
+  if (!u) { setUnameStatus('', UNAME_IDLE); return; }
+  const err = usernameError(u);
+  if (err) { setUnameStatus('bad', err); return; }
+  setUnameStatus('wait', 'Memeriksa ketersediaan...');
+  unameTimer = setTimeout(async () => {
+    try {
+      const taken = await usernameTaken(u);
+      if (seq !== unameSeq) return;
+      setUnameStatus(taken ? 'bad' : 'ok', taken ? 'Username sudah digunakan' : 'Username tersedia');
+    } catch (e) { if (seq === unameSeq) setUnameStatus('', UNAME_IDLE); }
+  }, 400);
+}
+
 function setLoginMode(mode, keepAlert) {
   loginMode = mode;
   const reg = mode === 'register', mig = mode === 'migrate';
+  $('loginScreen').classList.toggle('mode-register', reg);
   $('tabLogin').classList.toggle('active', !reg);
   $('tabRegister').classList.toggle('active', reg);
   $('tabLogin').setAttribute('aria-selected', String(!reg));
@@ -1058,6 +1085,7 @@ function setLoginMode(mode, keepAlert) {
   $('loginPwWrap').querySelector('label').textContent = mig ? 'Password baru' : 'Password';
   if (!keepAlert) loginAlert('');
   setLogin(false);
+  checkUsernameLive();
 }
 
 function setLogin(loading) {
@@ -1073,7 +1101,13 @@ const nameKey = n => String(n).trim().toLowerCase().replace(/\s+/g, ' ')
 
 async function claimName(name, id) {
   const r = await runTransaction(ref(db, 'usernames/' + nameKey(name)), cur => (cur === null || String(cur) === id) ? id : undefined);
-  return r.committed;
+  /* Berhasil hanya jika transaksi tersimpan DAN pemilik kunci di server memang ID ini */
+  return r.committed && r.snapshot.exists() && String(r.snapshot.val()) === String(id);
+}
+/* Username dianggap terpakai bila kuncinya ada di indeks, apa pun kondisi akun pemiliknya */
+async function usernameTaken(u) {
+  const snap = await get(ref(db, 'usernames/' + nameKey(u)));
+  return snap.exists();
 }
 
 /* ---- Username: unik, huruf kecil, boleh diganti. Minimal ada 1 huruf supaya tidak tertukar dengan ID angka ---- */
@@ -1150,6 +1184,7 @@ document.addEventListener('click', (e) => {
 $('usernameInput').addEventListener('input', (e) => {
   e.target.value = e.target.value.replace(/^@+/, '').replace(/\s/g, '').toLowerCase();
   if (loginMode === 'migrate') setLoginMode('login');
+  checkUsernameLive();
 });
 $('loginIdInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, ''); });
 $('tabLogin').addEventListener('click', () => { if (loginMode !== 'login') setLoginMode('login'); });
@@ -1222,7 +1257,7 @@ async function doRegister(user, pw, pw2) {
   if (uErr) { loginAlert(uErr + '.'); return; }
   const pe = pwProblem(pw, pw2);
   if (pe) { loginAlert(pe); return; }
-  if (await lookupOwner(user)) { loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
+  if (await usernameTaken(user)) { loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
   let newId = null;
   for (let i = 0; i < 5; i++) {
     const candidate = generateId();

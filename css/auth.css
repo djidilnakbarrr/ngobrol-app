@@ -176,3 +176,24 @@
   padding-left: 48px !important;
 }
 .pw-field input::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
+/* ===== Layar daftar: ringkas, rapi, tombol tidak turun jauh ===== */
+.uname-status { display: none; margin: -8px 0 14px 4px; font-size: 12.5px; line-height: 1.4; color: #7a8b93; text-align: left; min-height: 17px; }
+#loginScreen.mode-register .uname-status { display: block; }
+.uname-status.ok { color: #128c4a; font-weight: 600; }
+.uname-status.bad { color: #d32f2f; font-weight: 600; }
+.uname-status.wait { color: #7a8b93; }
+#loginScreen.mode-register .subtitle,
+#loginScreen.mode-register #loginHint,
+#loginScreen.mode-register #loginPw2Wrap .hint,
+#loginScreen.mode-register .login-foot { display: none !important; }
+#loginScreen.mode-register .login-box { padding: 26px 24px 22px; max-height: calc(100dvh - 24px); overflow-y: auto; }
+#loginScreen.mode-register .login-box > svg.login-logo { width: 56px; height: 56px; padding: 14px; border-radius: 18px; }
+#loginScreen.mode-register .login-brand { margin-top: 10px; }
+#loginScreen.mode-register .login-box h2 { margin: 4px 0 14px; font-size: 22px; }
+#loginScreen.mode-register .auth-tabs { margin-bottom: 16px; }
+#loginScreen.mode-register .login-box input { height: 50px; margin-bottom: 14px; }
+#loginScreen.mode-register .login-box .pw-field input { margin-bottom: 14px; }
+#loginScreen.mode-register .pw-eye { top: 6px; }
+#loginScreen.mode-register #loginBtn { margin-top: 6px; height: 52px; }

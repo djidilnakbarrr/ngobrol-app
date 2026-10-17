@@ -138,3 +138,7 @@ Peran disimpan di `users/<id>/role` dengan nilai `user` atau `admin`.
 - **Penyimpanan:** password tidak pernah disimpan sebagai teks asli. Aplikasi menyimpan hash PBKDF2-SHA256 (150.000 iterasi) dengan salt acak di `credentials/<id>`. Password sederhana (111111, 123456, dan sejenisnya) ditolak.
 - **Perhatian keamanan:** karena aplikasi memakai Realtime Database tanpa Firebase Authentication, pemeriksaan password berjalan di sisi aplikasi. Rules pada `database.rules.youtube.json` membatasi bentuk data, tetapi tidak dapat melarang akses langsung ke database. Untuk perlindungan penuh di sisi server, migrasikan login ke Firebase Authentication (custom token lewat Cloud Functions), lalu batasi Rules berdasarkan `auth.uid`.
 - Hapus akun ikut menghapus `credentials/<id>`.
+
+## Username unik 100%
+Setiap username dikunci di `usernames/<username>` berisi ID pemilik. Aplikasi memakai transaksi Firebase sehingga dua orang yang mendaftar bersamaan tidak mungkin mendapat username yang sama, dan di layar Daftar tersedia pemeriksaan langsung ("Username tersedia" atau "Username sudah digunakan").
+Agar tidak bisa ditembus lewat penulisan langsung ke database, tempel isi `database/database.rules.usernames.json` ke Rules Firebase (gabungkan dengan rules yang sudah ada). Pastikan tidak ada aturan di tingkat atas (`.write: true` di root atau `usernames`) karena akan menimpa aturan ini.

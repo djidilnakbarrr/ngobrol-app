@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "usernames": {
+      "$key": {
+        ".read": true,
+        ".write": "!data.exists() || !newData.exists()",
+        ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 30"
+      }
+    }
+  }
+}
