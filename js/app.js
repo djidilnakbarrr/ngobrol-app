@@ -1443,7 +1443,8 @@ function startCredWatch() {
     if (e !== myEp) forceLogout(EP_MSG);
   });
 }
-const EP_MSG = 'Anda telah dikeluarkan dari perangkat ini. Silakan masuk kembali.';
+/* Dikeluarkan dari perangkat: langsung ke layar masuk, tanpa teks apa pun */
+const EP_MSG = '';
 function stopCredWatch() {
   if (credUnsub) { try { credUnsub(); } catch (e) {} credUnsub = null; }
   if (credEpUnsub) { try { credEpUnsub(); } catch (e) {} credEpUnsub = null; }
@@ -1783,7 +1784,7 @@ async function readSession() {
     setLoginMode('login');
     try { const f = sessionStorage.getItem('chat_flash'); if (f) {
       sessionStorage.removeItem('chat_flash');
-      loginAlert(f, 'info');
+      if (!/dikeluarkan dari perangkat ini/i.test(f)) loginAlert(f, 'info');
     } } catch (e) {}
   }
 

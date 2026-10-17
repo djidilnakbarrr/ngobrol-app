@@ -1,7 +1,7 @@
 {
-  "version": "1.7.5",
+  "version": "1.7.6",
   "released": "2026-10-17",
   "notes": [
-    "Garis dan lingkaran putih dekoratif pada layar Masuk dan Daftar dihapus"
+    "Dikeluarkan dari perangkat langsung ke layar masuk tanpa teks"
   ]
 }
