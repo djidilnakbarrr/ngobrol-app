@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+
+<html lang="id">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta name="theme-color" content="#075e54">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Chat App">
+<meta name="description" content="Chat App: aplikasi obrolan yang cepat, ringkas, dan rapi.">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+<title>Chat App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+
+<link rel="stylesheet" href="css/base.css">
+
+<link rel="stylesheet" href="css/update.css">
+<link rel="stylesheet" href="css/chat-video.css">
+<link rel="stylesheet" href="css/youtube.css">
+</head>
+
+<body>
+
+
+
+<div id="loginScreen" style="display:none">
+
+  <div class="login-box">
+
+    <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#075e54" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+
+      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+
+    </svg>
+
+    <div class="login-brand">Chat App</div>
+    <h2>Buat Akun</h2>
+
+    <p class="subtitle" id="loginSubtitle">Masukkan nama pengguna Anda. ID akun akan dibuat secara otomatis.</p>
+
+    <label for="usernameInput">Nama pengguna</label>
+
+    <input type="text" id="usernameInput" maxlength="12" placeholder="Contoh: Budi" autocomplete="off">
+
+    <div id="loginIdWrap" style="display:none">
+
+      <label for="loginIdInput">ID akun Anda</label>
+
+      <input type="text" id="loginIdInput" maxlength="20" inputmode="numeric" placeholder="Masukkan ID" autocomplete="off">
+
+    </div>
+
+    <button id="loginBtn" type="button">
+
+      <svg class="btn-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.55"/></svg>
+
+      <span class="btn-label">Daftar Sekarang</span>
+
+      <svg class="btn-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+
+    </button>
+    <p class="login-foot">ID akun dibuat otomatis dan digunakan untuk masuk kembali. Simpan ID Anda di tempat yang aman.</p>
+
+  </div>
+
+</div>
+
+
+
+<div id="app">
+
+  <div class="main-container">
+
+    <div class="tab-content">
+
+      <div class="tab-pane active" id="paneChats">
+
+        <div class="pane-head"><h1>Chat</h1></div>
+
+        <div class="search-bar">
+
+          <div class="search-input-wrap">
+
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+              <circle cx="11" cy="11" r="8"/>
+
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+
+            </svg>
+
+            <input type="text" id="searchChats" placeholder="Cari percakapan">
+
+          </div>
+
+        </div>
+
+        <div class="chat-list" id="chatList"></div>
+
+        <button class="fab" id="newChatFab" title="Tambah kontak">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+            <line x1="12" y1="5" x2="12" y2="19"/>
+
+            <line x1="5" y1="12" x2="19" y2="12"/>
+
+          </svg>
+
+        </button>
+
+      </div>
+
+
+
+      <div class="tab-pane" id="paneContacts">
+
+        <div class="pane-head"><h1>Kontak</h1></div>
+
+        <div class="search-bar">
+
+          <div class="search-input-wrap">
+
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+              <circle cx="11" cy="11" r="8"/>
+
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+
+            </svg>
+
+            <input type="text" id="searchContacts" placeholder="Cari kontak">
+
+          </div>
+
+        </div>
+
+        <div class="contact-list" id="contactList"></div>
+
+      </div>
+
+
+
+      <div class="tab-pane" id="paneYoutube">
+        <div class="pane-head"><h1>YouTube</h1><div class="yt-head-actions"><button type="button" class="yt-icon-btn yt-refresh-btn" id="ytRefresh" aria-label="Segarkan video" title="Segarkan video"></button><button type="button" class="yt-icon-btn yt-admin-btn" id="ytAdminBtn" hidden aria-label="Pengaturan API key" title="Pengaturan API key (admin)"></button></div></div>
+        <div class="yt-top">
+          <div class="yt-search" id="ytSearchBox">
+            <span id="ytSearchIcon" style="display:inline-flex"></span>
+            <input type="text" id="ytInput" placeholder="Cari video" autocomplete="off" enterkeyhint="search">
+            <button type="button" class="yt-icon-btn yt-clear" id="ytClear" aria-label="Hapus"></button>
+            <button type="button" class="yt-icon-btn yt-go" id="ytGo" aria-label="Cari"></button>
+          </div>
+        </div>
+        <div class="yt-scroll" id="ytScroll">
+          <div id="ytList"><div class="yt-state"><div class="yt-state-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg></div><h3>YouTube</h3><p>Buka tab ini untuk melihat video populer.</p></div></div>
+          <div id="ytMoreWrap"></div>
+        </div>
+      </div>
+
+      <div class="tab-pane" id="paneSettings">
+
+        <div class="pane-head"><h1>Setelan</h1></div>
+
+        <div class="settings-pane">
+
+          <div class="profile-card">
+
+            <div class="avatar-edit" id="settingsAvatarWrap" title="Ganti foto profil">
+
+              <div class="avatar-lg" id="settingsAvatar">?</div>
+
+              <span class="avatar-edit-badge">
+
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+
+                  <circle cx="12" cy="13" r="4"/>
+
+                </svg>
+
+              </span>
+
+            </div>
+
+            <input type="file" id="photoInput" accept="image/*" hidden>
+
+            <h3 id="settingsName" style="cursor:pointer;">User</h3>
+
+            <p id="settingsSub">Akun Anda</p>
+
+            <div class="status-tag">online</div>
+
+          </div>
+
+
+
+          <div class="settings-list">
+
+            <div class="settings-group">
+
+            <div class="settings-item" id="settingsIdRow">
+
+              <div class="settings-icon">
+
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                  <rect x="3" y="4" width="18" height="16" rx="2"/>
+
+                  <circle cx="9" cy="10" r="2"/>
+
+                  <path d="M15 8h4M15 12h4M15 16h4M6 18a3 3 0 0 1 6 0"/>
+
+                </svg>
+
+              </div>
+
+              <div class="settings-body">
+
+                <h4>ID Saya</h4>
+
+                <p id="settingsMyIdText">-</p>
+
+              </div>
+
+              <button id="copyIdBtn" title="Salin ID" style="background:transparent;border:none;color:#54656f;cursor:pointer;padding:8px;display:flex;">
+
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
+
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+
+                </svg>
+
+              </button>
+
+            </div>
+
+
+
+            <div class="settings-item" id="shareMyContact">
+
+              <div class="settings-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></div>
+
+              <div class="settings-body">
+
+                <h4>Bagikan Kontak Saya</h4>
+
+                <p>Kontak dapat menambahkan Anda melalui tautan</p>
+
+              </div>
+
+            </div>
+
+
+
+            <div class="settings-item" id="blockedListBtn">
+
+              <div class="settings-icon">
+
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                  <circle cx="12" cy="12" r="10"/>
+
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+
+                </svg>
+
+              </div>
+
+              <div class="settings-body">
+
+                <h4>Kontak Diblokir</h4>
+
+                <p id="blockedCountText">0 kontak</p>
+
+              </div>
+
+            </div>
+
+
+
+            </div>
+
+
+
+                        <div class="settings-group">
+            <div class="settings-item" id="notifSettings">
+              <div class="settings-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <div class="settings-body">
+                <h4>Notifikasi</h4>
+                <p id="notifStatusText">Belum aktif. Ketuk untuk mengaktifkan.</p>
+              </div>
+            </div>
+            </div>
+<div class="settings-group">
+
+            <div class="settings-item danger" id="logoutSettings">
+
+              <div class="settings-icon">
+
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+
+                  <polyline points="16 17 21 12 16 7"/>
+
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+
+                </svg>
+
+              </div>
+
+              <div class="settings-body">
+
+                <h4>Keluar</h4>
+
+                <p>Keluar dari akun Anda</p>
+
+              </div>
+
+            </div>
+            <div class="settings-item danger" id="deleteAccountSettings">
+              <div class="settings-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </div>
+              <div class="settings-body">
+                <h4>Hapus Akun Permanen</h4>
+                <p>Hapus akun dan seluruh data Anda dari server</p>
+              </div>
+            </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="bottom-tabs" id="bottomTabs">
+
+      <button class="bottom-tab active" data-pane="paneChats">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+
+        </svg>
+
+        Chat
+
+      </button>
+
+      <button class="bottom-tab" data-pane="paneContacts">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+
+          <circle cx="9" cy="7" r="4"/>
+
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+
+        </svg>
+
+        Kontak
+
+      </button>
+
+      
+
+      <button class="bottom-tab" data-pane="paneYoutube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor"/></svg>
+        YouTube
+      </button>
+
+      <button class="bottom-tab" data-pane="paneSettings">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+          <circle cx="12" cy="12" r="3"/>
+
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+
+        </svg>
+
+        Setelan
+
+      </button>
+
+    </div>
+
+  </div>
+
+
+
+    <div id="archivedView" aria-label="Diarsipkan">
+    <div class="arch-head">
+      <button class="arch-icon-btn" id="archBack" title="Kembali" aria-label="Kembali"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></button>
+      <h2>Diarsipkan</h2>
+      <button class="arch-icon-btn" id="archMoreBtn" title="Opsi lain" aria-label="Opsi lain"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="12" cy="19" r="1.9"/></svg></button>
+      <div id="archMore"><button id="archUnarchiveAll">Keluarkan semua dari arsip</button></div>
+    </div>
+    <div id="archivedList"></div>
+  </div>
+
+  <div class="chat-view" id="chatView">
+
+    <div class="chat-header" id="chatHeader">
+
+      <div class="header-normal">
+
+        <button id="backBtn" title="Kembali" style="background:transparent;border:none;color:#fff;cursor:pointer;padding:8px;display:flex;">
+
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <line x1="19" y1="12" x2="5" y2="12"/>
+
+            <polyline points="12 19 5 12 12 5"/>
+
+          </svg>
+
+        </button>
+
+        <div class="avatar-md" id="chatAvatar" style="cursor:pointer;" title="Ubah nama kontak">?</div>
+
+        <div class="header-info">
+
+          <h3 id="chatName">-</h3>
+
+          <p id="chatStatus">online</p>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="header-selecting">
+
+        <button id="cancelSelectBtn" title="Batal" style="background:transparent;border:none;color:#fff;cursor:pointer;padding:8px;display:flex;">
+
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <line x1="19" y1="12" x2="5" y2="12"/>
+
+            <polyline points="12 19 5 12 12 5"/>
+
+          </svg>
+
+        </button>
+
+        <div class="header-info">
+
+          <h3 id="selectCount">1 dipilih</h3>
+
+          <p>Ketuk untuk membatalkan pilihan</p>
+
+        </div>
+
+        <button id="deleteSelectedBtn" title="Hapus" style="background:transparent;border:none;color:#fff;cursor:pointer;padding:8px;display:flex;">
+
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <polyline points="3 6 5 6 21 6"/>
+
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+
+            <line x1="10" y1="11" x2="10" y2="17"/>
+
+            <line x1="14" y1="11" x2="14" y2="17"/>
+
+          </svg>
+
+        </button>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="blocked-banner" id="blockedBanner">
+
+      Anda memblokir kontak ini. Buka blokir kontak untuk mengirim pesan.
+
+    </div>
+
+
+
+    <div class="messages" id="messages"></div>
+
+
+
+    <div class="reply-preview" id="replyPreview">
+
+      <div class="reply-preview-body">
+
+        <span class="reply-preview-name" id="replyPreviewName">-</span>
+
+        <span class="reply-preview-text" id="replyPreviewText">-</span>
+
+      </div>
+
+      <button class="reply-close-btn" id="replyCloseBtn" title="Batal balas">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+          <line x1="18" y1="6" x2="6" y2="18"/>
+
+          <line x1="6" y1="6" x2="18" y2="18"/>
+
+        </svg>
+
+      </button>
+
+    </div>
+
+
+
+    <div class="input-bar">
+
+      <button class="attach-btn" id="attachBtn" title="Kirim foto" type="button">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+          <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+
+        </svg>
+
+      </button>
+
+      <input type="file" id="fileInput" accept="image/*" hidden>
+
+
+
+      <div class="input-field" id="inputField">
+
+        <div id="msgInput" class="msg-input" contenteditable="true" data-placeholder="Ketik pesan"></div>
+
+      </div>
+
+
+
+      <div class="recording-state" id="recordingState">
+
+        <button class="cancel-rec-btn" id="cancelRecBtn" title="Batal" type="button">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <polyline points="3 6 5 6 21 6"/>
+
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+
+          </svg>
+
+        </button>
+
+        <span class="rec-dot"></span>
+
+        <span class="rec-time" id="recTime">0:00</span>
+
+        <div class="rec-wave" id="recWave"></div>
+
+        <button class="send-rec-btn" id="sendRecBtn" title="Kirim" type="button">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+            <line x1="22" y1="2" x2="11" y2="13"/>
+
+            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+
+          </svg>
+
+        </button>
+
+      </div>
+
+
+
+      <button class="action-btn" id="micBtn" title="Rekam suara" type="button">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+          <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+
+          <line x1="12" y1="19" x2="12" y2="23"/>
+
+          <line x1="8" y1="23" x2="16" y2="23"/>
+
+        </svg>
+
+      </button>
+
+      <button class="action-btn" id="sendBtn" aria-label="Kirim" type="button">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+          <line x1="22" y1="2" x2="11" y2="13"/>
+
+          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+
+        </svg>
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="myIdModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <span>Selamat datang!</span>
+
+      <button class="close-x" id="closeMyIdModal">
+
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+          <line x1="18" y1="6" x2="6" y2="18"/>
+
+          <line x1="6" y1="6" x2="18" y2="18"/>
+
+        </svg>
+
+      </button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <p style="color:#54656f; font-size:14px; line-height:1.5; margin-bottom:6px;">
+
+        Akun Anda berhasil dibuat. Berikut adalah <b>ID unik</b> Anda:
+
+      </p>
+
+      <div class="my-id-box">
+
+        <div class="label">ID Anda</div>
+
+        <div class="id-row">
+
+          <div class="id-value" id="myIdValue">-</div>
+
+          <button class="copy-btn" id="copyMyIdBtn">
+
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+
+            </svg>
+
+            Salin
+
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="modal-hint" style="margin-top:14px;">
+
+        <b>Bagikan ID ini kepada teman Anda</b> agar mereka dapat menambahkan Anda sebagai kontak.
+
+      </div>
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button class="btn-primary" id="okMyIdModal">OK, Mengerti</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="addContactModal">
+  <div class="modal-box ac-box" role="dialog" aria-modal="true" aria-labelledby="acTitle">
+    <div class="modal-header ac-header">
+      <div class="mh-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div>
+      <div class="mh-text"><div class="mh-title" id="acTitle">Tambah Kontak</div><div class="mh-sub">Simpan teman menggunakan ID-nya</div></div>
+      <button class="close-x" id="closeAddContact" aria-label="Tutup">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body ac-body">
+      <div class="ac-field">
+        <label for="contactAliasInput">Nama kontak</label>
+        <div class="ac-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input type="text" id="contactAliasInput" maxlength="30" autocomplete="off" autocapitalize="words" enterkeyhint="next" placeholder="Masukkan nama kontak">
+        </div>
+      </div>
+
+      <div class="ac-field">
+        <label for="contactIdInput">ID teman</label>
+        <div class="ac-input">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+          <input type="text" id="contactIdInput" maxlength="20" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="Masukkan ID">
+        </div>
+      </div>
+
+      <div class="modal-hint ac-hint">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        <span>ID kontak dapat dilihat pada menu <b>Setelan</b> miliknya. Nama kontak dapat Anda ubah kapan saja.</span>
+      </div>
+    </div>
+    <div class="modal-actions ac-actions">
+      <button class="btn-cancel" id="cancelAddContact">Batal</button>
+      <button class="btn-primary" id="confirmAddContact">Tambah</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editNameModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <span>Ubah Nama</span>
+
+      <button class="close-x" id="closeEditName">
+
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+          <line x1="18" y1="6" x2="6" y2="18"/>
+
+          <line x1="6" y1="6" x2="18" y2="18"/>
+
+        </svg>
+
+      </button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <label for="editNameInput">Nama baru</label>
+
+      <input type="text" id="editNameInput" maxlength="12" autocomplete="off">
+
+      <div class="modal-hint">
+
+        Perubahan nama tampilan akan berlaku untuk semua kontak Anda.
+
+      </div>
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button class="btn-cancel" id="cancelEditName">Batal</button>
+
+      <button class="btn-primary" id="confirmEditName">Simpan</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="editContactModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <span>Ubah Nama Kontak</span>
+
+      <button class="close-x" id="closeEditContact">
+
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+          <line x1="18" y1="6" x2="6" y2="18"/>
+
+          <line x1="6" y1="6" x2="18" y2="18"/>
+
+        </svg>
+
+      </button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <label for="editContactInput">Nama kontak</label>
+
+      <input type="text" id="editContactInput" maxlength="30" autocomplete="off">
+
+      <div class="modal-hint">ID: <b id="editContactId">-</b></div>
+
+      <button class="btn-delete-contact" id="deleteContactBtn" type="button">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+          <polyline points="3 6 5 6 21 6"/>
+
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+
+          <line x1="10" y1="11" x2="10" y2="17"/>
+
+          <line x1="14" y1="11" x2="14" y2="17"/>
+
+        </svg>
+
+        Hapus kontak permanen
+
+      </button>
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button class="btn-cancel" id="cancelEditContact">Batal</button>
+
+      <button class="btn-primary" id="confirmEditContact">Simpan</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div id="newMenu">
+
+  <div class="chat-menu-box">
+
+    <div class="chat-menu-header">
+
+      <div class="chat-menu-title">Tambah baru</div>
+
+      <div class="chat-menu-sub">Pilih tindakan</div>
+
+    </div>
+
+    <button class="chat-menu-option" id="newMenuContact" type="button">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+
+        <circle cx="8.5" cy="7" r="4"/>
+
+        <line x1="20" y1="8" x2="20" y2="14"/>
+
+        <line x1="23" y1="11" x2="17" y2="11"/>
+
+      </svg>
+
+      Tambah kontak
+
+    </button>
+
+    <button class="chat-menu-option" id="newMenuGroup" type="button">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+
+        <circle cx="9" cy="7" r="4"/>
+
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+
+      </svg>
+
+      Buat grup
+
+    </button>
+
+    <button class="chat-menu-option cancel" id="newMenuCancel" type="button">Batal</button>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="groupModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <div class="mh-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+
+      <div class="mh-text"><div class="mh-title">Buat Grup</div><div class="mh-sub">Kumpulkan teman dalam satu obrolan</div></div>
+
+      <button class="close-x" id="closeGroupModal" type="button">
+
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+          <line x1="18" y1="6" x2="6" y2="18"/>
+
+          <line x1="6" y1="6" x2="18" y2="18"/>
+
+        </svg>
+
+      </button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <label for="groupNameInput">Nama grup</label>
+
+      <input type="text" id="groupNameInput" maxlength="25" autocomplete="off" placeholder="Contoh: Keluarga">
+
+
+
+      <label for="groupMemberIdInput">Tambah anggota (opsional)</label>
+
+      <div class="member-add-row">
+
+        <input type="text" id="groupMemberIdInput" maxlength="20" inputmode="numeric" autocomplete="off" placeholder="Masukkan ID kontak">
+
+        <button class="member-add-btn" id="groupMemberAddBtn" type="button" title="Tambah">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+            <line x1="12" y1="5" x2="12" y2="19"/>
+
+            <line x1="5" y1="12" x2="19" y2="12"/>
+
+          </svg>
+
+        </button>
+
+      </div>
+
+      <div class="group-section-title" id="groupMemberCountTitle">Anggota (1)</div>
+
+      <div class="member-list" id="groupMemberList"></div>
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button class="btn-cancel" id="cancelGroupModal" type="button">Batal</button>
+
+      <button class="btn-primary" id="confirmGroupModal" type="button">Buat</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="groupInfoModal">
+
+  <div class="gi-screen">
+
+    <div class="gi-hero2">
+
+      <button class="gi-back" id="closeGroupInfo" type="button" aria-label="Kembali">
+
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+
+      </button>
+
+      <div class="gi-avatar" id="groupInfoAvatar"></div>
+
+      <div class="gi-title" id="groupInfoTitle">Info Grup</div>
+
+      <div class="gi-sub" id="groupInfoSub"></div>
+
+    </div>
+
+    <div class="gi-body">
+
+      <div class="gi-card" id="groupInfoAddSection">
+
+        <div class="gi-card-title">Tambah anggota</div>
+
+        <div class="gi-add">
+
+          <input type="text" id="groupInfoIdInput" maxlength="20" inputmode="numeric" autocomplete="off" placeholder="Masukkan ID kontak">
+
+          <button class="gi-add-btn" id="groupInfoAddBtn" type="button" title="Tambah">
+
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+
+          </button>
+
+        </div>
+
+      </div>
+
+
+
+      <div class="gi-card" id="groupInviteSection">
+
+        <div class="gi-inv-head">
+
+          <span class="gi-inv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+
+          <div><div class="gi-card-title" style="margin:0;">Link undangan</div><div class="gi-inv-sub">Siapa pun yang punya link bisa bergabung</div></div>
+
+        </div>
+
+        <div id="giInviteBody"></div>
+
+      </div>
+
+
+
+      <div class="gi-sticky">
+        <div class="gi-search">
+
+          <span class="gi-search-ico">
+
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="15.4" y1="15.4" x2="21" y2="21"/></svg>
+
+          </span>
+
+          <input type="text" id="groupInfoSearch" placeholder="Cari nama atau ID anggota" autocomplete="off">
+
+          <button class="gi-search-clear" id="groupInfoSearchClear" type="button" aria-label="Hapus pencarian">
+
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+
+          </button>
+
+        </div>
+
+        <div class="gi-section-head" id="groupInfoCount">Anggota</div>
+
+      </div>
+
+      <div class="gi-card gi-list" id="groupInfoList"></div>
+
+
+
+      <div class="gi-actions">
+
+                <button class="gi-btn gi-btn-leave" id="clearGroupBtn" type="button" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Hapus semua pesan grup
+        </button>
+        <button class="gi-btn gi-btn-leave" id="leaveGroupBtn" type="button">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+
+          Keluar dari grup
+
+        </button>
+
+        <button class="gi-btn gi-btn-disband" id="disbandGroupBtn" type="button">
+
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+
+          Bubarkan grup
+
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="gi-footer">
+
+      <button class="gi-close-btn" id="closeGroupInfoBtn" type="button">Tutup</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="blockedModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <span>Kontak Diblokir</span>
+
+      <button class="close-x" id="closeBlockedModal">
+
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+
+          <line x1="18" y1="6" x2="6" y2="18"/>
+
+          <line x1="6" y1="6" x2="18" y2="18"/>
+
+        </svg>
+
+      </button>
+
+    </div>
+
+    <div class="modal-body" id="blockedBody" style="padding:0; max-height:60vh; overflow-y:auto;"></div>
+
+    <div class="modal-actions" style="padding:12px 20px 20px;">
+
+      <button class="btn-cancel" id="closeBlockedBtn">Tutup</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div id="deleteModal">
+
+  <div class="delete-box">
+
+    <div class="del-head">
+
+      <div class="del-ico">
+
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+
+      </div>
+
+      <div>
+
+        <div class="delete-title" id="deleteTitle">Hapus pesan?</div>
+
+        <div class="delete-sub" id="deleteSub">Pilih cara menghapus</div>
+
+      </div>
+
+    </div>
+
+    <div class="del-opts">
+
+      <button class="del-opt danger" id="actDeleteAll" type="button" style="display:none;">
+
+        <span class="del-opt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+
+        <span class="del-opt-txt"><b>Hapus untuk semua orang</b><small>Pesan dihapus secara permanen dari server dan semua perangkat</small></span>
+
+      </button>
+
+      <button class="del-opt" id="actDeleteMe" type="button">
+
+        <span class="del-opt-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+
+        <span class="del-opt-txt"><b>Hapus untuk saya</b><small>Pesan hanya dihapus dari percakapan Anda</small></span>
+
+      </button>
+
+    </div>
+
+    <button class="delete-option cancel" id="actCancel" type="button">Batal</button>
+
+  </div>
+
+</div>
+
+
+
+<div id="chatMenu">
+
+  <div class="chat-menu-box">
+
+    <div class="chat-menu-header">
+
+      <div class="chat-menu-title" id="chatMenuTitle">-</div>
+
+      <div class="chat-menu-sub" id="chatMenuSub">Pilih tindakan</div>
+
+    </div>
+
+
+
+        <button class="chat-menu-option" id="menuArchive">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="5" rx="1.2"/><path d="M5 8v11a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
+      <span id="menuArchiveText">Arsipkan obrolan</span>
+    </button>
+    <button class="chat-menu-option" id="menuGroupInfo" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      Info grup
+    </button>
+    <button class="chat-menu-option" id="menuRename">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+
+      </svg>
+
+      Ubah nama
+
+    </button>
+
+
+
+    <button class="chat-menu-option" id="menuShareContact">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+
+      Bagikan kontak
+
+    </button>
+
+
+
+    <button class="chat-menu-option danger" id="menuDeleteChat">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <polyline points="3 6 5 6 21 6"/>
+
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+
+      </svg>
+
+      Hapus obrolan
+
+    </button>
+
+
+
+    <button class="chat-menu-option danger" id="menuBlock">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <circle cx="12" cy="12" r="10"/>
+
+        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+
+      </svg>
+
+      <span id="menuBlockText">Blokir kontak</span>
+
+    </button>
+
+
+
+    <button class="chat-menu-option danger" id="menuDeleteContact">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+
+        <circle cx="8.5" cy="7" r="4"/>
+
+        <line x1="18" y1="8" x2="23" y2="13"/>
+
+        <line x1="23" y1="8" x2="18" y2="13"/>
+
+      </svg>
+
+      Hapus kontak permanen
+
+    </button>
+
+
+
+    <button class="chat-menu-option cancel" id="menuCancel">Batal</button>
+
+  </div>
+
+</div>
+
+
+
+<div id="confirmModal">
+
+  <div class="confirm-box">
+
+    <div class="confirm-icon" id="confirmIcon"></div>
+
+    <div class="confirm-title" id="confirmTitle">-</div>
+
+    <div class="confirm-msg" id="confirmMsg">-</div>
+
+    <div class="confirm-actions">
+
+      <button type="button" class="c-cancel" id="confirmCancelBtn">Batal</button>
+
+      <button type="button" class="c-ok" id="confirmOkBtn">OK</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="shareModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <div class="mh-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+
+      <div class="mh-text"><div class="mh-title" id="shareTitle">Bagikan</div><div class="mh-sub" id="shareSub"></div></div>
+
+      <button class="close-x" id="shareClose" type="button" aria-label="Tutup"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <div class="share-preview">
+
+        <div class="avatar-lg" id="shareAvatar">?</div>
+
+        <div class="sp-info"><div class="sp-name" id="shareName"></div><div class="sp-meta" id="shareMeta"></div></div>
+
+      </div>
+
+      <div class="share-label">Link</div>
+
+      <div class="share-link" id="shareLinkBox" title="Ketuk untuk menyalin">
+
+        <span class="share-link-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
+
+        <span class="share-link-text" id="shareLinkText"></span><span class="share-link-copy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
+
+      </div>
+
+      <div class="share-note" id="shareNote"></div>
+
+      <div class="share-actions">
+
+        <button class="share-btn primary" id="shareNative" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>Bagikan</button>
+
+        <div class="share-row">
+
+          <button class="share-btn" id="shareCopy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Salin link</button>
+
+          <button class="share-btn wa" id="shareWa" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>WhatsApp</button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="modal-actions" style="padding-top:4px;">
+
+      <button class="btn-cancel" id="shareDone" type="button">Tutup</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div class="modal-overlay" id="deepModal">
+
+  <div class="modal-box">
+
+    <div class="modal-header">
+
+      <div class="mh-ico" id="deepIco"></div>
+
+      <div class="mh-text"><div class="mh-title" id="deepTitle">-</div><div class="mh-sub" id="deepSub"></div></div>
+
+      <button class="close-x" id="deepClose" type="button" aria-label="Tutup"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+
+    </div>
+
+    <div class="modal-body">
+
+      <div class="deep-card">
+
+        <div class="avatar-lg" id="deepAvatar">?</div>
+
+        <div class="deep-info">
+
+          <div class="deep-name" id="deepName">-</div>
+
+          <div class="deep-meta" id="deepMeta"></div>
+
+        </div>
+
+      </div>
+
+      <div id="deepAliasWrap" style="display:none;">
+
+        <label for="deepAlias">Simpan sebagai nama</label>
+
+        <input type="text" id="deepAlias" maxlength="30" autocomplete="off" placeholder="Nama kontak">
+
+      </div>
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button class="btn-cancel" id="deepCancel" type="button">Batal</button>
+
+      <button class="btn-primary" id="deepOk" type="button">Lanjut</button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<div id="imgViewer"><img id="imgViewerSrc" src=""></div>
+
+<div class="modal-overlay" id="deleteAccountModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>Hapus Akun Permanen</span>
+      <button class="close-x" id="closeDelAcc" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="del-acc-warn">Akun, ID, kontak, dan seluruh percakapan pribadi Anda akan dihapus permanen dari server dan tidak dapat dikembalikan. Anda juga akan keluar dari semua grup. Pesan yang pernah Anda kirim di grup tetap tersimpan di grup tersebut.</div>
+      <label for="delAccInput">Ketik HAPUS untuk melanjutkan</label>
+      <input type="text" id="delAccInput" autocomplete="off" autocapitalize="characters" placeholder="HAPUS">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" id="cancelDelAcc" type="button">Batal</button>
+      <button class="btn-danger" id="delAccConfirmBtn" type="button" disabled>Hapus Akun</button>
+    </div>
+  </div>
+</div>
+<div class="ns-overlay" id="notifSheet" data-state="ask">
+  <div class="ns-sheet" data-state="ask" role="dialog" aria-modal="true" aria-labelledby="nsTitle">
+    <div class="ns-handle"></div>
+    <div class="ns-scroll">
+<div class="ns-hero">
+      <div class="ns-rings"><span></span><span></span></div>
+      <div class="ns-badge">
+        <svg class="ns-i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <svg class="ns-i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        <svg class="ns-i-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        <span class="ns-dot"></span>
+      </div>
+    </div>
+    <h2 class="ns-title" id="nsTitle">Aktifkan Notifikasi</h2>
+    <p class="ns-sub" id="nsSub">Terima pemberitahuan setiap ada pesan baru, termasuk saat aplikasi sedang tertutup.</p>
+    <div class="ns-pv-label">Contoh notifikasi</div>
+    <div class="ns-preview">
+      <div class="ns-pv-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></div>
+      <div>
+        <div class="ns-pv-top"><span>Chat App</span><i>sekarang</i></div>
+        <div class="ns-pv-name">Nama Pengguna</div>
+        <div class="ns-pv-msg">Halo! Sudah sampai mana?</div>
+      </div>
+    </div>
+    <ul class="ns-list ns-benefits">
+      <li><div class="ns-li-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="3"/><line x1="8" y1="20" x2="16" y2="20"/></svg></div><div><b>Muncul langsung di layar</b><span>Pesan baru tampil sebagai banner di bagian atas layar.</span></div></li>
+      <li><div class="ns-li-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg></div><div><b>Getaran dan suara</b><span>Anda tahu ada pesan masuk tanpa membuka aplikasi.</span></div></li>
+      <li><div class="ns-li-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg></div><div><b>Tetap diterima saat aplikasi tertutup</b><span>Notifikasi tetap muncul meskipun aplikasi tidak sedang dibuka.</span></div></li>
+    </ul>
+    <ol class="ns-list ns-steps">
+      <li><div class="ns-li-ico"></div><div><b>Buka setelan situs</b><span>Ketuk ikon gembok di bilah alamat browser</span></div></li>
+      <li><div class="ns-li-ico"></div><div><b>Pilih Izin, lalu Notifikasi</b><span>Ubah dari Diblokir menjadi Izinkan</span></div></li>
+      <li><div class="ns-li-ico"></div><div><b>Muat ulang halaman</b><span>Setelah itu ketuk menu Notifikasi di Setelan</span></div></li>
+    </ol>
+    </div>
+    <div class="ns-actions">
+    <button class="ns-btn primary" id="nsAllow" type="button">Aktifkan Notifikasi</button>
+    <button class="ns-btn ghost" id="nsLater" type="button">Nanti Saja</button>
+    <p class="ns-foot">Pengaturan ini dapat diubah kapan saja di menu Setelan.</p>
+    </div>
+  </div>
+</div>
+
+<div id="voChooser"><div class="vo-sheet">
+  <button class="vo-opt" id="voOptNormal" type="button"><span class="vo-ico" style="border-style:solid"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span><b>Foto biasa</b><small>Bisa dilihat berulang kali</small></span></button>
+  <button class="vo-opt" id="voOptOnce" type="button"><span class="vo-ico">1</span><span><b>Foto sekali lihat</b><small>Hilang setelah dibuka penerima</small></span></button>
+  <button class="vo-cancel" id="voOptCancel" type="button">Batal</button>
+</div></div>
+<div id="voViewer">
+  <div class="vo-top"><span>Foto sekali lihat</span><button id="voClose" type="button">Tutup</button></div>
+  <div class="vo-stage"><img id="voImg" alt="" draggable="false"></div>
+  <div class="vo-note">Foto ini akan hilang setelah ditutup.</div>
+</div>
+<div id="toast"></div>
+
+
+
+<script src="js/chat-video.js"></script>
+<script type="module" src="js/app.js"></script>
+
+<script src="js/avatar.js"></script>
+
+
+
+<script src="js/updater.js"></script>
+<div id="ytPlayer" role="dialog" aria-modal="true" aria-label="Pemutar video">
+  <div class="yt-sheet">
+    <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
+    <div class="yt-frame" id="ytFrameWrap"></div>
+    <div class="yt-detail" id="ytDetail"></div>
+  </div>
+</div>
+
+<div id="ytAdmin" role="dialog" aria-modal="true" aria-labelledby="ytAdmTitle">
+  <div class="yt-adm-card">
+    <div class="yt-adm-head">
+      <div class="yt-state-ico" id="ytAdmIco"></div>
+      <div class="yt-adm-title"><h3 id="ytAdmTitle">API key YouTube</h3><p>Pengaturan khusus admin</p></div>
+    </div>
+
+    <div class="yt-adm-status">
+      <div class="yt-adm-status-top">
+        <span class="yt-dot" id="ytStatusDot"></span><span id="ytStatusText">Belum diatur</span>
+        <button type="button" class="yt-adm-del" id="ytAdmReset">Hapus kunci</button>
+      </div>
+      <div class="yt-adm-masked" id="ytKeyMasked"></div>
+      <div class="yt-adm-meta" id="ytAdmMeta"></div>
+    </div>
+
+    <label class="yt-adm-label" for="ytKeyInput">API key baru</label>
+    <div class="yt-adm-field">
+      <input type="text" id="ytKeyInput" class="yt-secret" placeholder="Tempel API key di sini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" data-lpignore="true" data-1p-ignore="true" data-form-type="other" name="yt-key-field">
+      <button type="button" class="yt-icon-btn" id="ytKeyEye" aria-label="Tampilkan kunci"></button>
+    </div>
+    <div class="yt-adm-hint">Kunci diuji ke YouTube terlebih dahulu dan hanya disimpan jika valid. Perubahan langsung berlaku untuk semua pengguna.</div>
+    <div class="yt-adm-msg" id="ytAdmMsg" role="status" aria-live="polite"></div>
+
+    <div class="yt-adm-actions">
+      <button type="button" class="yt-btn" id="ytAdmCancel">Batal</button>
+      <button type="button" class="yt-btn primary" id="ytAdmSave">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/youtube-config.js"></script>
+<script src="js/youtube.js"></script>
+</body>
+
+</html>
