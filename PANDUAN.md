@@ -149,3 +149,8 @@ Agar tidak bisa ditembus lewat penulisan langsung ke database, tempel isi `datab
 
 ## Keluar dari semua perangkat lain
 Di Setelan > tab **Lainnya** ada tombol **Keluar dari Semua Perangkat Lain**. Perangkat yang menekan tombol tetap masuk, semua perangkat lain keluar otomatis, termasuk yang sedang offline atau aplikasinya ditutup (mereka keluar begitu aplikasi dibuka dan terhubung). Caranya: nomor `credentials/<id>/epoch` dinaikkan dan versi sesi (`ver`) diganti; token notifikasi perangkat lain juga dihapus. Mengganti password tidak menghapus nomor ini.
+
+
+## ID akun unik selamanya
+
+Saat mendaftar, ID 4 huruf dipesan secara atomik di `ids/<ID>` (tidak pernah dihapus, bahkan ketika akun dihapus), kemudian di `users/<ID>`. Dengan begitu tidak ada dua akun yang pernah memiliki ID yang sama, dan ID akun lama tidak dipakai ulang. ID juga tidak boleh sama dengan username siapa pun. Tempel isi `database/database.rules.ids.json` ke Rules Firebase (gabungkan dengan rules yang sudah ada) agar server ikut menegakkan aturan ini.

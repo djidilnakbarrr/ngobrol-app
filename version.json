@@ -1,7 +1,7 @@
 {
-  "version": "1.7.6",
+  "version": "1.7.7",
   "released": "2026-10-17",
   "notes": [
-    "Dikeluarkan dari perangkat langsung ke layar masuk tanpa teks"
+    "ID akun dijamin unik dan tidak pernah dipakai ulang"
   ]
 }

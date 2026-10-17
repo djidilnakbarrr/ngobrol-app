@@ -789,10 +789,13 @@ window.showToast = showToast;
 /* ID akun baru: 4 huruf besar acak (tanpa I, L, O agar mudah dibaca dan dihafal). Akun lama tetap memakai ID angkanya. */
 const ID_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 function generateId() {
-  const buf = new Uint32Array(4);
-  (window.crypto || window.msCrypto).getRandomValues(buf);
+  const n = ID_LETTERS.length, lim = Math.floor(0x100000000 / n) * n;
+  const buf = new Uint32Array(1);
   let out = '';
-  for (let k = 0; k < 4; k++) out += ID_LETTERS[buf[k] % ID_LETTERS.length];
+  while (out.length < 4) {
+    (window.crypto || window.msCrypto).getRandomValues(buf);
+    if (buf[0] < lim) out += ID_LETTERS[buf[0] % n];   /* buang nilai yang membuat huruf tertentu lebih sering */
+  }
   return out;
 }
 /* Rapikan ID yang diketik: huruf dan angka saja; ID huruf selalu huruf besar */
@@ -1356,9 +1359,16 @@ async function doRegister(user, pw, pw2) {
   const cred = await makeCredential(pw);
   /* Pesan ID 4 huruf secara atomik: transaksi hanya berhasil bila ID benar-benar belum dipakai */
   const userObj = { name, username: user, online: true, lastSeen: Date.now(), photo: '', role: 'user', reserved: { [nameKey(user)]: true } };
+  /* ID wajib unik selamanya: (1) belum dipakai akun mana pun, (2) belum pernah dipakai akun yang sudah dihapus
+     (daftar ids/ tidak pernah dikosongkan), (3) tidak sama dengan username siapa pun. Semua dipesan secara atomik. */
   let newId = null;
-  for (let i = 0; i < 40 && !newId; i++) {
+  for (let i = 0; i < 80 && !newId; i++) {
     const candidate = generateId();
+    try { if (await usernameTaken(candidate)) continue; } catch (e) {}
+    try {
+      const reg = await runTransaction(ref(db, 'ids/' + candidate), cur => (cur === null ? true : undefined));
+      if (!reg.committed) continue;
+    } catch (e) { /* daftar ids/ belum diizinkan oleh Rules: pemeriksaan akun aktif di bawah tetap berlaku */ }
     const r = await runTransaction(ref(db, 'users/' + candidate), cur => (cur === null ? userObj : undefined));
     if (r.committed) newId = candidate;
   }

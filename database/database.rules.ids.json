@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "ids": {
+      "$id": {
+        ".read": true,
+        ".write": "!data.exists() && newData.exists()",
+        ".validate": "newData.val() === true"
+      }
+    }
+  }
+}
