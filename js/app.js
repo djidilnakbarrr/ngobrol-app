@@ -1054,7 +1054,7 @@ function setLoginMode(mode, keepAlert) {
     : 'Akun dilindungi password 6 angka. Tanpa password yang benar, akun tidak dapat dibuka.';
   ['loginPwInput', 'loginPw2Input', 'loginIdInput'].forEach(i => { $(i).value = ''; });
   document.querySelectorAll('#loginScreen .pw-eye.shown').forEach(b => b.click());
-  $('loginPwInput').placeholder = mig ? 'Masukkan password baru (6 angka)' : 'Masukkan 6 digit angka';
+  $('loginPwInput').placeholder = mig ? 'Masukkan password baru...' : 'Masukkan password...';
   $('loginPwWrap').querySelector('label').textContent = mig ? 'Password baru' : 'Password';
   if (!keepAlert) loginAlert('');
   setLogin(false);

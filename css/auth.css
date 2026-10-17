@@ -74,3 +74,94 @@
 
 /* Ikon status foto sekali lihat */
 .vo-ico svg { width: 16px; height: 16px; display: block; }
+
+/* ===== Tampilan profesional layar Masuk / Daftar (hanya gaya, tanpa mengubah teks) ===== */
+#loginScreen {
+  background:
+    radial-gradient(60% 40% at 85% 8%, rgba(255,255,255,.14) 0, transparent 70%),
+    radial-gradient(70% 50% at 10% 100%, rgba(24,168,148,.35) 0, transparent 70%),
+    linear-gradient(165deg, #0d9482 0%, #087264 42%, #04403a 100%);
+  padding: 24px 18px;
+}
+#loginScreen::before, #loginScreen::after {
+  content: ""; position: fixed; border-radius: 50%; pointer-events: none;
+  border: 1px solid rgba(255,255,255,.12);
+}
+#loginScreen::before { width: 360px; height: 360px; top: -140px; right: -120px; }
+#loginScreen::after { width: 280px; height: 280px; bottom: -110px; left: -100px; }
+#loginScreen .login-box {
+  position: relative; max-width: 410px; padding: 34px 26px 26px; border-radius: 30px;
+  background: #fff;
+  box-shadow: 0 40px 80px -20px rgba(2,30,26,.55), 0 0 0 1px rgba(255,255,255,.5) inset;
+}
+#loginScreen .login-box > svg.login-logo {
+  width: 72px; height: 72px; padding: 18px; border-radius: 22px; stroke: #fff;
+  background: linear-gradient(145deg, #14ab95 0%, #075e54 100%);
+  box-shadow: 0 14px 28px -8px rgba(7,94,84,.55), inset 0 1px 0 rgba(255,255,255,.3);
+}
+#loginScreen .login-brand { margin-top: 16px; font-size: 11.5px; letter-spacing: .24em; color: #0b8a79; }
+#loginScreen .login-box h2 { margin: 6px 0 8px; font-size: 25px; font-weight: 800; letter-spacing: -.5px; color: #0f1d22; }
+#loginScreen .login-box .subtitle { margin-bottom: 22px; font-size: 14px; line-height: 1.55; color: #62737c; }
+
+/* Tab */
+#loginScreen .auth-tabs { padding: 5px; margin-bottom: 20px; border-radius: 16px; background: #eaf0ef; box-shadow: inset 0 1px 3px rgba(0,0,0,.06); }
+#loginScreen .login-box .auth-tab { padding: 12px 8px; border-radius: 12px; font-size: 14px; font-weight: 600; color: #5b6e75; }
+#loginScreen .login-box .auth-tab:hover { background: rgba(7,94,84,.07); }
+#loginScreen .login-box .auth-tab.active {
+  color: #fff; background: linear-gradient(135deg, #0e9a86, #075e54);
+  box-shadow: 0 6px 14px -4px rgba(7,94,84,.55);
+}
+
+/* Label dan kolom isian */
+#loginScreen .login-box label { margin: 0 0 7px 2px; font-size: 13px; font-weight: 600; color: #35464d; }
+#loginScreen .login-box input {
+  height: 54px; padding: 0 16px 0 48px; margin-bottom: 18px; border-radius: 15px;
+  border: 1.5px solid #e1e8ea; background-color: #f5f8f8; color: #0f1d22; font-size: 16px;
+  background-repeat: no-repeat; background-position: 16px center; background-size: 20px 20px;
+  transition: border-color .18s, background-color .18s, box-shadow .18s;
+}
+#loginScreen .login-box input::placeholder { color: #9aa9b0; font-size: 15px; opacity: 1; letter-spacing: normal; }
+#loginScreen .login-box input:hover { border-color: #cfdadd; }
+#loginScreen .login-box input:focus { background-color: #fff; border-color: #0e9a86; box-shadow: 0 0 0 4px rgba(14,154,134,.14); }
+#loginScreen .login-box .pw-field input { padding: 0 52px 0 48px; font-size: 16px; letter-spacing: normal; }
+#loginScreen .login-box .pw-field input:not(:placeholder-shown) { font-size: 22px; letter-spacing: 6px; }
+#loginScreen .login-box .pw-eye { right: 8px; top: 8px; border-radius: 10px; color: #7a8b93; }
+#loginScreen .login-box .pw-eye:hover { background: #e6eeed; color: #075e54; }
+
+/* Petunjuk dan peringatan */
+#loginScreen .login-box .hint {
+  margin: -6px 0 18px; padding: 11px 14px; border-radius: 13px; font-size: 12.5px; line-height: 1.55;
+  color: #4d6168; background: #eef7f5; border: 1px solid #d6ebe6; box-shadow: inset 3px 0 0 #0e9a86;
+}
+#loginScreen .auth-alert { border-radius: 13px; padding: 12px 14px; font-size: 13px; }
+
+/* Tombol utama */
+#loginScreen #loginBtn {
+  height: 56px; margin-top: 6px; border-radius: 16px; font-size: 15px; letter-spacing: .6px;
+  background: linear-gradient(135deg, #12a590 0%, #087264 55%, #054a42 100%);
+  box-shadow: 0 14px 26px -8px rgba(7,94,84,.65), inset 0 1px 0 rgba(255,255,255,.22);
+}
+
+/* Catatan kaki dengan ikon gembok */
+#loginScreen .login-box .login-foot {
+  position: relative; margin-top: 20px; padding: 16px 6px 0 6px; font-size: 12.5px; line-height: 1.55; color: #6b7c84;
+  border-top: 1px solid #edf1f2;
+}
+#loginScreen .login-box .login-foot::before {
+  content: ""; display: block; width: 18px; height: 18px; margin: 0 auto 6px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b8a79' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpolyline points='9 12 11 14 15 10'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+@media (max-width: 380px) {
+  #loginScreen .login-box { padding: 30px 20px 22px; border-radius: 26px; }
+}
+
+/* Ikon di dalam kolom isian */
+#loginNameInput { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E"); }
+#loginNameInput:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E"); }
+#usernameInput { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94'/%3E%3C/svg%3E"); }
+#usernameInput:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94'/%3E%3C/svg%3E"); }
+#loginIdInput { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='4' y1='9' x2='20' y2='9'/%3E%3Cline x1='4' y1='15' x2='20' y2='15'/%3E%3Cline x1='10' y1='3' x2='8' y2='21'/%3E%3Cline x1='16' y1='3' x2='14' y2='21'/%3E%3C/svg%3E"); }
+#loginIdInput:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='4' y1='9' x2='20' y2='9'/%3E%3Cline x1='4' y1='15' x2='20' y2='15'/%3E%3Cline x1='10' y1='3' x2='8' y2='21'/%3E%3Cline x1='16' y1='3' x2='14' y2='21'/%3E%3C/svg%3E"); }
+#loginPwInput, #loginPw2Input, #cpOld, #cpNew, #cpNew2, #pgNew, #pgNew2 { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E"); }
+#loginPwInput:focus, #loginPw2Input:focus, #cpOld:focus, #cpNew:focus, #cpNew2:focus, #pgNew:focus, #pgNew2:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E"); }
+.modal-body .pw-field input { padding-left: 48px; background-repeat: no-repeat; background-position: 16px center; background-size: 20px 20px; }
