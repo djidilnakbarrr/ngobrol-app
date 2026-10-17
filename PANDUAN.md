@@ -102,3 +102,12 @@ Di grup, centang hanya biru bila pesan Anda adalah **balasan** ke pesan seseoran
 
 ## Anggota baru tidak melihat chat lama
 Saat anggota ditambahkan (oleh pembuat atau lewat link undangan), waktu bergabung disimpan di `groups/<gid>/joined/<id>`. Pesan yang dikirim sebelum waktu itu tidak ditampilkan kepada anggota baru; anggota lama tetap melihat semua pesan. Pesan tidak dihapus dari database. Pastikan Rules mengizinkan menulis `groups/<gid>/joined`.
+
+## Fitur YouTube
+Tab **YouTube** menampilkan video populer, kategori, pencarian, dan pemutar bawaan (embed `youtube-nocookie.com`). Data diambil langsung dari browser lewat YouTube Data API v3.
+Pemasangan:
+1. Di Google Cloud Console aktifkan **YouTube Data API v3**, lalu buat **API key** (APIs & Services > Credentials).
+2. Buka file `youtube-config.js` dan ganti `GANTI_DENGAN_API_KEY_ANDA` dengan kunci Anda. Unggah ulang file ini ke hosting.
+3. Sangat disarankan membatasi kunci: Application restrictions = HTTP referrers (domain aplikasi Anda), API restrictions = YouTube Data API v3. Kunci ini terlihat di browser, jadi pembatasan wajib.
+Catatan kuota: kuota gratis 10.000 unit per hari. Video populer dan detail memakai 1 unit, pencarian 100 unit. Hasil disimpan di perangkat selama `CACHE_MINUTES` (default 10 menit) untuk menghemat kuota.
+Pengaturan wilayah, bahasa, dan jumlah video per muatan ada di `youtube-config.js`.

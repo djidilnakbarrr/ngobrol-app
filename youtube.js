@@ -1,0 +1,267 @@
+/* Fitur YouTube: pencarian, video populer, dan pemutar. Kunci API ada di youtube-config.js */
+(function () {
+  'use strict';
+  var CFG = window.YT_CONFIG || {};
+  var API = 'https://www.googleapis.com/youtube/v3/';
+  var $ = function (id) { return document.getElementById(id); };
+
+  /* ---------- Ikon SVG ---------- */
+  var I = {
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
+    arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg>',
+    trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
+    music: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+    game: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="4"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15.5" cy="11" r=".6"/><circle cx="17.5" cy="13" r=".6"/></svg>',
+    news: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h13a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2V4z"/><path d="M19 9h2v9a2 2 0 0 1-2 2"/><line x1="8" y1="8" x2="15" y2="8"/><line x1="8" y1="12" x2="15" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>',
+    sport: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/><path d="M5.6 5.6c3 2.4 3 10.4 0 12.8M18.4 5.6c-3 2.4-3 10.4 0 12.8"/></svg>',
+    edu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg>',
+    film: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="7" y1="3" x2="7" y2="21"/><line x1="17" y1="3" x2="17" y2="21"/><line x1="3" y1="12" x2="21" y2="12"/></svg>',
+    key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2"/><path d="M17 6l3 3"/><path d="M14 9l2 2"/></svg>',
+    alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>',
+    refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+    eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
+    user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>',
+    external: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+  };
+
+  var CATS = [
+    { id: 'popular', label: 'Populer', icon: I.trend },
+    { id: '10', label: 'Musik', icon: I.music, cat: '10' },
+    { id: '20', label: 'Gaming', icon: I.game, cat: '20' },
+    { id: '25', label: 'Berita', icon: I.news, cat: '25' },
+    { id: '17', label: 'Olahraga', icon: I.sport, cat: '17' },
+    { id: '27', label: 'Edukasi', icon: I.edu, cat: '27' },
+    { id: '1', label: 'Film', icon: I.film, cat: '1' }
+  ];
+
+  var state = { mode: 'popular', cat: 'popular', query: '', token: '', loading: false, ready: false, current: null };
+
+  /* ---------- Utilitas ---------- */
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function hasKey() { var k = String(CFG.API_KEY || ''); return k.length > 10 && !/GANTI/i.test(k); }
+  function dur(iso) {
+    var m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
+    if (!m) return '';
+    var h = (+m[1] || 0) * 24 + (+m[2] || 0), mi = +m[3] || 0, s = +m[4] || 0;
+    var p = function (n) { return n < 10 ? '0' + n : '' + n; };
+    return h ? h + ':' + p(mi) + ':' + p(s) : mi + ':' + p(s);
+  }
+  function compact(n) {
+    n = +n; if (isNaN(n)) return '';
+    try { return new Intl.NumberFormat('id-ID', { notation: 'compact', maximumFractionDigits: 1 }).format(n); } catch (e) { return String(n); }
+  }
+  function ago(iso) {
+    var t = Date.parse(iso); if (!t) return '';
+    var s = Math.max(1, (Date.now() - t) / 1000);
+    var u = [[31536000, 'tahun'], [2592000, 'bulan'], [604800, 'minggu'], [86400, 'hari'], [3600, 'jam'], [60, 'menit']];
+    for (var i = 0; i < u.length; i++) if (s >= u[i][0]) return Math.floor(s / u[i][0]) + ' ' + u[i][1] + ' lalu';
+    return 'baru saja';
+  }
+  function toast(m) { if (typeof window.showToast === 'function') window.showToast(m); }
+
+  /* ---------- Akses API dengan cache ---------- */
+  function cacheGet(k) {
+    try {
+      var raw = localStorage.getItem('yt:' + k); if (!raw) return null;
+      var o = JSON.parse(raw);
+      if (Date.now() - o.t > (CFG.CACHE_MINUTES || 10) * 60000) return null;
+      return o.d;
+    } catch (e) { return null; }
+  }
+  function cacheSet(k, d) { try { localStorage.setItem('yt:' + k, JSON.stringify({ t: Date.now(), d: d })); } catch (e) { /* penyimpanan penuh atau diblokir */ } }
+
+  function call(endpoint, params) {
+    var q = Object.keys(params).filter(function (k) { return params[k] !== '' && params[k] != null; })
+      .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
+    var ck = endpoint + '?' + q;
+    var hit = cacheGet(ck);
+    if (hit) return Promise.resolve(hit);
+    return fetch(API + endpoint + '?' + q + '&key=' + encodeURIComponent(CFG.API_KEY)).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) {
+          var e = new Error((j.error && j.error.message) || ('HTTP ' + r.status));
+          e.reason = j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason;
+          e.status = r.status; throw e;
+        }
+        cacheSet(ck, j); return j;
+      });
+    });
+  }
+
+  function details(ids) {
+    if (!ids.length) return Promise.resolve([]);
+    return call('videos', { part: 'snippet,contentDetails,statistics', id: ids.join(','), hl: CFG.LANGUAGE }).then(function (j) { return j.items || []; });
+  }
+
+  function fetchPage() {
+    var size = Math.min(50, CFG.PAGE_SIZE || 12);
+    if (state.mode === 'popular') {
+      return call('videos', { part: 'snippet,contentDetails,statistics', chart: 'mostPopular', regionCode: CFG.REGION_CODE || 'ID', maxResults: size, pageToken: state.token, hl: CFG.LANGUAGE })
+        .then(function (j) { return { items: j.items || [], next: j.nextPageToken || '' }; });
+    }
+    var p = { part: 'snippet', type: 'video', maxResults: size, pageToken: state.token, regionCode: CFG.REGION_CODE || 'ID', relevanceLanguage: CFG.LANGUAGE || 'id', safeSearch: 'moderate' };
+    if (state.mode === 'search') p.q = state.query; else p.videoCategoryId = state.cat;
+    return call('search', p).then(function (j) {
+      var ids = (j.items || []).map(function (x) { return x.id && x.id.videoId; }).filter(Boolean);
+      return details(ids).then(function (items) { return { items: items, next: j.nextPageToken || '' }; });
+    });
+  }
+
+  /* ---------- Tampilan ---------- */
+  function renderChips() {
+    $('ytChips').innerHTML = CATS.map(function (c) {
+      var on = state.mode !== 'search' && state.cat === c.id;
+      return '<button type="button" class="yt-chip' + (on ? ' active' : '') + '" data-cat="' + c.id + '">' + c.icon + esc(c.label) + '</button>';
+    }).join('');
+  }
+  function title() {
+    if (state.mode === 'search') return I.search + 'Hasil untuk "' + esc(state.query) + '"';
+    var c = CATS.filter(function (x) { return x.id === state.cat; })[0];
+    return (c ? c.icon : I.trend) + (state.cat === 'popular' ? 'Video populer' : 'Kategori ' + esc(c.label));
+  }
+  function skeleton(n) {
+    var h = '';
+    for (var i = 0; i < n; i++) h += '<div class="yt-card yt-skel"><div class="yt-thumb"></div><div class="yt-info"><div class="yt-ch-av"></div><div class="yt-txt" style="flex:1"><div class="yt-line" style="width:92%"></div><div class="yt-line" style="width:60%"></div></div></div></div>';
+    return h;
+  }
+  function card(v) {
+    var sn = v.snippet || {}, st = v.statistics || {};
+    var th = (sn.thumbnails && (sn.thumbnails.medium || sn.thumbnails.high || sn.thumbnails.default) || {}).url || '';
+    var live = sn.liveBroadcastContent === 'live';
+    var d = v.contentDetails && dur(v.contentDetails.duration);
+    var views = st.viewCount ? compact(st.viewCount) + ' ditonton' : '';
+    return '<button type="button" class="yt-card" data-id="' + esc(v.id) + '" aria-label="' + esc(sn.title) + '">' +
+      '<div class="yt-thumb"><img loading="lazy" alt="" src="' + esc(th) + '"><div class="yt-play"><span>' + I.play + '</span></div>' +
+      (live ? '<span class="yt-live">LIVE</span>' : (d && d !== '0:00' ? '<span class="yt-dur">' + d + '</span>' : '')) + '</div>' +
+      '<div class="yt-info"><div class="yt-ch-av">' + esc((sn.channelTitle || '?').trim().charAt(0).toUpperCase()) + '</div>' +
+      '<div class="yt-txt"><div class="yt-title">' + esc(sn.title) + '</div>' +
+      '<div class="yt-sub"><b>' + esc(sn.channelTitle) + '</b><br>' + [views, ago(sn.publishedAt)].filter(Boolean).join('  ·  ') + '</div></div></div></button>';
+  }
+  function stateBox(kind, icon, h, p, btn) {
+    return '<div class="yt-state ' + kind + '"><div class="yt-state-ico">' + icon + '</div><h3>' + h + '</h3><p>' + p + '</p>' + (btn || '') + '</div>';
+  }
+  function showError(e, fresh) {
+    var box;
+    if (!hasKey()) {
+      box = stateBox('', I.key, 'API key belum diisi', 'Buka file <code>youtube-config.js</code> lalu ganti nilai <code>API_KEY</code> dengan kunci dari Google Cloud (YouTube Data API v3).');
+    } else if (e && (e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded' || e.reason === 'rateLimitExceeded')) {
+      box = stateBox('error', I.alert, 'Kuota harian habis', 'Kuota YouTube Data API untuk kunci ini sudah terpakai. Kuota akan pulih otomatis setiap hari, atau tambah kuota di Google Cloud Console.');
+    } else if (e && (e.reason === 'keyInvalid' || e.reason === 'badRequest' && /API key/i.test(e.message))) {
+      box = stateBox('error', I.key, 'API key tidak valid', 'Periksa kembali nilai <code>API_KEY</code> di <code>youtube-config.js</code>.');
+    } else if (e && (e.reason === 'accessNotConfigured' || e.reason === 'forbidden' || e.reason === 'ipRefererBlocked')) {
+      box = stateBox('error', I.alert, 'Akses ditolak', 'Pastikan YouTube Data API v3 sudah diaktifkan pada proyek Anda dan pembatasan HTTP referrer pada kunci mengizinkan domain aplikasi ini.');
+    } else {
+      box = stateBox('error', I.alert, 'Gagal memuat video', esc(navigator.onLine ? (e && e.message) || 'Terjadi kesalahan.' : 'Tidak ada koneksi internet.'),
+        '<button type="button" class="yt-btn primary" id="ytRetry">' + I.refresh + 'Coba lagi</button>');
+    }
+    if (fresh) $('ytList').innerHTML = box; else toast('Gagal memuat: ' + ((e && e.message) || 'kesalahan'));
+  }
+
+  function load(fresh) {
+    if (state.loading) return;
+    if (fresh) { state.token = ''; }
+    if (!hasKey()) { $('ytList').innerHTML = ''; showError(null, true); $('ytMoreWrap').innerHTML = ''; return; }
+    state.loading = true;
+    if (fresh) $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid">' + skeleton(6) + '</div>';
+    var btn = $('ytMore'); if (btn) { btn.disabled = true; }
+    fetchPage().then(function (r) {
+      state.token = r.next;
+      if (fresh) {
+        if (!r.items.length) { $('ytList').innerHTML = stateBox('', I.empty, 'Video tidak ditemukan', 'Coba kata kunci lain atau pilih kategori yang berbeda.'); $('ytMoreWrap').innerHTML = ''; return; }
+        $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid" id="ytGrid"></div>';
+      }
+      $('ytGrid').insertAdjacentHTML('beforeend', r.items.map(card).join(''));
+      $('ytMoreWrap').innerHTML = r.next ? '<div class="yt-more"><button type="button" class="yt-btn" id="ytMore">' + I.down + 'Muat lebih banyak</button></div>' : '';
+    }).catch(function (e) { showError(e, fresh); if (!fresh) { var b = $('ytMore'); if (b) b.disabled = false; } })
+      .then(function () { state.loading = false; });
+  }
+
+  function setCat(id) {
+    var c = CATS.filter(function (x) { return x.id === id; })[0]; if (!c) return;
+    state.cat = id; state.mode = id === 'popular' ? 'popular' : 'category'; state.query = '';
+    $('ytInput').value = ''; $('ytSearchBox').classList.remove('has-text');
+    renderChips(); load(true);
+  }
+  function doSearch() {
+    var q = $('ytInput').value.trim();
+    if (!q) { setCat('popular'); return; }
+    state.mode = 'search'; state.query = q; renderChips(); load(true);
+    $('ytScroll').scrollTop = 0;
+  }
+
+  /* ---------- Pemutar ---------- */
+  function openPlayer(id) {
+    $('ytFrameWrap').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0&playsinline=1&modestbranding=1" title="Pemutar video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
+    $('ytDetail').innerHTML = '<div class="yt-line" style="height:18px;width:80%;border-radius:6px;background:#e6ecee"></div>';
+    $('ytPlayer').classList.add('open');
+    state.current = { id: id };
+    details([id]).then(function (items) {
+      var v = items[0]; if (!v || state.current.id !== id) return;
+      var sn = v.snippet || {}, st = v.statistics || {};
+      state.current = { id: id, title: sn.title };
+      var desc = String(sn.description || '').trim();
+      $('ytDetail').innerHTML = '<h2>' + esc(sn.title) + '</h2><div class="yt-meta">' +
+        '<span>' + I.user + esc(sn.channelTitle) + '</span>' +
+        (st.viewCount ? '<span>' + I.eye + compact(st.viewCount) + ' ditonton</span>' : '') +
+        '<span>' + I.clock + esc(ago(sn.publishedAt)) + '</span></div>' +
+        '<div class="yt-actions"><button type="button" class="yt-btn" id="ytShare">' + I.share + 'Bagikan</button>' +
+        '<button type="button" class="yt-btn" id="ytCopy">' + I.link + 'Salin tautan</button>' +
+        '<a class="yt-btn" target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=' + encodeURIComponent(id) + '" style="text-decoration:none">' + I.external + 'Buka di YouTube</a></div>' +
+        (desc ? '<div class="yt-desc" id="ytDesc">' + esc(desc) + '</div><button type="button" class="yt-desc-toggle" id="ytDescToggle">Tampilkan selengkapnya</button>' : '');
+    }).catch(function () { $('ytDetail').innerHTML = ''; });
+  }
+  function closePlayer() {
+    $('ytPlayer').classList.remove('open');
+    $('ytFrameWrap').innerHTML = '';
+    state.current = null;
+  }
+  function url() { return state.current ? 'https://www.youtube.com/watch?v=' + state.current.id : ''; }
+
+  /* ---------- Inisialisasi ---------- */
+  function init() {
+    if (!$('paneYoutube')) return;
+    $('ytSearchIcon').innerHTML = I.search;
+    $('ytClear').innerHTML = I.close; $('ytGo').innerHTML = I.arrow; $('ytClose').innerHTML = I.close;
+    renderChips();
+
+    $('ytChips').addEventListener('click', function (e) { var b = e.target.closest('.yt-chip'); if (b) setCat(b.dataset.cat); });
+    $('ytList').addEventListener('click', function (e) {
+      var c = e.target.closest('.yt-card[data-id]'); if (c) { openPlayer(c.dataset.id); return; }
+      if (e.target.closest('#ytRetry')) load(true);
+    });
+    $('ytMoreWrap').addEventListener('click', function (e) { if (e.target.closest('#ytMore')) load(false); });
+    $('ytInput').addEventListener('input', function () { $('ytSearchBox').classList.toggle('has-text', !!this.value); });
+    $('ytInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); this.blur(); doSearch(); } });
+    $('ytGo').addEventListener('click', doSearch);
+    $('ytClear').addEventListener('click', function () { $('ytInput').value = ''; $('ytSearchBox').classList.remove('has-text'); $('ytInput').focus(); if (state.mode === 'search') setCat('popular'); });
+
+    $('ytClose').addEventListener('click', closePlayer);
+    $('ytPlayer').addEventListener('click', function (e) {
+      if (e.target === $('ytPlayer')) { closePlayer(); return; }
+      if (e.target.closest('#ytCopy')) {
+        var u = url(); if (!u) return;
+        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('Tautan disalin'); }, function () { toast(u); });
+      } else if (e.target.closest('#ytShare')) {
+        var t = state.current || {};
+        if (navigator.share) navigator.share({ title: t.title || 'Video YouTube', url: url() }).catch(function () {});
+        else if (navigator.clipboard) navigator.clipboard.writeText(url()).then(function () { toast('Tautan disalin'); });
+      } else if (e.target.closest('#ytDescToggle')) {
+        var d = $('ytDesc'), open = d.classList.toggle('open');
+        e.target.closest('#ytDescToggle').textContent = open ? 'Tampilkan lebih sedikit' : 'Tampilkan selengkapnya';
+      }
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('ytPlayer').classList.contains('open')) closePlayer(); });
+
+    /* muat pertama kali saat tab dibuka */
+    var tab = document.querySelector('.bottom-tab[data-pane="paneYoutube"]');
+    if (tab) tab.addEventListener('click', function () { if (!state.ready) { state.ready = true; load(true); } });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();

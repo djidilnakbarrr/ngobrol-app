@@ -3378,6 +3378,7 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
 .vid-btn svg { width: 18px; height: 18px; }
 @media (prefers-reduced-motion: reduce) { .vid-load i, .vid-card.playing.ready .vid-name b { animation: none; } }
 </style>
+<link rel="stylesheet" href="youtube.css">
 </head>
 
 <body>
@@ -3501,6 +3502,23 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
       </div>
 
 
+
+      <div class="tab-pane" id="paneYoutube">
+        <div class="pane-head"><h1>YouTube</h1></div>
+        <div class="yt-top">
+          <div class="yt-search" id="ytSearchBox">
+            <span id="ytSearchIcon" style="display:inline-flex"></span>
+            <input type="search" id="ytInput" placeholder="Cari video" autocomplete="off" enterkeyhint="search">
+            <button type="button" class="yt-icon-btn yt-clear" id="ytClear" aria-label="Hapus"></button>
+            <button type="button" class="yt-icon-btn yt-go" id="ytGo" aria-label="Cari"></button>
+          </div>
+          <div class="yt-chips" id="ytChips"></div>
+        </div>
+        <div class="yt-scroll" id="ytScroll">
+          <div id="ytList"><div class="yt-state"><div class="yt-state-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg></div><h3>YouTube</h3><p>Buka tab ini untuk melihat video populer.</p></div></div>
+          <div id="ytMoreWrap"></div>
+        </div>
+      </div>
 
       <div class="tab-pane" id="paneSettings">
 
@@ -3723,6 +3741,11 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
       </button>
 
       
+
+      <button class="bottom-tab" data-pane="paneYoutube">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="4"/><path d="M10 9.2v5.6l4.8-2.8z" fill="currentColor"/></svg>
+        YouTube
+      </button>
 
       <button class="bottom-tab" data-pane="paneSettings">
 
@@ -4382,7 +4405,6 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
 
 
       <div class="gi-sticky">
-
         <div class="gi-search">
 
           <span class="gi-search-ico">
@@ -6988,7 +7010,6 @@ function syncMetaListeners() {
 }
 
 function displayName(idUser) {
-
   if (contactsCache[idUser]) return contactsCache[idUser];
 
   if (usersCache[idUser] && usersCache[idUser].name) return usersCache[idUser].name;
@@ -8377,7 +8398,7 @@ function renderGroupInfo() {
 
   if (iAmCreator) renderInviteSection(currentInfoGid, g);
 
-    $('leaveGroupBtn').style.display = iAmCreator ? 'none' : '';
+      $('leaveGroupBtn').style.display = iAmCreator ? 'none' : '';
   $('clearGroupBtn').style.display = isGroupMod(currentInfoGid) ? '' : 'none';
 
   $('disbandGroupBtn').style.display = iAmCreator ? '' : 'none';
@@ -10726,15 +10747,10 @@ async function sendGroupMessage(payload) {
 
     updates['groups/' + gid + '/last'] = last;
     Object.keys(g.members).forEach(u => { if (u !== myId) updates['unread/' + u + '/' + gid] = increment(1); });
-    await update(ref(db), updates);
+        await update(ref(db), updates);
     return true;
-
   } catch (err) { showToast('Gagal mengirim: ' + err.message); return false; }
-
 }
-
-
-
 async function sendMessage(payload) {
 
   stickBottomOnce = true;
@@ -11620,6 +11636,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
     showToast('Semua pesan grup dihapus');
   } catch (err) { showToast('Gagal menghapus: ' + err.message); }
 });
+
 </script>
 
 <script>
@@ -11687,7 +11704,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
    Naikkan versi dengan:  node rilis.js 1.2.0 "catatan 1" "catatan 2"   (mengubah APP_VERSION di bawah + version.json) */
 (function () {
   'use strict';
-  const APP_VERSION = '1.3.1';
+  const APP_VERSION = '1.4.1';
   const CHECK_URL = 'version.json';
   const $ = id => document.getElementById(id);
   const ss = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
@@ -11851,6 +11868,16 @@ $('clearGroupBtn').addEventListener('click', async () => {
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
 </script>
+<div id="ytPlayer" role="dialog" aria-modal="true" aria-label="Pemutar video">
+  <div class="yt-sheet">
+    <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
+    <div class="yt-frame" id="ytFrameWrap"></div>
+    <div class="yt-detail" id="ytDetail"></div>
+  </div>
+</div>
+
+<script src="youtube-config.js"></script>
+<script src="youtube.js"></script>
 </body>
 
 </html>

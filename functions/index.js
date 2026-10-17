@@ -94,7 +94,7 @@ exports.notifyGroup = onValueCreated(opt('/groupChats/{gid}/{key}'), async (even
   const [gSnap, nameSnap] = await Promise.all([one('groups/' + gid), one('users/' + from + '/name')]);
   const g = gSnap.val();
   if (!g || !g.members) return;
-  const senderName = nameSnap.val() || disp(from);
+  const senderName = (nameSnap.val() || disp(from));
   const recipients = Object.keys(g.members).filter((u) => u !== from);
   await Promise.all(recipients.map(async (uid) => {
     const [blocked, alias, tokens] = await Promise.all([
