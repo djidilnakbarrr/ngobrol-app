@@ -1082,41 +1082,17 @@
   }
 
   .msg-input {
-
-    flex: 1; min-width: 0; border: none; background: transparent;
-
-    color: #111b21; font-size: 16px; font-family: inherit; line-height: 1.4;
-
-    padding: 9px 0; outline: none;
-
-    max-height: 120px; min-height: 24px;
-
-    overflow-y: auto; word-wrap: break-word; white-space: pre-wrap;
-
-    caret-color: #00a884 !important;
-
-    -webkit-caret-color: #00a884 !important;
-
-    -webkit-user-modify: read-write-plaintext-only;
-
+    flex: 1; min-width: 0; width: 100%; display: block; border: none; background: transparent;
+    color: #111b21; -webkit-text-fill-color: #111b21; font-size: 16px; font-family: inherit; line-height: 1.4;
+    padding: 9px 0; outline: none; margin: 0; resize: none; border-radius: 0;
+    -webkit-appearance: none; appearance: none;
+    height: 40px; max-height: 120px; min-height: 40px;
+    overflow-y: auto; overflow-x: hidden; word-wrap: break-word; white-space: pre-wrap;
+    user-select: text; -webkit-user-select: text;
+    caret-color: #00a884;
     scrollbar-width: none; -ms-overflow-style: none;
-
   }
-
-  .msg-input:focus, .msg-input:active, .msg-input:focus *, .msg-input:active * {
-
-    caret-color: #00a884 !important;
-
-    -webkit-caret-color: #00a884 !important;
-
-  }
-
-  .msg-input:empty::before {
-
-    content: attr(data-placeholder); color: #8696a0; pointer-events: none;
-
-  }
-
+  .msg-input::placeholder { color: #8696a0; opacity: 1; -webkit-text-fill-color: #8696a0; }
   .msg-input::-webkit-scrollbar { width: 0; height: 0; display: none; background: transparent; }
 
   .msg-input::-webkit-scrollbar-thumb { background: transparent; }

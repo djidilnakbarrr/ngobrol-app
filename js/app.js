@@ -6055,34 +6055,18 @@ const inputField = $('inputField');
 
 
 function getInputText() {
-
-  return (msgInput.innerText || msgInput.textContent || '').replace(/\u00a0/g, ' ').trim();
-
+  return (msgInput.value || '').replace(/\u00a0/g, ' ').trim();
 }
-
-function clearInput() {
-
-  msgInput.innerHTML = '';
-
-  msgInput.style.height = 'auto';
-
-  msgInput.style.height = '24px';
-
-  updateActionButton();
-
-}
-
 function autoResize() {
-
   msgInput.style.height = 'auto';
-
   const h = Math.min(msgInput.scrollHeight, 120);
-
-  msgInput.style.height = Math.max(h, 24) + 'px';
-
+  msgInput.style.height = Math.max(h, 40) + 'px';
 }
-
-
+function clearInput() {
+  msgInput.value = '';
+  autoResize();
+  updateActionButton();
+}
 
 msgInput.addEventListener('input', () => { autoResize(); updateActionButton(); });
 
@@ -6104,7 +6088,7 @@ msgInput.addEventListener('blur', () => {
 
 msgInput.addEventListener('keydown', (e) => {
 
-  if (e.key === 'Enter' && !e.shiftKey) {
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
 
     e.preventDefault();
 
@@ -6113,18 +6097,6 @@ msgInput.addEventListener('keydown', (e) => {
   }
 
 });
-
-msgInput.addEventListener('paste', (e) => {
-
-  e.preventDefault();
-
-  const text = (e.clipboardData || window.clipboardData).getData('text');
-
-  document.execCommand('insertText', false, text);
-
-});
-
-
 
 $('sendBtn').addEventListener('click', async (e) => {
 

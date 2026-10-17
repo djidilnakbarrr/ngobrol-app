@@ -23,12 +23,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 
-<link rel="stylesheet" href="css/base.css?v=1.7.7">
+<link rel="stylesheet" href="css/base.css?v=1.7.8">
 
-<link rel="stylesheet" href="css/update.css?v=1.7.7">
-<link rel="stylesheet" href="css/chat-video.css?v=1.7.7">
-<link rel="stylesheet" href="css/youtube.css?v=1.7.7">
-<link rel="stylesheet" href="css/auth.css?v=1.7.7">
+<link rel="stylesheet" href="css/update.css?v=1.7.8">
+<link rel="stylesheet" href="css/chat-video.css?v=1.7.8">
+<link rel="stylesheet" href="css/youtube.css?v=1.7.8">
+<link rel="stylesheet" href="css/auth.css?v=1.7.8">
 </head>
 
 <body>
@@ -71,7 +71,7 @@
     <div id="loginPwWrap">
       <label for="loginPwInput">Password</label>
       <div class="pw-field">
-        <input type="password" id="loginPwInput" maxlength="6" placeholder="Masukkan password..." autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="loginPwInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan password..." autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="loginPwInput" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <div class="field-msg" id="loginPwMsg" role="alert" aria-live="assertive"></div>
@@ -79,7 +79,7 @@
     <div id="loginPw2Wrap" style="display:none">
       <label for="loginPw2Input">Konfirmasi password</label>
       <div class="pw-field">
-        <input type="password" id="loginPw2Input" maxlength="6" placeholder="Konfirmasi password..." autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="loginPw2Input" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Konfirmasi password..." autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="loginPw2Input" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <div class="field-msg" id="loginPw2Msg" role="alert" aria-live="assertive"></div>
@@ -648,7 +648,7 @@
 
       <div class="input-field" id="inputField">
 
-        <div id="msgInput" class="msg-input" contenteditable="true" data-placeholder="Ketik pesan"></div>
+        <textarea id="msgInput" class="msg-input" rows="1" placeholder="Ketik pesan" autocomplete="off" autocapitalize="sentences" autocorrect="on" spellcheck="true" enterkeyhint="send" aria-label="Ketik pesan"></textarea>
 
       </div>
 
@@ -908,17 +908,17 @@
     <div class="modal-body auth-modal-body">
       <label for="cpOld">Password saat ini</label>
       <div class="pw-field">
-        <input type="password" id="cpOld" maxlength="6" placeholder="Masukkan password saat ini..." autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="cpOld" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan password saat ini..." autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="cpOld" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <label for="cpNew">Password baru</label>
       <div class="pw-field">
-        <input type="password" id="cpNew" maxlength="6" placeholder="Masukkan password baru..." autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="cpNew" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan password baru..." autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="cpNew" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <label for="cpNew2">Konfirmasi password baru</label>
       <div class="pw-field">
-        <input type="password" id="cpNew2" maxlength="6" placeholder="Konfirmasi password baru..." autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="cpNew2" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Konfirmasi password baru..." autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="cpNew2" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <div class="auth-alert" id="cpAlert" role="alert" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="cpAlertText"></span></div>
@@ -1739,14 +1739,14 @@
 
 
 
-<script src="js/chat-video.js?v=1.7.7"></script>
-<script type="module" src="js/app.js?v=1.7.7"></script>
+<script src="js/chat-video.js?v=1.7.8"></script>
+<script type="module" src="js/app.js?v=1.7.8"></script>
 
-<script src="js/avatar.js?v=1.7.7"></script>
+<script src="js/avatar.js?v=1.7.8"></script>
 
 
 
-<script src="js/updater.js?v=1.7.7"></script>
+<script src="js/updater.js?v=1.7.8"></script>
 <div id="ytPlayer" role="dialog" aria-modal="true" aria-label="Pemutar video">
   <div class="yt-sheet">
     <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
@@ -1786,8 +1786,8 @@
   </div>
 </div>
 
-<script src="js/youtube-config.js?v=1.7.7"></script>
-<script src="js/youtube.js?v=1.7.7"></script>
+<script src="js/youtube-config.js?v=1.7.8"></script>
+<script src="js/youtube.js?v=1.7.8"></script>
 </body>
 
 </html>
