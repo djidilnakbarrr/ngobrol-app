@@ -3280,3 +3280,15 @@
 @keyframes fmIn { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 #loginScreen .login-box input.err,
 #loginScreen .login-box .pw-field.err input { border-color: #d32f2f; box-shadow: 0 0 0 4px rgba(211, 47, 47, .12); background-color: #fff; }
+
+/* ===== Keyboard: kolom isian selalu bisa diketik (termasuk di iOS/Android) ===== */
+input, textarea, select {
+  -webkit-user-select: text; user-select: text;
+  -webkit-touch-callout: default;
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]), textarea {
+  -webkit-text-fill-color: currentColor;
+  -webkit-appearance: none; appearance: none;
+}

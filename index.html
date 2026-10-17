@@ -6,7 +6,7 @@
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
 
 <meta name="theme-color" content="#075e54">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1674,7 +1674,7 @@
       <div class="del-acc-warn">Akun, ID, kontak, dan seluruh percakapan pribadi Anda akan dihapus permanen dari server dan tidak dapat dikembalikan. Anda juga akan keluar dari semua grup. Pesan yang pernah Anda kirim di grup tetap tersimpan di grup tersebut.</div>
       <label for="delAccInput">Ketik angka berikut untuk melanjutkan</label>
       <div class="del-code" id="delAccCode" aria-live="polite">000</div>
-      <input type="text" id="delAccInput" class="del-code-input" maxlength="3" autocomplete="off" placeholder="Masukkan 3 angka">
+      <input type="text" id="delAccInput" class="del-code-input" maxlength="3" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="Masukkan 3 angka">
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" id="cancelDelAcc" type="button">Batal</button>
@@ -1742,6 +1742,7 @@
 <script src="js/chat-video.js?v=1.7.8"></script>
 <script type="module" src="js/app.js?v=1.7.8"></script>
 
+<script src="js/keyboard.js?v=1.7.8"></script>
 <script src="js/avatar.js?v=1.7.8"></script>
 
 
