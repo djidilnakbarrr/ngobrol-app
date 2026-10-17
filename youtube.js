@@ -273,14 +273,17 @@
     });
   }
 
+  var MASK_OK = (function () { try { return !!(window.CSS && CSS.supports && CSS.supports('-webkit-text-security', 'disc')); } catch (e) { return false; } })();
   function setReveal(show) {
     var i = $('ytKeyInput'), b = $('ytKeyEye');
-    i.type = show ? 'text' : 'password';
+    /* Pakai teks biasa + penyamaran CSS agar browser tidak menawarkan "Simpan sandi". Cadangan: type=password */
+    if (MASK_OK) { i.type = 'text'; i.classList.toggle('yt-secret', !show); } else { i.type = show ? 'text' : 'password'; i.classList.remove('yt-secret'); }
     b.innerHTML = show ? I.eye : I.eyeOff;
     b.setAttribute('aria-pressed', show ? 'true' : 'false');
     b.setAttribute('aria-label', show ? 'Sembunyikan kunci' : 'Tampilkan kunci');
     b.title = show ? 'Sembunyikan kunci' : 'Tampilkan kunci';
   }
+  function isRevealed() { return $('ytKeyEye').getAttribute('aria-pressed') === 'true'; }
   function maskKey(k) { return k && k.length > 10 ? k.slice(0, 4) + '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + k.slice(-4) : ''; }
   function admMsg(t, ok) { var m = $('ytAdmMsg'); m.textContent = t || ''; m.classList.toggle('ok', !!ok); }
   function openAdmin() {
@@ -330,7 +333,7 @@
   }
   function resetKey() {
     var b = $('ytAdmReset');
-    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Ketuk lagi untuk menghapus'; return; }
+    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Yakin hapus?'; return; }
     busy(true);
     writeKey('').then(function () { toast('API key dihapus'); closeAdmin(); })
       .catch(function (e) { admMsg(e && e.code === 'PERMISSION_DENIED' ? 'Ditolak oleh aturan database. Periksa Rules Firebase.' : failText(e)); })
@@ -380,7 +383,7 @@
     $('ytAdmSave').addEventListener('click', saveKey);
     $('ytAdmReset').addEventListener('click', resetKey);
     $('ytKeyInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveKey(); });
-    $('ytKeyEye').addEventListener('click', function () { setReveal($('ytKeyInput').type === 'password'); $('ytKeyInput').focus(); });
+    $('ytKeyEye').addEventListener('click', function () { setReveal(!isRevealed()); $('ytKeyInput').focus(); });
     $('ytAdmin').addEventListener('click', function (e) { if (e.target === $('ytAdmin')) closeAdmin(); });
 
     /* sinkronkan kunci dan peran saat tab dibuka pertama kali, lalu muat video */
