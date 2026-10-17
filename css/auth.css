@@ -162,6 +162,55 @@
 #usernameInput:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94'/%3E%3C/svg%3E"); }
 #loginIdInput { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='4' y1='9' x2='20' y2='9'/%3E%3Cline x1='4' y1='15' x2='20' y2='15'/%3E%3Cline x1='10' y1='3' x2='8' y2='21'/%3E%3Cline x1='16' y1='3' x2='14' y2='21'/%3E%3C/svg%3E"); }
 #loginIdInput:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cline x1='4' y1='9' x2='20' y2='9'/%3E%3Cline x1='4' y1='15' x2='20' y2='15'/%3E%3Cline x1='10' y1='3' x2='8' y2='21'/%3E%3Cline x1='16' y1='3' x2='14' y2='21'/%3E%3C/svg%3E"); }
-#loginPwInput, #loginPw2Input, #cpOld, #cpNew, #cpNew2, #pgNew, #pgNew2 { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E"); }
-#loginPwInput:focus, #loginPw2Input:focus, #cpOld:focus, #cpNew:focus, #cpNew2:focus, #pgNew:focus, #pgNew2:focus { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E"); }
-.modal-body .pw-field input { padding-left: 48px; background-repeat: no-repeat; background-position: 16px center; background-size: 20px 20px; }
+
+/* ===== Ikon kolom password dan username (pseudo-element, tanpa pengulangan gambar) ===== */
+.pw-field::before, .acc-field::before {
+  content: ""; position: absolute; left: 16px; top: 17px; width: 20px; height: 20px; z-index: 1;
+  background-repeat: no-repeat; background-position: center; background-size: contain; pointer-events: none;
+}
+.pw-field::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E"); }
+.pw-field:focus-within::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E"); }
+.acc-at::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2395a3ab' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94'/%3E%3C/svg%3E"); }
+.acc-at:focus-within::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230e9a86' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='4'/%3E%3Cpath d='M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94'/%3E%3C/svg%3E"); }
+.login-box .pw-field input, .modal-body .pw-field input, #loginScreen .login-box .pw-field input { padding-left: 48px; background-image: none; }
+
+/* ===== Modal Pengaturan Akun (tab) ===== */
+.acc-box { padding: 0; overflow: hidden; }
+.acc-header { padding-bottom: 6px; }
+.acc-tabs { display: flex; gap: 4px; margin: 4px 20px 6px; padding: 5px; border-radius: 16px; background: #eaf0ef; box-shadow: inset 0 1px 3px rgba(0,0,0,.06); }
+.acc-tab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 11px 6px;
+  border: none; border-radius: 12px; background: transparent; color: #5b6e75; cursor: pointer;
+  font-size: 13px; font-weight: 600; font-family: inherit; transition: background .18s, color .18s, box-shadow .18s;
+}
+.acc-tab svg { width: 16px; height: 16px; flex-shrink: 0; }
+.acc-tab:hover { background: rgba(7,94,84,.07); }
+.acc-tab.active { color: #fff; background: linear-gradient(135deg, #0e9a86, #075e54); box-shadow: 0 6px 14px -4px rgba(7,94,84,.55); }
+.acc-pane { display: none; }
+.acc-pane.active { display: block; animation: accIn .2s ease; }
+@keyframes accIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.acc-pane .modal-body { padding-top: 16px; }
+.acc-pane .modal-body > label, .acc-pane .modal-body .pw-field + label { display: block; margin: 0 0 7px 2px; font-size: 13px; font-weight: 600; color: #35464d; text-transform: none; letter-spacing: 0; }
+.acc-pane .modal-body label { text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 600; color: #35464d; margin-left: 2px; }
+.acc-field { position: relative; }
+.acc-field input[type="text"] {
+  display: block; width: 100%; height: 54px; padding: 0 16px 0 48px; margin-bottom: 16px; border-radius: 15px;
+  border: 1.5px solid #e1e8ea; background: #f5f8f8; color: #0f1d22; font-size: 16px; outline: none; font-family: inherit;
+}
+.acc-field input[type="text"]:focus { background: #fff; border-color: #0e9a86; box-shadow: 0 0 0 4px rgba(14,154,134,.14); }
+.acc-pane .modal-hint { margin-top: 0; border-radius: 13px; border: 1px solid #d6ebe6; border-left: none; background: #eef7f5; box-shadow: inset 3px 0 0 #0e9a86; padding: 11px 14px; line-height: 1.55; font-size: 12.5px; }
+.acc-idbox { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 12px 12px 16px; margin-bottom: 16px; border-radius: 15px; border: 1.5px solid #e1e8ea; background: #f5f8f8; }
+.acc-idvalue { font-size: 20px; font-weight: 700; letter-spacing: 2px; color: #0f1d22; word-break: break-all; }
+.acc-copy { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border: none; border-radius: 11px; background: #e3f3ef; color: #075e54; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.acc-copy svg { width: 16px; height: 16px; }
+.acc-copy:hover { background: #d3ece6; }
+
+/* Penyesuaian layar sempit pada modal Pengaturan Akun */
+.acc-tabs { margin-left: 20px; margin-right: 20px; }
+.acc-tab { min-width: 0; padding: 11px 4px; gap: 5px; font-size: 12.5px; white-space: nowrap; }
+.acc-tab svg { width: 15px; height: 15px; }
+.acc-pane .modal-body .pw-field input { margin-bottom: 18px; padding-right: 46px; }
+.acc-pane .modal-body .pw-field input::placeholder, .acc-field input::placeholder { font-size: 14px; }
+.acc-pane .modal-body .pw-eye { right: 6px; }
+.acc-pane .modal-body .pw-field input::placeholder, .acc-field input::placeholder { font-size: 13.5px; }
+.acc-tab { padding-left: 2px; padding-right: 2px; }
