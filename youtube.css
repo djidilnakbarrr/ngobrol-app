@@ -93,3 +93,45 @@
 .yt-search input[type="search"]::-webkit-search-results-button,
 .yt-search input[type="search"]::-webkit-search-results-decoration { -webkit-appearance: none; appearance: none; display: none; }
 .yt-search input[type="search"]::-ms-clear { display: none; }
+
+/* Panel admin API key */
+.yt-admin-btn[hidden] { display: none; }
+.yt-admin-btn { background: var(--brand-tint, #e8f5f2); color: var(--brand, #075e54); }
+#ytAdmin { position: fixed; inset: 0; z-index: 4300; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(8,20,26,.62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); overflow-y: auto; }
+#ytAdmin.open { display: flex; }
+.yt-adm-card { width: 100%; max-width: 420px; max-height: 100%; overflow-y: auto; background: #fff; border-radius: 20px; padding: 22px 20px 20px; box-shadow: var(--sh-3, 0 24px 60px rgba(8,20,26,.35)); }
+.yt-adm-card, .yt-adm-card * { box-sizing: border-box; min-width: 0; }
+.yt-adm-head { display: flex; gap: 14px; align-items: center; margin-bottom: 18px; }
+.yt-adm-head .yt-state-ico { margin: 0; width: 46px; height: 46px; flex: 0 0 46px; border-radius: 14px; }
+.yt-adm-head .yt-state-ico svg { width: 22px; height: 22px; }
+.yt-adm-title { flex: 1; }
+.yt-adm-title h3 { font-size: 17px; line-height: 1.25; font-weight: 800; color: var(--ink, #0f1c22); }
+.yt-adm-title p { font-size: 13px; color: var(--muted, #667781); margin-top: 2px; }
+
+.yt-adm-status { padding: 12px 14px; margin-bottom: 18px; background: var(--surface-2, #f6f8f8); border: 1px solid var(--line, #e9eef0); border-radius: 14px; }
+.yt-adm-status-top { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--ink-2, #3b4a54); }
+.yt-dot { width: 8px; height: 8px; border-radius: 50%; background: #b7c2c7; flex: 0 0 8px; }
+.yt-dot.on { background: #1fae6b; box-shadow: 0 0 0 3px rgba(31,174,107,.18); }
+.yt-adm-masked { margin-top: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; letter-spacing: .4px; color: var(--ink, #0f1c22); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.yt-adm-meta { margin-top: 6px; font-size: 12.5px; color: var(--muted, #667781); overflow-wrap: anywhere; }
+
+.yt-adm-label { display: block; font-size: 12px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; color: var(--ink-2, #3b4a54); margin-bottom: 8px; }
+.yt-adm-field { display: flex; align-items: center; gap: 4px; height: 48px; padding: 0 6px 0 14px; border: 1px solid var(--line, #e9eef0); border-radius: 12px; background: #fff; transition: border-color .15s, box-shadow .15s; }
+.yt-adm-field:focus-within { border-color: var(--brand-2, #0b8a79); box-shadow: 0 0 0 3px rgba(11,138,121,.16); }
+.yt-adm-field input { flex: 1 1 auto; width: 100%; height: 100%; border: 0; outline: 0; background: transparent; font: inherit; font-size: 15px; color: var(--ink, #0f1c22); text-overflow: ellipsis; }
+.yt-adm-field input::placeholder { color: var(--faint, #8a99a1); letter-spacing: 0; }
+.yt-adm-field .yt-icon-btn { flex: 0 0 36px; }
+.yt-adm-hint { margin-top: 8px; font-size: 12.5px; line-height: 1.5; color: var(--muted, #667781); overflow-wrap: anywhere; }
+.yt-adm-msg { min-height: 20px; margin-top: 10px; font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--danger, #d63b34); overflow-wrap: anywhere; }
+.yt-adm-msg.ok { color: var(--brand-2, #0b8a79); }
+
+.yt-adm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.yt-adm-actions .yt-btn { width: 100%; height: 46px; padding: 0 14px; justify-content: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.yt-adm-actions .primary { grid-column: 1 / -1; }
+.yt-adm-actions .danger { grid-column: 1 / -1; border-color: transparent; background: transparent; color: var(--danger, #d63b34); height: 40px; }
+.yt-adm-actions .danger:hover { background: var(--danger-tint, #fdeceb); }
+.yt-adm-actions .yt-btn { grid-column: 1 / -1; }
+.yt-adm-masked.empty { font-family: inherit; letter-spacing: 0; white-space: normal; font-size: 13.5px; color: var(--muted, #667781); }
+#ytKeyEye { color: var(--muted, #667781); }
+#ytKeyEye[aria-pressed="true"] { color: var(--brand, #075e54); background: var(--brand-tint, #e8f5f2); }
+#ytKeyEye svg { width: 20px; height: 20px; }

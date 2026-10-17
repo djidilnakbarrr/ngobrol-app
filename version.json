@@ -2,7 +2,7 @@
   "version": "1.4.1",
   "released": "2026-10-16",
   "notes": [
-    "Fitur YouTube: cari, putar, dan simpan video favorit",
+    "Fitur YouTube: cari dan putar video, API key diatur admin dari aplikasi",
     "Admin dan pembuat grup bisa menghapus pesan siapa pun dan semua pesan grup",
     "Centang biru grup: biru saat balasan Anda sudah dilihat penerimanya",
     "Anggota baru grup tidak melihat chat sebelum mereka bergabung"

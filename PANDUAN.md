@@ -104,10 +104,25 @@ Di grup, centang hanya biru bila pesan Anda adalah **balasan** ke pesan seseoran
 Saat anggota ditambahkan (oleh pembuat atau lewat link undangan), waktu bergabung disimpan di `groups/<gid>/joined/<id>`. Pesan yang dikirim sebelum waktu itu tidak ditampilkan kepada anggota baru; anggota lama tetap melihat semua pesan. Pesan tidak dihapus dari database. Pastikan Rules mengizinkan menulis `groups/<gid>/joined`.
 
 ## Fitur YouTube
-Tab **YouTube** menampilkan video populer, kategori, pencarian, dan pemutar bawaan (embed `youtube-nocookie.com`). Data diambil langsung dari browser lewat YouTube Data API v3.
+Tab **YouTube** menampilkan video populer, kategori, pencarian, dan pemutar bawaan (embed `youtube-nocookie.com`). Data diambil dari browser lewat YouTube Data API v3.
+
+**API key tidak disimpan di file.** Kunci hanya diisi oleh admin dari dalam aplikasi dan disimpan di database (`config/youtube`).
+
 Pemasangan:
-1. Di Google Cloud Console aktifkan **YouTube Data API v3**, lalu buat **API key** (APIs & Services > Credentials).
-2. Buka file `youtube-config.js` dan ganti `GANTI_DENGAN_API_KEY_ANDA` dengan kunci Anda. Unggah ulang file ini ke hosting.
-3. Sangat disarankan membatasi kunci: Application restrictions = HTTP referrers (domain aplikasi Anda), API restrictions = YouTube Data API v3. Kunci ini terlihat di browser, jadi pembatasan wajib.
-Catatan kuota: kuota gratis 10.000 unit per hari. Video populer dan detail memakai 1 unit, pencarian 100 unit. Hasil disimpan di perangkat selama `CACHE_MINUTES` (default 10 menit) untuk menghemat kuota.
-Pengaturan wilayah, bahasa, dan jumlah video per muatan ada di `youtube-config.js`.
+1. Di Google Cloud Console aktifkan **YouTube Data API v3**, lalu buat **API key** (APIs & Services > Credentials). Batasi kunci: Application restrictions = HTTP referrers (domain aplikasi Anda), API restrictions = YouTube Data API v3. Kunci dapat dilihat oleh pengguna aplikasi, jadi pembatasan wajib.
+2. Jadikan satu akun admin (lihat bagian peran di bawah).
+3. Buka aplikasi dengan akun admin > tab YouTube > ikon kunci di kanan atas > tempel kunci > Simpan. Kunci diuji dulu (1 unit kuota) dan hanya disimpan jika valid. Perubahan langsung berlaku untuk semua pengguna. Setelah Simpan, kunci tersimpan permanen di database dan tidak dihapus otomatis oleh aplikasi (tidak oleh logout, hapus akun, maupun pembersihan data perangkat). Hanya tombol "Hapus kunci" milik admin yang mengosongkannya.
+
+Kuota gratis 10.000 unit per hari. Video populer dan detail memakai 1 unit, pencarian 100 unit. Hasil disimpan di perangkat selama `CACHE_MINUTES` (default 10 menit). Wilayah, bahasa, dan jumlah video per muatan ada di `youtube-config.js` (file ini tidak berisi kunci).
+
+## Peran pengguna dan admin
+Peran disimpan di `users/<id>/role` dengan nilai `user` atau `admin`.
+- Akun baru otomatis `user`. Akun lama tanpa peran diberi `user` otomatis saat pemiliknya membuka aplikasi. Anda juga bisa menambahkan field `role` = `user` manual di konsol.
+- Aplikasi tidak pernah memberi peran `admin`. Menjadikan seseorang admin dilakukan **manual**: Firebase Console > Realtime Database > `users` > pilih ID > ubah `role` dari `user` menjadi `admin`. Untuk mencabut, ubah kembali menjadi `user`.
+- Hanya admin yang melihat ikon kunci dan dapat menyimpan atau menghapus kunci.
+
+**Rules Firebase (wajib).** Aplikasi ini tidak memakai Firebase Authentication, jadi pengaman di layar saja bisa dilewati orang yang paham teknis. Gabungkan isi `database.rules.youtube.json` ke Rules database Anda agar server ikut menegakkan:
+- `users/<id>/role` tidak bisa diubah menjadi `admin` dari aplikasi, dan admin tidak bisa diturunkan dari aplikasi. Perubahan peran hanya lewat konsol Firebase.
+- `config/youtube` hanya bisa ditulis jika `updatedBy` menunjuk pengguna ber-role `admin`, dan node ini tidak bisa dihapus dari aplikasi (penghapusan hanya lewat konsol Firebase). Tombol "Hapus kunci" milik admin hanya mengosongkan nilai kunci, datanya tetap ada.
+- Jika Rules Anda punya `".write": true` di root, `config`, atau `users`, izin dari tingkat atas menimpa aturan di atas. Batasi izin tulis yang terlalu luas itu.
+- Batasan: karena login memakai ID, siapa pun yang mengetahui ID akun admin dapat bertindak sebagai admin. Rahasiakan ID akun admin dan jangan menambahkannya sebagai kontak orang lain.

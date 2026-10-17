@@ -1,17 +1,12 @@
 /* ==========================================================================
-   KONFIGURASI YOUTUBE
+   PENGATURAN YOUTUBE
    --------------------------------------------------------------------------
-   Ganti nilai API_KEY di bawah dengan kunci API Anda dari Google Cloud:
-     1. Buka https://console.cloud.google.com lalu pilih atau buat proyek.
-     2. APIs & Services > Library > aktifkan "YouTube Data API v3".
-     3. APIs & Services > Credentials > Create credentials > API key.
-     4. Sangat disarankan: pada API key, batasi Application restrictions
-        (HTTP referrers) ke domain aplikasi Anda, dan API restrictions
-        hanya ke "YouTube Data API v3". Kunci ini terlihat di browser.
-   Setelah diganti, unggah ulang file ini ke hosting.
+   API key TIDAK disimpan di file ini. Kunci diatur oleh admin langsung dari
+   aplikasi (tab YouTube > ikon kunci) dan disimpan di database Firebase.
+   File ini hanya berisi pengaturan tampilan dan kuota.
    ========================================================================== */
 window.YT_CONFIG = {
-  API_KEY: 'AIzaSyArgLueuY2K5wywQNf7HvdJ3vSOLRU8FpQ',
+  API_KEY: '',              // jangan diisi. Kunci diambil dari database
 
   REGION_CODE: 'ID',        // wilayah untuk video populer (kode negara 2 huruf)
   LANGUAGE: 'id',           // bahasa relevansi hasil pencarian

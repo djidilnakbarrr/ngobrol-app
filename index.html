@@ -3504,7 +3504,7 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
 
 
       <div class="tab-pane" id="paneYoutube">
-        <div class="pane-head"><h1>YouTube</h1></div>
+        <div class="pane-head"><h1>YouTube</h1><button type="button" class="yt-icon-btn yt-admin-btn" id="ytAdminBtn" hidden aria-label="Pengaturan API key" title="Pengaturan API key (admin)"></button></div>
         <div class="yt-top">
           <div class="yt-search" id="ytSearchBox">
             <span id="ytSearchIcon" style="display:inline-flex"></span>
@@ -5221,6 +5221,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 
 const db = getDatabase(app);
+/* Jembatan untuk youtube.js (skrip non-modul): akses database dan identitas pengguna */
+window.__ngobrolFB = { db, ref, get, set, onValue, getMyId: () => myId, getMyName: () => myName };
 
 
 
@@ -6313,7 +6315,7 @@ $('loginBtn').addEventListener('click', async () => {
 
     myName = name;
 
-    await set(ref(db, 'users/' + myId), { name: myName, online: true, lastSeen: Date.now(), photo: "" });
+    await set(ref(db, 'users/' + myId), { name: myName, online: true, lastSeen: Date.now(), photo: "", role: 'user' });
 
     saveSession();
 
@@ -6384,7 +6386,7 @@ function enterApp() {
 
   update(ref(db, 'users/' + myId), { name: myName, online: true, lastSeen: Date.now() })
 
-    .then(() => { loadContacts(); loadChatMeta(); loadGroups(); loadMyProfile(); startNotifSystem(); claimName(myName, myId).catch(() => {}); setTimeout(handleDeepLink, 400); })
+    .then(() => { get(ref(db, 'users/' + myId + '/role')).then(r => { if (!r.exists()) set(ref(db, 'users/' + myId + '/role'), 'user').catch(() => {}); }).catch(() => {}); loadContacts(); loadChatMeta(); loadGroups(); loadMyProfile(); startNotifSystem(); claimName(myName, myId).catch(() => {}); setTimeout(handleDeepLink, 400); })
 
     .catch(err => {
 
@@ -11873,6 +11875,35 @@ $('clearGroupBtn').addEventListener('click', async () => {
     <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
     <div class="yt-frame" id="ytFrameWrap"></div>
     <div class="yt-detail" id="ytDetail"></div>
+  </div>
+</div>
+
+<div id="ytAdmin" role="dialog" aria-modal="true" aria-labelledby="ytAdmTitle">
+  <div class="yt-adm-card">
+    <div class="yt-adm-head">
+      <div class="yt-state-ico" id="ytAdmIco"></div>
+      <div class="yt-adm-title"><h3 id="ytAdmTitle">API key YouTube</h3><p>Pengaturan khusus admin</p></div>
+    </div>
+
+    <div class="yt-adm-status">
+      <div class="yt-adm-status-top"><span class="yt-dot" id="ytStatusDot"></span><span id="ytStatusText">Belum diatur</span></div>
+      <div class="yt-adm-masked" id="ytKeyMasked"></div>
+      <div class="yt-adm-meta" id="ytAdmMeta"></div>
+    </div>
+
+    <label class="yt-adm-label" for="ytKeyInput">API key baru</label>
+    <div class="yt-adm-field">
+      <input type="password" id="ytKeyInput" placeholder="Tempel API key di sini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true">
+      <button type="button" class="yt-icon-btn" id="ytKeyEye" aria-label="Tampilkan atau sembunyikan kunci"></button>
+    </div>
+    <div class="yt-adm-hint">Kunci diuji ke YouTube terlebih dahulu dan hanya disimpan jika valid. Perubahan langsung berlaku untuk semua pengguna.</div>
+    <div class="yt-adm-msg" id="ytAdmMsg" role="status" aria-live="polite"></div>
+
+    <div class="yt-adm-actions">
+      <button type="button" class="yt-btn primary" id="ytAdmSave">Simpan</button>
+      <button type="button" class="yt-btn" id="ytAdmCancel">Batal</button>
+      <button type="button" class="yt-btn danger" id="ytAdmReset">Hapus kunci</button>
+    </div>
   </div>
 </div>
 

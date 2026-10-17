@@ -1,4 +1,4 @@
-/* Fitur YouTube: pencarian, video populer, dan pemutar. Kunci API ada di youtube-config.js */
+/* Fitur YouTube: pencarian, video populer, dan pemutar. API key diambil dari database (diatur admin) */
 (function () {
   'use strict';
   var CFG = window.YT_CONFIG || {};
@@ -23,6 +23,7 @@
     empty: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg>',
     refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.5 15a9 9 0 1 1-2.1-9.4L23 10"/></svg>',
     down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>',
+    eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>',
     eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
     clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
     user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
@@ -45,7 +46,7 @@
 
   /* ---------- Utilitas ---------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function hasKey() { var k = String(CFG.API_KEY || ''); return k.length > 10 && !/GANTI/i.test(k); }
+  function hasKey() { return String(CFG.API_KEY || '').length > 10; }
   function dur(iso) {
     var m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
     if (!m) return '';
@@ -150,11 +151,13 @@
   function showError(e, fresh) {
     var box;
     if (!hasKey()) {
-      box = stateBox('', I.key, 'API key belum diisi', 'Buka file <code>youtube-config.js</code> lalu ganti nilai <code>API_KEY</code> dengan kunci dari Google Cloud (YouTube Data API v3).');
+      box = admin.is
+        ? stateBox('', I.key, 'API key belum diatur', 'Fitur YouTube membutuhkan API key. Sebagai admin, Anda dapat mengisinya sekarang.', '<button type="button" class="yt-btn primary" id="ytSetKey">' + I.key + 'Atur API key</button>')
+        : stateBox('', I.key, 'Fitur belum aktif', 'API key YouTube belum diatur. Silakan hubungi admin aplikasi.');
     } else if (e && (e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded' || e.reason === 'rateLimitExceeded')) {
       box = stateBox('error', I.alert, 'Kuota harian habis', 'Kuota YouTube Data API untuk kunci ini sudah terpakai. Kuota akan pulih otomatis setiap hari, atau tambah kuota di Google Cloud Console.');
     } else if (e && (e.reason === 'keyInvalid' || e.reason === 'badRequest' && /API key/i.test(e.message))) {
-      box = stateBox('error', I.key, 'API key tidak valid', 'Periksa kembali nilai <code>API_KEY</code> di <code>youtube-config.js</code>.');
+      box = stateBox('error', I.key, 'API key tidak valid', admin.is ? 'Perbarui kunci melalui ikon kunci di kanan atas.' : 'Silakan hubungi admin aplikasi untuk memperbarui kunci.');
     } else if (e && (e.reason === 'accessNotConfigured' || e.reason === 'forbidden' || e.reason === 'ipRefererBlocked')) {
       box = stateBox('error', I.alert, 'Akses ditolak', 'Pastikan YouTube Data API v3 sudah diaktifkan pada proyek Anda dan pembatasan HTTP referrer pada kunci mengizinkan domain aplikasi ini.');
     } else {
@@ -224,6 +227,116 @@
   }
   function url() { return state.current ? 'https://www.youtube.com/watch?v=' + state.current.id : ''; }
 
+  /* ---------- Kunci dari database dan peran admin ---------- */
+  CFG.API_KEY = '';
+  var admin = { is: false, meta: null };
+
+  function waitBridge(ms) {
+    return new Promise(function (res) {
+      var t0 = Date.now();
+      (function p() {
+        var b = window.__ngobrolFB;
+        if (b && b.getMyId && b.getMyId()) return res(b);
+        if (Date.now() - t0 > ms) return res(null);
+        setTimeout(p, 150);
+      })();
+    });
+  }
+
+  /* Berlangganan config/youtube (semua pengguna) dan users/<id>/role (peran sendiri) */
+  function startSync() {
+    return waitBridge(5000).then(function (b) {
+      if (!b) return;
+      var id = b.getMyId();
+      return new Promise(function (resolve) {
+        var first = true;
+        var done = function () { if (first) { first = false; resolve(); } };
+        b.onValue(b.ref(b.db, 'config/youtube'), function (snap) {
+          var v = snap.val() || {};
+          var k = String(v.apiKey || '').trim();
+          admin.meta = v;
+          var eff = k;
+          var changed = eff !== CFG.API_KEY;
+          CFG.API_KEY = eff;
+          if (first) done(); else if (changed && state.ready) load(true);
+        }, done);
+        b.onValue(b.ref(b.db, 'users/' + id + '/role'), function (snap) {
+          var r = snap.val();
+          /* akun lama tanpa peran diberi "user". Peran "admin" hanya bisa diberikan manual di konsol Firebase */
+          if (r === null || r === undefined) b.set(b.ref(b.db, 'users/' + id + '/role'), 'user').catch(function () {});
+          admin.is = r === 'admin';
+          $('ytAdminBtn').hidden = !admin.is;
+          if (!admin.is) closeAdmin();
+          if (state.ready && !hasKey()) load(true);
+        }, function () {});
+      });
+    });
+  }
+
+  function setReveal(show) {
+    var i = $('ytKeyInput'), b = $('ytKeyEye');
+    i.type = show ? 'text' : 'password';
+    b.innerHTML = show ? I.eye : I.eyeOff;
+    b.setAttribute('aria-pressed', show ? 'true' : 'false');
+    b.setAttribute('aria-label', show ? 'Sembunyikan kunci' : 'Tampilkan kunci');
+    b.title = show ? 'Sembunyikan kunci' : 'Tampilkan kunci';
+  }
+  function maskKey(k) { return k && k.length > 10 ? k.slice(0, 4) + '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + k.slice(-4) : ''; }
+  function admMsg(t, ok) { var m = $('ytAdmMsg'); m.textContent = t || ''; m.classList.toggle('ok', !!ok); }
+  function openAdmin() {
+    if (!admin.is) return;
+    var m = admin.meta || {}, has = hasKey();
+    $('ytKeyInput').value = ''; setReveal(false);
+    $('ytStatusDot').className = 'yt-dot' + (has ? ' on' : '');
+    $('ytStatusText').textContent = has ? 'Aktif' : 'Belum diatur';
+    $('ytKeyMasked').textContent = has ? maskKey(CFG.API_KEY) : 'Tidak ada kunci tersimpan'; $('ytKeyMasked').classList.toggle('empty', !has);
+    var meta = '';
+    if (has && m.updatedAt) meta = 'Diubah oleh ' + (m.updatedByName || m.updatedBy || 'admin') + ', ' + ago(new Date(m.updatedAt).toISOString());
+    $('ytAdmMeta').textContent = meta; $('ytAdmMeta').style.display = meta ? '' : 'none';
+    $('ytAdmReset').style.display = has ? '' : 'none';
+    $('ytAdmReset').textContent = 'Hapus kunci'; $('ytAdmReset').dataset.confirm = '';
+    admMsg(''); $('ytAdmin').classList.add('open');
+    setTimeout(function () { $('ytKeyInput').focus(); }, 60);
+  }
+  function closeAdmin() { var a = $('ytAdmin'); if (a) a.classList.remove('open'); }
+
+  function writeKey(key) {
+    var b = window.__ngobrolFB;
+    if (!b || !admin.is) return Promise.reject(new Error('Hanya admin yang dapat mengubah API key.'));
+    return b.set(b.ref(b.db, 'config/youtube'), { apiKey: key, updatedBy: b.getMyId(), updatedByName: b.getMyName(), updatedAt: Date.now() });
+  }
+  function busy(on) { ['ytAdmSave', 'ytAdmReset', 'ytAdmCancel'].forEach(function (i) { $(i).disabled = on; }); }
+  function failText(e) {
+    if (e && (e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded')) return 'Kunci valid, tetapi kuota harian habis.';
+    if (e && e.reason === 'keyInvalid') return 'API key tidak valid.';
+    if (e && (e.reason === 'accessNotConfigured' || e.reason === 'forbidden' || e.reason === 'ipRefererBlocked')) return 'Kunci ditolak. Aktifkan YouTube Data API v3 dan cek pembatasan referrer.';
+    return (e && e.message) || 'Gagal memeriksa kunci.';
+  }
+  function saveKey() {
+    var k = $('ytKeyInput').value.trim();
+    if (!k) { admMsg('Masukkan API key.'); return; }
+    if (/\s/.test(k) || k.length < 20) { admMsg('Format API key tidak valid.'); return; }
+    busy(true); admMsg('Memeriksa kunci...', true);
+    /* uji kunci dengan satu permintaan ringan (1 unit kuota) sebelum disimpan */
+    fetch(API + 'videos?part=id&id=dQw4w9WgXcQ&key=' + encodeURIComponent(k)).then(function (r) {
+      return r.json().then(function (j) {
+        if (!r.ok) { var e = new Error((j.error && j.error.message) || 'HTTP ' + r.status); e.reason = j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason; throw e; }
+      });
+    }).then(function () { return writeKey(k); }).then(function () {
+      admMsg('API key tersimpan dan langsung dipakai semua pengguna.', true); toast('API key YouTube diperbarui');
+      setTimeout(closeAdmin, 900);
+    }).catch(function (e) { admMsg(e && e.reason ? failText(e) : (e && e.code === 'PERMISSION_DENIED' ? 'Ditolak oleh aturan database. Periksa Rules Firebase.' : failText(e))); })
+      .then(function () { busy(false); });
+  }
+  function resetKey() {
+    var b = $('ytAdmReset');
+    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Ketuk lagi untuk menghapus'; return; }
+    busy(true);
+    writeKey('').then(function () { toast('API key dihapus'); closeAdmin(); })
+      .catch(function (e) { admMsg(e && e.code === 'PERMISSION_DENIED' ? 'Ditolak oleh aturan database. Periksa Rules Firebase.' : failText(e)); })
+      .then(function () { busy(false); b.dataset.confirm = ''; b.textContent = 'Hapus kunci'; });
+  }
+
   /* ---------- Inisialisasi ---------- */
   function init() {
     if (!$('paneYoutube')) return;
@@ -235,6 +348,7 @@
     $('ytList').addEventListener('click', function (e) {
       var c = e.target.closest('.yt-card[data-id]'); if (c) { openPlayer(c.dataset.id); return; }
       if (e.target.closest('#ytRetry')) load(true);
+      if (e.target.closest('#ytSetKey')) openAdmin();
     });
     $('ytMoreWrap').addEventListener('click', function (e) { if (e.target.closest('#ytMore')) load(false); });
     $('ytInput').addEventListener('input', function () { $('ytSearchBox').classList.toggle('has-text', !!this.value); });
@@ -260,8 +374,23 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('ytPlayer').classList.contains('open')) closePlayer(); });
 
     /* muat pertama kali saat tab dibuka */
+    $('ytAdminBtn').innerHTML = I.key; $('ytAdmIco').innerHTML = I.key; setReveal(false);
+    $('ytAdminBtn').addEventListener('click', openAdmin);
+    $('ytAdmCancel').addEventListener('click', closeAdmin);
+    $('ytAdmSave').addEventListener('click', saveKey);
+    $('ytAdmReset').addEventListener('click', resetKey);
+    $('ytKeyInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveKey(); });
+    $('ytKeyEye').addEventListener('click', function () { setReveal($('ytKeyInput').type === 'password'); $('ytKeyInput').focus(); });
+    $('ytAdmin').addEventListener('click', function (e) { if (e.target === $('ytAdmin')) closeAdmin(); });
+
+    /* sinkronkan kunci dan peran saat tab dibuka pertama kali, lalu muat video */
     var tab = document.querySelector('.bottom-tab[data-pane="paneYoutube"]');
-    if (tab) tab.addEventListener('click', function () { if (!state.ready) { state.ready = true; load(true); } });
+    if (tab) tab.addEventListener('click', function () {
+      if (state.ready) return;
+      state.ready = true;
+      $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid">' + skeleton(6) + '</div>';
+      Promise.race([startSync(), new Promise(function (r) { setTimeout(r, 6000); })]).catch(function () {}).then(function () { load(true); });
+    });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
