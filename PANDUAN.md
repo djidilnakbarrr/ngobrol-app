@@ -1,10 +1,13 @@
 # Panduan pasang notifikasi
 
 ## 1. Upload ke hosting (HTTPS)
-Taruh 3 file ini di folder yang sama:
-- `index.html`
-- `firebase-messaging-sw.js`
-- `icon-192.png`
+Unggah seluruh isi folder dengan struktur apa adanya (jangan diratakan):
+- `index.html`, `firebase-messaging-sw.js`, `manifest.webmanifest`, `version.json`, ikon `*.png` (di root)
+- `css/` (tampilan): `base.css`, `update.css`, `chat-video.css`, `youtube.css`
+- `js/` (logika): `app.js`, `database.js`, `firebase-config.js`, `youtube.js`, `youtube-config.js`, `chat-video.js`, `avatar.js`, `updater.js`
+- `database/` (aturan database): `database.rules.youtube.json`
+
+`index.html` dan `firebase-messaging-sw.js` harus tetap satu folder (root).
 
 Notifikasi hanya jalan lewat **HTTPS** atau `localhost` (GitHub Pages, Firebase Hosting, Netlify, dll). Tidak jalan dari file lokal (`file://`) atau http biasa.
 
@@ -48,7 +51,7 @@ Menu "Hapus percakapan" kini menghapus seluruh node `chats/<id1>__<id2>` di Fire
 ## Notifikasi 100% muncul
 - Notifikasi hanya ditahan bila chat yang sama sedang terbuka dan terlihat di layar. Aplikasi terbuka di chat lain / daftar chat tetap menampilkan notifikasi (plus pemberitahuan di dalam aplikasi).
 - Cloud Function memakai `retry: true`; kegagalan sementara FCM otomatis dicoba ulang (tag = key pesan, jadi tidak dobel).
-- Setelah mengganti file, deploy ulang fungsi: `firebase deploy --only functions`, dan unggah ulang `index.html` serta `firebase-messaging-sw.js`.
+- Setelah mengganti file, deploy ulang fungsi: `firebase deploy --only functions`, dan unggah ulang `index.html`, folder `js/`, dan `firebase-messaging-sw.js`.
 
 ## Badge pesan belum dibaca
 Jumlah pesan belum dibaca disimpan di `unread/<idPenerima>/<idChat>` (angka). Pengirim menaikkannya (+1, atomik) bersamaan dengan pesan; penerima menghapusnya saat chat terbuka dan terlihat di layar. Badge hijau muncul di daftar chat dan hilang otomatis setelah dibaca. Pastikan Rules database mengizinkan baca/tulis pada path `unread/*` (penerima boleh membaca/menghapus miliknya, pengirim boleh menambah milik lawan bicara).
@@ -82,8 +85,8 @@ Ketuk tombol lampiran > **Foto sekali lihat**. Penerima melihat kotak "Foto seka
 - Akun/sesi login dan data pesan tidak dihapus saat memperbarui.
 
 ### Cara merilis versi baru
-1. Di folder proyek jalankan: `node rilis.js 1.2.0 "Catatan satu" "Catatan dua"` (mengubah `APP_VERSION` di `index.html` dan menulis `version.json`).
-2. Unggah ulang **`index.html`** dan **`version.json`** (dan file lain yang berubah) ke hosting. Selesai; semua pengguna akan mendapat pembaruan.
+1. Di folder proyek jalankan: `node rilis.js 1.2.0 "Catatan satu" "Catatan dua"` (mengubah `APP_VERSION` di `js/updater.js` dan menulis `version.json`).
+2. Unggah ulang **`js/updater.js`** dan **`version.json`** (dan file lain yang berubah) ke hosting. Selesai; semua pengguna akan mendapat pembaruan.
 - `vercel.json` sudah diberi header `no-cache` untuk `/`, `/index.html`, dan `/version.json`. Jika hosting bukan Vercel, pastikan tiga path itu tidak di-cache (mis. di Firebase Hosting: tambahkan header `Cache-Control: no-cache` untuk `index.html` dan `version.json`).
 - Deploy pertama kali versi ini: pengguna yang masih di versi lama (belum punya fitur ini) harus membuka link sekali; setelah itu seterusnya otomatis.
 

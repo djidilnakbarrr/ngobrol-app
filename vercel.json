@@ -1,7 +1,7 @@
 {
   "headers": [
     {
-      "source": "/youtube-config.js",
+      "source": "/js/youtube-config.js",
       "headers": [
         {
           "key": "Cache-Control",
@@ -55,6 +55,24 @@
         {
           "key": "Content-Type",
           "value": "application/manifest+json"
+        }
+      ]
+    },
+    {
+      "source": "/js/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/css/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     }
