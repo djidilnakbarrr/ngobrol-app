@@ -670,7 +670,16 @@ async function listMyChatIds() {
   } catch (e) {}
   return Array.from(ids);
 }
+/* Kode konfirmasi 3 angka: berganti acak setiap kali jendela hapus akun dibuka */
+let delAccCode = '';
+function newDelAccCode() {
+  const buf = new Uint32Array(1);
+  (window.crypto || window.msCrypto).getRandomValues(buf);
+  delAccCode = String(100 + (buf[0] % 900));
+  $('delAccCode').textContent = delAccCode;
+}
 function openDeleteAccount() {
+  newDelAccCode();
   $('delAccInput').value = '';
   $('delAccConfirmBtn').disabled = true;
   $('delAccConfirmBtn').textContent = 'Hapus Akun';
@@ -683,10 +692,11 @@ $('closeDelAcc').addEventListener('click', closeDeleteAccount);
 $('cancelDelAcc').addEventListener('click', closeDeleteAccount);
 $('deleteAccountModal').addEventListener('click', (e) => { if (e.target === $('deleteAccountModal')) closeDeleteAccount(); });
 $('delAccInput').addEventListener('input', () => {
-  $('delAccConfirmBtn').disabled = $('delAccInput').value.trim().toUpperCase() !== 'HAPUS';
+  $('delAccInput').value = $('delAccInput').value.replace(/\D/g, '').slice(0, 3);
+  $('delAccConfirmBtn').disabled = !delAccCode || $('delAccInput').value !== delAccCode;
 });
 $('delAccConfirmBtn').addEventListener('click', async () => {
-  if ($('delAccInput').value.trim().toUpperCase() !== 'HAPUS') return;
+  if (!delAccCode || $('delAccInput').value !== delAccCode) return;
   $('delAccConfirmBtn').disabled = true;
   $('cancelDelAcc').disabled = true;
   $('delAccConfirmBtn').textContent = 'Menghapus...';

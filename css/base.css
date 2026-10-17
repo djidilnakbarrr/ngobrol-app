@@ -3283,3 +3283,9 @@
 .set-title { margin: 2px 6px 10px; font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #7a8b93; }
 .set-sec .settings-group + .set-title { margin-top: 22px; }
 .set-sec .settings-group { margin-bottom: 0; }
+
+
+/* Kode konfirmasi hapus akun */
+.del-code { margin: 2px 0 12px; padding: 14px 0; text-align: center; border-radius: 16px; background: #fdecec; border: 1.5px dashed #f1b5b5; color: #c62828; font-size: 34px; font-weight: 800; letter-spacing: 12px; text-indent: 12px; font-variant-numeric: tabular-nums; user-select: none; -webkit-user-select: none; }
+.del-code-input { text-align: center; font-size: 20px; font-weight: 700; letter-spacing: 8px; }
+.del-code-input::placeholder { font-size: 15px; font-weight: 500; letter-spacing: normal; }
