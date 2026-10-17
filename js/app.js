@@ -6,6 +6,7 @@ window.__ngobrolFB = { db, ref, get, set, onValue, getMyId: () => myId, getMyNam
 
 
 let myName = "";
+let myUsername = "";
 
 let myId = "";
 
@@ -733,8 +734,11 @@ async function deleteMyAccount() {
   /* 3) data milik sendiri */
   ['contacts', 'blocked', 'fcmTokens', 'unread'].forEach(n => { updates[n + '/' + id] = null; });
   try {
-    const us = await get(ref(db, 'usernames/' + nameKey(myName)));
-    if (us.exists() && String(us.val()) === id) updates['usernames/' + nameKey(myName)] = null;
+    for (const k of new Set([nameKey(myName), myUsername ? nameKey(myUsername) : ''])) {
+      if (!k) continue;
+      const us = await get(ref(db, 'usernames/' + k));
+      if (us.exists() && String(us.val()) === id) updates['usernames/' + k] = null;
+    }
   } catch (e) {}
   updates['users/' + id] = null;
   await update(ref(db), updates);
@@ -955,165 +959,169 @@ $('confirmModal').addEventListener('click', (e) => { if (e.target === $('confirm
 let loginMode = 'register';
 
 function setLoginMode(mode) {
-
   loginMode = mode;
-
+  $('loginNameWrap').style.display = mode === 'verify' ? 'none' : 'block';
   $('loginIdWrap').style.display = mode === 'verify' ? 'block' : 'none';
-
+  $('loginHint').style.display = mode === 'verify' ? 'none' : 'block';
   $('loginSubtitle').textContent = mode === 'verify'
-
-    ? 'Nama ini sudah terdaftar. Masukkan ID akun Anda untuk masuk kembali, atau gunakan nama lain untuk mendaftar.'
-
-    : 'Masukkan nama pengguna Anda. ID akun akan dibuat secara otomatis.';
-
+    ? 'Username ini sudah terdaftar. Masukkan ID akun Anda untuk masuk kembali, atau gunakan username lain untuk mendaftar.'
+    : 'Masukkan nama dan username Anda. ID akun akan dibuat secara otomatis.';
   setLogin(false);
-
 }
 
 function setLogin(loading) {
-
   const b = $('loginBtn');
-
   b.disabled = loading;
-
   b.classList.toggle('loading', loading);
-
   b.querySelector('.btn-label').textContent = loading ? 'Memproses...' : (loginMode === 'verify' ? 'Masuk' : 'Daftar Sekarang');
-
 }
 
-/* Nama unik: indeks usernames/{nama-huruf-kecil} = ID pemilik */
-
+/* Indeks unik: usernames/{kunci-huruf-kecil} = ID pemilik */
 const nameKey = n => String(n).trim().toLowerCase().replace(/\s+/g, ' ')
-
   .replace(/[.$#\[\]\/]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
 
 async function claimName(name, id) {
-
   const r = await runTransaction(ref(db, 'usernames/' + nameKey(name)), cur => (cur === null || String(cur) === id) ? id : undefined);
-
   return r.committed;
-
 }
 
-$('usernameInput').addEventListener('input', () => {
+/* ---- Username: unik, huruf kecil, boleh diganti. Minimal ada 1 huruf supaya tidak tertukar dengan ID angka ---- */
+const USERNAME_RE = /^(?=.*[a-z])[a-z0-9._]{3,20}$/;
+const normUsername = u => String(u == null ? '' : u).trim().replace(/^@+/, '').toLowerCase();
+function usernameError(u) {
+  if (!u) return 'Silakan masukkan username';
+  if (u.length < 3) return 'Username minimal terdiri dari 3 karakter';
+  if (u.length > 20) return 'Username maksimal 20 karakter';
+  if (!/^[a-z0-9._]+$/.test(u)) return 'Username hanya boleh huruf, angka, titik, dan garis bawah';
+  if (!/[a-z]/.test(u)) return 'Username harus mengandung minimal 1 huruf';
+  return '';
+}
+/* Cari ID pemilik username (null jika tidak ada) */
+async function findUserIdByUsername(u) {
+  const key = normUsername(u);
+  if (!key) return null;
+  const s = await get(ref(db, 'usernames/' + nameKey(key)));
+  if (!s.exists()) return null;
+  const id = String(s.val());
+  const us = await get(ref(db, 'users/' + id));
+  return us.exists() ? id : null;
+}
+/* Turunkan username dari nama tampilan (untuk akun lama yang belum punya username) */
+function usernameFromName(name) {
+  let b = String(name || '').toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9._]/g, '').slice(0, 16);
+  if (!/[a-z]/.test(b)) b = 'user' + b;
+  while (b.length < 3) b += Math.floor(Math.random() * 10);
+  return b;
+}
+function renderMyUsername() {
+  const el = $('settingsUsernameText');
+  if (el) el.textContent = myUsername ? '@' + myUsername : 'Belum diatur';
+}
+/* Pastikan akun punya username (akun lama dimigrasikan otomatis dari namanya) */
+async function ensureMyUsername() {
+  if (!myId) return;
+  const snap = await get(ref(db, 'users/' + myId + '/username'));
+  let cur = snap.exists() ? normUsername(snap.val()) : '';
+  if (cur && !usernameError(cur) && await claimName(cur, myId)) { myUsername = cur; renderMyUsername(); return; }
+  const base = usernameFromName(myName);
+  let chosen = null;
+  for (let i = 0; i < 6 && !chosen; i++) {
+    const cand = i === 0 ? base : base.slice(0, 16) + String(Math.floor(100 + Math.random() * 900));
+    if (await claimName(cand, myId)) chosen = cand;
+  }
+  if (!chosen) return;
+  await update(ref(db, 'users/' + myId), { username: chosen });
+  /* lepas kunci lama (nama) bila berbeda dan milik sendiri */
+  try {
+    const oldKey = nameKey(myName);
+    if (oldKey !== nameKey(chosen)) {
+      const o = await get(ref(db, 'usernames/' + oldKey));
+      if (o.exists() && String(o.val()) === myId) await remove(ref(db, 'usernames/' + oldKey));
+    }
+  } catch (e) {}
+  myUsername = chosen; renderMyUsername();
+}
 
+$('usernameInput').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/^@+/, '');
   if (loginMode === 'verify') { $('loginIdInput').value = ''; setLoginMode('register'); }
-
 });
 
 $('loginIdInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, ''); });
 
+$('loginNameInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') { e.preventDefault(); $('usernameInput').focus(); }
+});
+
 $('loginBtn').addEventListener('click', async () => {
-
-  const name = $('usernameInput').value.trim();
-
-  if (!name) { showToast('Silakan masukkan nama pengguna'); return; }
-
-  if (name.length < 2) { showToast('Nama minimal terdiri dari 2 karakter'); return; }
-
-  if (name.length > 12) { showToast('Nama melebihi batas karakter'); return; }
-
+  const typedUser = normUsername($('usernameInput').value);
+  const name = $('loginNameInput').value.trim();
+  if (!typedUser) { showToast('Silakan masukkan username'); return; }
   setLogin(true);
-
   try {
-
-    const ownerSnap = await get(ref(db, 'usernames/' + nameKey(name)));
-
-    if (ownerSnap.exists()) {
-
-      const ownerId = String(ownerSnap.val());
-
+    /* 1) username sudah terdaftar -> masuk dengan ID */
+    let ownerId = null;
+    const ownerSnap = await get(ref(db, 'usernames/' + nameKey(typedUser)));
+    if (ownerSnap.exists()) ownerId = String(ownerSnap.val());
+    if (ownerId) {
       if (loginMode !== 'verify') {
-
         setLoginMode('verify');
-
-        showToast('Nama sudah terdaftar. Masukkan ID Anda untuk masuk');
-
+        showToast('Username sudah terdaftar. Masukkan ID Anda untuk masuk');
         setTimeout(() => $('loginIdInput').focus(), 100);
-
         return;
-
       }
-
       const typed = $('loginIdInput').value.trim();
-
       if (!typed) { showToast('Silakan masukkan ID akun'); setLogin(false); return; }
-
-      if (typed !== ownerId && canonId(typed) !== ownerId) { showToast('ID tidak sesuai dengan nama pengguna'); setLogin(false); return; }
-
+      if (typed !== ownerId && canonId(typed) !== ownerId) { showToast('ID tidak sesuai dengan username'); setLogin(false); return; }
       const us = await get(ref(db, 'users/' + ownerId));
-
       myId = ownerId;
-
-      myName = (us.exists() && us.val() && us.val().name) || name;
-
+      myName = (us.exists() && us.val() && us.val().name) || typedUser;
       saveSession();
-
-        showToast('Selamat datang kembali, ' + myName);
-
+      showToast('Selamat datang kembali, ' + myName);
       enterApp();
-
       return;
-
     }
-
+    /* 2) pendaftaran baru: nama + username */
+    if (!name) { showToast('Silakan masukkan nama'); setLogin(false); return; }
+    if (name.length < 2) { showToast('Nama minimal terdiri dari 2 karakter'); setLogin(false); return; }
+    if (name.length > 12) { showToast('Nama melebihi batas karakter'); setLogin(false); return; }
+    const uErr = usernameError(typedUser);
+    if (uErr) { showToast(uErr); setLogin(false); return; }
     let newId = null;
-
     for (let i = 0; i < 5; i++) {
-
       const candidate = generateId();
-
       const snap = await get(ref(db, 'users/' + candidate));
-
       if (!snap.exists()) { newId = candidate; break; }
-
     }
-
     if (!newId) {
-
       showToast('Gagal membuat ID. Silakan coba lagi');
-
       setLogin(false);
-
       return;
-
     }
-
-    if (!(await claimName(name, newId))) {
-
+    if (!(await claimName(typedUser, newId))) {
       setLoginMode('verify');
-
-      showToast('Nama sudah terdaftar. Masukkan ID atau gunakan nama lain');
-
+      showToast('Username sudah terdaftar. Masukkan ID atau gunakan username lain');
       return;
-
     }
-
     myId = newId;
-
     myName = name;
-
-    await set(ref(db, 'users/' + myId), { name: myName, online: true, lastSeen: Date.now(), photo: "", role: 'user' });
-
+    myUsername = typedUser;
+    try {
+      await set(ref(db, 'users/' + myId), { name: myName, username: typedUser, online: true, lastSeen: Date.now(), photo: "", role: 'user' });
+    } catch (e) {
+      try { await remove(ref(db, 'usernames/' + nameKey(typedUser))); } catch (e2) {}
+      myId = ''; myName = ''; myUsername = '';
+      throw e;
+    }
     saveSession();
-
     $('myIdValue').textContent = dispId(myId);
-
     $('myIdModal').classList.add('show');
-
     enterApp();
-
   } catch (err) {
-
     console.error(err);
-
     showToast('Gagal masuk: ' + err.message);
-
     setLogin(false);
-
   }
-
 });
 
 $('usernameInput').addEventListener('keypress', e => {
@@ -1165,7 +1173,7 @@ function enterApp() {
 
   update(ref(db, 'users/' + myId), { name: myName, online: true, lastSeen: Date.now() })
 
-    .then(() => { get(ref(db, 'users/' + myId + '/role')).then(r => { if (!r.exists()) set(ref(db, 'users/' + myId + '/role'), 'user').catch(() => {}); }).catch(() => {}); loadContacts(); loadChatMeta(); loadGroups(); loadMyProfile(); startNotifSystem(); claimName(myName, myId).catch(() => {}); setTimeout(handleDeepLink, 400); })
+    .then(() => { get(ref(db, 'users/' + myId + '/role')).then(r => { if (!r.exists()) set(ref(db, 'users/' + myId + '/role'), 'user').catch(() => {}); }).catch(() => {}); loadContacts(); loadChatMeta(); loadGroups(); loadMyProfile(); startNotifSystem(); ensureMyUsername().catch(() => {}); setTimeout(handleDeepLink, 400); })
 
     .catch(err => {
 
@@ -1184,6 +1192,8 @@ function loadMyProfile() {
   onValue(ref(db, 'users/' + myId), snap => {
 
     const d = snap.val() || {};
+
+    if (d.username && normUsername(d.username) !== myUsername) { myUsername = normUsername(d.username); renderMyUsername(); }
 
     if (d.name && d.name !== myName) {
 
@@ -1550,6 +1560,52 @@ $('confirmEditName').addEventListener('click', async () => {
 });
 
 
+
+/* ============= EDIT USERNAME ============= */
+function openEditUsername() {
+  $('editUsernameInput').value = myUsername || '';
+  $('editUsernameModal').classList.add('show');
+  setTimeout(() => $('editUsernameInput').focus(), 100);
+}
+function closeEditUsername() { $('editUsernameModal').classList.remove('show'); }
+$('settingsUsernameRow').addEventListener('click', openEditUsername);
+$('closeEditUsername').addEventListener('click', closeEditUsername);
+$('cancelEditUsername').addEventListener('click', closeEditUsername);
+$('editUsernameModal').addEventListener('click', (e) => { if (e.target === $('editUsernameModal')) closeEditUsername(); });
+$('editUsernameInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/^@+/, '').replace(/\s/g, '').toLowerCase(); });
+$('editUsernameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('confirmEditUsername').click(); } });
+$('confirmEditUsername').addEventListener('click', async () => {
+  const nu = normUsername($('editUsernameInput').value);
+  const err = usernameError(nu);
+  if (err) { showToast(err); return; }
+  if (nu === myUsername) { closeEditUsername(); return; }
+  $('confirmEditUsername').disabled = true;
+  $('confirmEditUsername').textContent = 'Menyimpan...';
+  try {
+    const oldU = myUsername;
+    if (!(await claimName(nu, myId))) { showToast('Username "@' + nu + '" sudah digunakan. Silakan pilih username lain'); return; }
+    try {
+      await update(ref(db, 'users/' + myId), { username: nu });
+    } catch (e) {
+      if (!oldU || nameKey(nu) !== nameKey(oldU)) { try { await remove(ref(db, 'usernames/' + nameKey(nu))); } catch (e2) {} }
+      throw e;
+    }
+    if (oldU && nameKey(oldU) !== nameKey(nu)) {
+      try {
+        const o = await get(ref(db, 'usernames/' + nameKey(oldU)));
+        if (o.exists() && String(o.val()) === myId) await remove(ref(db, 'usernames/' + nameKey(oldU)));
+      } catch (e) {}
+    }
+    myUsername = nu;
+    renderMyUsername();
+    closeEditUsername();
+    showToast('Username berhasil diperbarui');
+  } catch (e) { showToast('Gagal menyimpan: ' + e.message); }
+  finally {
+    $('confirmEditUsername').disabled = false;
+    $('confirmEditUsername').textContent = 'Simpan';
+  }
+});
 
 /* ============= LOAD DATA ============= */
 
@@ -2581,6 +2637,8 @@ function openAddContactModal() {
 
   $('contactIdInput').value = '';
 
+  $('contactUsernameInput').value = '';
+
   $('addContactModal').classList.add('show');
 
   setTimeout(() => $('contactAliasInput').focus(), 100);
@@ -2612,83 +2670,57 @@ $('addContactModal').addEventListener('click', (e) => {
 });
 
 $('contactIdInput').addEventListener('input', (e) => {
-
   e.target.value = e.target.value.replace(/\D/g, '');
-
 });
 
+$('contactUsernameInput').addEventListener('input', (e) => {
+  e.target.value = e.target.value.replace(/^@+/, '').replace(/\s/g, '').toLowerCase();
+});
 
-
-$('contactAliasInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('contactIdInput').focus(); } });
+$('contactAliasInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('contactUsernameInput').focus(); } });
+$('contactUsernameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('contactIdInput').focus(); } });
 $('contactIdInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('confirmAddContact').click(); } });
 
+/* Tambah kontak: cukup isi username ATAU ID (salah satu). Jika keduanya diisi, harus milik akun yang sama. */
 $('confirmAddContact').addEventListener('click', async () => {
-
-  const id = await resolveUserId($('contactIdInput').value.trim());
-
   const alias = $('contactAliasInput').value.trim();
-
-  if (!id) { showToast('Silakan masukkan ID'); return; }
-
+  const typedUser = normUsername($('contactUsernameInput').value);
+  const typedId = canonId($('contactIdInput').value);
   if (!alias) { showToast('Silakan masukkan nama kontak'); return; }
-
-  if (id === myId) { showToast('Anda tidak dapat menambahkan diri sendiri'); return; }
-
+  if (!typedUser && !typedId) { showToast('Isi username atau ID teman (salah satu sudah cukup)'); return; }
   $('confirmAddContact').disabled = true;
-
   $('confirmAddContact').textContent = 'Menyimpan...';
-
   try {
-
-    const snap = await get(ref(db, 'users/' + id));
-
-    if (!snap.exists()) {
-
-      showToast('ID "' + dispId(id) + '" tidak ditemukan');
-
-      $('confirmAddContact').disabled = false;
-
-      $('confirmAddContact').textContent = 'Tambah';
-
-      return;
-
+    let id = typedId;
+    if (typedUser) {
+      const uid = await findUserIdByUsername(typedUser);
+      if (!uid) { showToast('Username "@' + typedUser + '" tidak ditemukan'); return; }
+      if (typedId && typedId !== uid) { showToast('Username dan ID tidak cocok, kosongkan salah satunya'); return; }
+      id = uid;
     }
-
+    if (id === myId) { showToast('Anda tidak dapat menambahkan diri sendiri'); return; }
+    const snap = await get(ref(db, 'users/' + id));
+    if (!snap.exists()) {
+      showToast('ID "' + dispId(id) + '" tidak ditemukan');
+      return;
+    }
     await set(ref(db, 'contacts/' + myId + '/' + id), alias);
-
     try {
-
       const back = await get(ref(db, 'contacts/' + id + '/' + myId));
-
       if (!back.exists()) await set(ref(db, 'contacts/' + id + '/' + myId), myName);
-
     } catch (e) { console.error(e); }
-
     contactsCache[id] = alias;
-
     if (deletedChats[id]) { delete deletedChats[id]; saveDeletedChats(); }
-
     renderContactList();
-
     renderChatList();
-
     closeAddContactModal();
-
     showToast('Kontak "' + alias + '" ditambahkan');
-
   } catch (err) { showToast('Gagal menyimpan: ' + err.message); }
-
   finally {
-
     $('confirmAddContact').disabled = false;
-
     $('confirmAddContact').textContent = 'Tambah';
-
   }
-
 });
-
-
 
 /* ============= EDIT / DELETE CONTACT ============= */
 
@@ -2702,7 +2734,7 @@ function openEditContact(id) {
 
   $('editContactInput').value = displayName(id) === id ? '' : displayName(id);
 
-  $('editContactId').textContent = dispId(id);
+  $('editContactId').textContent = dispId(id) + ((usersCache[id] && usersCache[id].username) ? '  ·  @' + usersCache[id].username : '');
 
   $('editContactModal').classList.add('show');
 
@@ -6300,7 +6332,7 @@ async function openAddPreview(id) {
 
     showDeep({ kind: 'user', title: 'Tambah kontak', sub: 'Kontak ini dibagikan lewat link', name: u.name || dispId(id), photo: u.photo || '',
 
-      meta: 'ID ' + id, alias: u.name || '', okText: 'Tambah',
+      meta: 'ID ' + id + (u.username ? '  ·  @' + u.username : ''), alias: u.name || '', okText: 'Tambah',
 
       onOk: async (alias) => {
 
@@ -6429,6 +6461,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
     deleteAccountModal: () => closeDeleteAccount(),
     addContactModal: () => closeAddContactModal(),
     editNameModal: () => closeEditNameModal(),
+    editUsernameModal: () => closeEditUsername(),
     editContactModal: () => closeEditContact(),
     groupModal: () => closeGroupModal(),
     groupInfoModal: () => closeGroupInfo(),
