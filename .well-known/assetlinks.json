@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "app.vercel.obrolan_app.twa",
-        "sha256_cert_fingerprints": ["E0:1D:C8:98:B4:EB:A9:38:33:69:C8:2B:84:AB:C0:62:0A:F5:F0:AD:69:5F:AC:5E:D9:21:5B:0E:E9:BE:8B:BE"]
-      }
-    }]
