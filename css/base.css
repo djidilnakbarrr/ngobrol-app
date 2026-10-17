@@ -3259,3 +3259,27 @@
   #toast .toast-act:active { background: rgba(11,138,121,.12); }
   @media (max-width: 360px) { .archive-row { padding-left: 14px; padding-right: 14px; } }
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+
+/* ===== Setelan: tab kategori yang rapi ===== */
+.settings-pane { padding-top: 0; }
+.profile-card { margin: 10px 0 18px !important; }
+.set-tabs {
+  position: sticky; top: 0; z-index: 5; display: flex; gap: 6px; padding: 6px;
+  margin: 0 0 18px; background: #e8eeee; border-radius: 18px;
+  box-shadow: inset 0 1px 2px rgba(15,28,34,.06), 0 0 0 6px var(--bg);
+}
+.set-tab {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; height: 44px;
+  border: none; border-radius: 13px; background: transparent; color: #5b6d75; cursor: pointer;
+  font-family: inherit; font-size: 14px; font-weight: 600; transition: background .18s, color .18s, box-shadow .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+.set-tab svg { width: 18px; height: 18px; flex-shrink: 0; }
+.set-tab.active { background: #fff; color: var(--brand); box-shadow: 0 2px 8px rgba(15,28,34,.12); }
+.set-sec { display: none; }
+.set-sec.active { display: block; animation: setFade .22s ease; }
+@keyframes setFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.set-title { margin: 2px 6px 10px; font-size: 12px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #7a8b93; }
+.set-sec .settings-group + .set-title { margin-top: 22px; }
+.set-sec .settings-group { margin-bottom: 0; }

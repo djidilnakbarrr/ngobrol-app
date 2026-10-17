@@ -1332,40 +1332,18 @@ $('confirmGatePw').addEventListener('click', async () => {
 });
 ['pgNew', 'pgNew2'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (id === 'pgNew') $('pgNew2').focus(); else $('confirmGatePw').click(); } }));
 
-/* ============= PENGATURAN AKUN (tab Username / Password / ID Akun) ============= */
-function openAccount(tab) {
-  document.querySelectorAll('#accTabs .acc-tab').forEach(t => {
-    const on = t.dataset.tab === tab;
-    t.classList.toggle('active', on);
-    t.setAttribute('aria-selected', String(on));
-  });
-  document.querySelectorAll('#accountModal .acc-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === tab));
-  if (tab === 'id') $('accIdValue').textContent = dispId(myId);
-  $('accountModal').classList.add('show');
-  const f = { username: 'editUsernameInput', password: 'cpOld' }[tab];
-  if (f) setTimeout(() => $(f).focus(), 150);
-}
-function closeAccount() { $('accountModal').classList.remove('show'); }
-document.querySelectorAll('#accTabs .acc-tab').forEach(t => t.addEventListener('click', () => {
-  const tab = t.dataset.tab;
-  if (tab === 'username') $('editUsernameInput').value = myUsername || '';
-  if (tab === 'password') { ['cpOld', 'cpNew', 'cpNew2'].forEach(i => { $(i).value = ''; }); setAlert('cpAlert', 'cpAlertText', ''); }
-  openAccount(tab);
-}));
-$('accCopyId').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(myId); showToast('ID berhasil disalin'); }
-  catch (e) { showToast('ID: ' + myId); }
-});
-
 function openChangePw() {
   ['cpOld', 'cpNew', 'cpNew2'].forEach(i => { $(i).value = ''; });
-  document.querySelectorAll('#accountModal .pw-eye.shown').forEach(b => b.click());
+  document.querySelectorAll('#changePwModal .pw-eye.shown').forEach(b => b.click());
   setAlert('cpAlert', 'cpAlertText', '');
-  openAccount('password');
+  $('changePwModal').classList.add('show');
+  setTimeout(() => $('cpOld').focus(), 120);
 }
-function closeChangePw() { closeAccount(); }
+function closeChangePw() { $('changePwModal').classList.remove('show'); }
 $('settingsPasswordRow').addEventListener('click', openChangePw);
+$('closeChangePw').addEventListener('click', closeChangePw);
 $('cancelChangePw').addEventListener('click', closeChangePw);
+$('changePwModal').addEventListener('click', (e) => { if (e.target === $('changePwModal')) closeChangePw(); });
 ['cpOld', 'cpNew', 'cpNew2'].forEach((id, i, arr) => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (i < arr.length - 1) $(arr[i + 1]).focus(); else $('confirmChangePw').click(); } }));
 $('confirmChangePw').addEventListener('click', async () => {
   const oldPw = $('cpOld').value, np = $('cpNew').value, np2 = $('cpNew2').value;
@@ -1833,14 +1811,14 @@ $('confirmEditName').addEventListener('click', async () => {
 /* ============= EDIT USERNAME ============= */
 function openEditUsername() {
   $('editUsernameInput').value = myUsername || '';
-  openAccount('username');
+  $('editUsernameModal').classList.add('show');
+  setTimeout(() => $('editUsernameInput').focus(), 100);
 }
-function closeEditUsername() { closeAccount(); }
+function closeEditUsername() { $('editUsernameModal').classList.remove('show'); }
 $('settingsUsernameRow').addEventListener('click', openEditUsername);
 $('closeEditUsername').addEventListener('click', closeEditUsername);
 $('cancelEditUsername').addEventListener('click', closeEditUsername);
-$('accCloseId').addEventListener('click', closeAccount);
-$('accountModal').addEventListener('click', (e) => { if (e.target === $('accountModal')) closeAccount(); });
+$('editUsernameModal').addEventListener('click', (e) => { if (e.target === $('editUsernameModal')) closeEditUsername(); });
 $('editUsernameInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/^@+/, '').replace(/\s/g, '').toLowerCase(); });
 $('editUsernameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('confirmEditUsername').click(); } });
 $('confirmEditUsername').addEventListener('click', async () => {
@@ -6730,7 +6708,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
     deleteAccountModal: () => closeDeleteAccount(),
     addContactModal: () => closeAddContactModal(),
     editNameModal: () => closeEditNameModal(),
-    accountModal: () => closeAccount(),
+    editUsernameModal: () => closeEditUsername(),
     editContactModal: () => closeEditContact(),
     groupModal: () => closeGroupModal(),
     groupInfoModal: () => closeGroupInfo(),
@@ -6777,3 +6755,14 @@ $('clearGroupBtn').addEventListener('click', async () => {
   arm();
 })();
 
+
+
+/* Tab kategori pada halaman Setelan */
+document.addEventListener('click', e => {
+  const tab = e.target.closest && e.target.closest('.set-tab');
+  if (!tab) return;
+  document.querySelectorAll('.set-tab').forEach(t => { const on = t === tab; t.classList.toggle('active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+  document.querySelectorAll('.set-sec').forEach(sec => sec.classList.toggle('active', sec.id === tab.dataset.sec));
+  const pane = document.querySelector('.settings-pane');
+  if (pane) pane.scrollTo({ top: 0, behavior: 'smooth' });
+});
