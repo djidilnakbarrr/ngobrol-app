@@ -1010,6 +1010,7 @@ function pwWeak(pw) {
   return up || down;
 }
 function pwProblem(pw, pw2) {
+  if (!pw) return 'Password tidak boleh kosong.';
   if (!PW_RE.test(pw)) return 'Password harus terdiri dari tepat 6 angka.';
   if (pwWeak(pw)) return 'Password terlalu mudah ditebak. Hindari angka berulang atau berurutan.';
   if (pw2 !== undefined && pw !== pw2) return 'Konfirmasi password tidak sama dengan password.';
@@ -1050,7 +1051,39 @@ function setAlert(boxId, textId, msg, kind) {
   box.classList.toggle('info', kind === 'info');
   box.style.display = 'flex';
 }
-const loginAlert = (m, k) => setAlert('loginAlert', 'loginAlertText', m, k);
+/* Pesan kesalahan tampil tepat di bawah kolom yang bersangkutan (hilang otomatis dalam 2 detik) */
+const FIELD_INPUT = { loginNameMsg: 'loginNameInput', loginUserMsg: 'usernameInput', loginIdMsg: 'loginIdInput', loginPwMsg: 'loginPwInput', loginPw2Msg: 'loginPw2Input' };
+const fieldMsgTimers = {};
+function fieldMsg(id, msg, ms) {
+  const el = $(id); if (!el) return;
+  clearTimeout(fieldMsgTimers[id]);
+  el.textContent = msg || '';
+  const inp = $(FIELD_INPUT[id]);
+  if (inp) inp.classList.toggle('err', !!msg);
+  const pf = el.previousElementSibling;
+  if (pf && pf.classList.contains('pw-field')) pf.classList.toggle('err', !!msg);
+  if (msg) fieldMsgTimers[id] = setTimeout(() => fieldMsg(id, ''), ms || 2000);
+}
+function clearFieldMsgs() { Object.keys(FIELD_INPUT).forEach(k => fieldMsg(k, '')); }
+function pwError(msg, ms) {
+  fieldMsg('loginPwMsg', ''); fieldMsg('loginPw2Msg', '');
+  fieldMsg(/^Konfirmasi/.test(msg) ? 'loginPw2Msg' : 'loginPwMsg', msg, ms);
+}
+function userError(msg) {
+  if (loginMode === 'register') { setUnameStatus('bad', String(msg).replace(/\.$/, '')); $('usernameInput').classList.add('err'); }
+  else fieldMsg('loginUserMsg', msg);
+}
+function focusFirstError() {
+  const order = [['loginNameMsg', 'loginNameInput'], ['loginUserMsg', 'usernameInput'], ['loginIdMsg', 'loginIdInput'], ['loginPwMsg', 'loginPwInput'], ['loginPw2Msg', 'loginPw2Input']];
+  for (const [m, i] of order) { const e = $(m), n = $(i); if (((e && e.textContent) || n.classList.contains('err')) && n.offsetParent !== null) { n.focus(); return; } }
+}
+/* Pesan di layar masuk otomatis hilang dalam 2 detik (hanya jika pesan yang sama masih tampil) */
+let loginAlertTimer = 0;
+function loginAlert(m, k) {
+  clearTimeout(loginAlertTimer);
+  setAlert('loginAlert', 'loginAlertText', m, k);
+  if (m) loginAlertTimer = setTimeout(() => setAlert('loginAlert', 'loginAlertText', ''), 2000);
+}
 
 /* Status ketersediaan username (mode daftar) */
 const UNAME_IDLE = '';
@@ -1059,6 +1092,7 @@ function setUnameStatus(kind, msg) {
   const el = $('unameStatus'); if (!el) return;
   el.className = 'uname-status' + (kind ? ' ' + kind : '');
   el.textContent = msg;
+  const ui = $('usernameInput'); if (ui) ui.classList.toggle('err', kind === 'bad');
 }
 function checkUsernameLive() {
   clearTimeout(unameTimer);
@@ -1100,9 +1134,12 @@ function setLoginMode(mode, keepAlert) {
     : 'Akun dilindungi password 6 angka. Tanpa password yang benar, akun tidak dapat dibuka.';
   ['loginPwInput', 'loginPw2Input', 'loginIdInput'].forEach(i => { $(i).value = ''; });
   document.querySelectorAll('#loginScreen .pw-eye.shown').forEach(b => b.click());
+  $('loginPwInput').setAttribute('autocomplete', reg ? 'new-password' : 'off');
+  $('loginPw2Input').setAttribute('autocomplete', 'new-password');
   $('loginPwInput').placeholder = mig ? 'Masukkan password baru...' : 'Masukkan password...';
   $('loginPwWrap').querySelector('label').textContent = mig ? 'Password baru' : 'Password';
   if (!keepAlert) loginAlert('');
+  clearFieldMsgs();
   setLogin(false);
   checkUsernameLive();
 }
@@ -1210,9 +1247,33 @@ $('usernameInput').addEventListener('input', (e) => {
   if (loginMode === 'migrate') setLoginMode('login');
   checkUsernameLive();
 });
-$('loginIdInput').addEventListener('input', (e) => { e.target.value = canonId(e.target.value); });
-$('tabLogin').addEventListener('click', () => { if (loginMode !== 'login') setLoginMode('login'); });
-$('tabRegister').addEventListener('click', () => { if (loginMode !== 'register') setLoginMode('register'); });
+['loginPwInput', 'loginPw2Input'].forEach(i => $(i).addEventListener('input', () => fieldMsg(i === 'loginPwInput' ? 'loginPwMsg' : 'loginPw2Msg', '')));
+$('usernameInput').addEventListener('input', () => fieldMsg('loginUserMsg', ''));
+$('loginNameInput').addEventListener('input', () => fieldMsg('loginNameMsg', ''));
+$('loginIdInput').addEventListener('input', (e) => { e.target.value = canonId(e.target.value); fieldMsg('loginIdMsg', ''); });
+/* Pindah tab Masuk/Daftar: seluruh isian dikosongkan agar tidak terisi otomatis dari tab sebelumnya */
+function resetAuthInputs() {
+  clearTimeout(unameTimer); unameSeq++;
+  ['loginNameInput', 'usernameInput', 'loginIdInput', 'loginPwInput', 'loginPw2Input'].forEach(i => { $(i).value = ''; });
+  setUnameStatus('', UNAME_IDLE);
+  clearFieldMsgs();
+}
+/* Username di tab Masuk dipertahankan saat berpindah ke tab Daftar dan kembali lagi */
+let savedLoginUser = '';
+function rememberLoginUser() { if (loginMode !== 'register') savedLoginUser = $('usernameInput').value; }
+$('tabLogin').addEventListener('click', () => {
+  if (loginMode === 'login') return;
+  const keep = loginMode === 'register' ? savedLoginUser : $('usernameInput').value;
+  resetAuthInputs();
+  setLoginMode('login');
+  $('usernameInput').value = keep;
+});
+$('tabRegister').addEventListener('click', () => {
+  if (loginMode === 'register') return;
+  rememberLoginUser();
+  resetAuthInputs();
+  setLoginMode('register');
+});
 
 async function enterWithAccount(id, fallbackName, ver) {
   const us = await get(ref(db, 'users/' + id));
@@ -1234,10 +1295,14 @@ async function lookupOwner(user) {
 }
 
 async function doSignIn(user, pw) {
-  if (!user) { loginAlert('Silakan masukkan username.'); return; }
-  if (!PW_RE.test(pw)) { loginAlert('Password harus terdiri dari 6 angka.'); return; }
+  let bad = false;
+  if (!user) { userError('Silakan masukkan username.'); bad = true; }
+  if (!pw) { pwError('Password tidak boleh kosong.'); bad = true; }
+  else if (!PW_RE.test(pw)) { pwError('Password harus terdiri dari 6 angka.'); bad = true; }
+  if (bad) { focusFirstError(); return; }
+  /* Username baru dicari setelah username dan password terisi benar */
   const ownerId = await lookupOwner(user);
-  if (!ownerId) { loginAlert('Username atau password tidak sesuai.'); return; }
+  if (!ownerId) { userError('Username tidak ditemukan.'); focusFirstError(); return; }
   const r = await verifyPassword(ownerId, pw);
   if (r.status === 'nocred') {
     setLoginMode('migrate', true);
@@ -1245,9 +1310,9 @@ async function doSignIn(user, pw) {
     setTimeout(() => $('loginIdInput').focus(), 100);
     return;
   }
-  if (r.status === 'locked') { loginAlert(lockMessage(r.until)); $('loginPwInput').value = ''; return; }
+  if (r.status === 'locked') { pwError(lockMessage(r.until), 5000); $('loginPwInput').value = ''; return; }
   if (r.status === 'bad') {
-    loginAlert('Username atau password tidak sesuai.' + (r.left <= 2 ? ' Sisa percobaan: ' + r.left + '.' : ''));
+    pwError('Password salah.' + (r.left <= 2 ? ' Sisa percobaan: ' + r.left + '.' : ''));
     $('loginPwInput').value = '';
     $('loginPwInput').focus();
     return;
@@ -1257,12 +1322,15 @@ async function doSignIn(user, pw) {
 
 async function doMigrate(user, pw, pw2) {
   const typedId = canonId($('loginIdInput').value);
-  if (!user) { loginAlert('Silakan masukkan username.'); return; }
-  if (!typedId) { loginAlert('Silakan masukkan ID akun untuk verifikasi.'); return; }
+  let bad = false;
+  if (!user) { userError('Silakan masukkan username.'); bad = true; }
+  if (!typedId) { fieldMsg('loginIdMsg', 'Silakan masukkan ID akun untuk verifikasi.'); bad = true; }
   const pe = pwProblem(pw, pw2);
-  if (pe) { loginAlert(pe); return; }
+  if (pe) { pwError(pe); bad = true; }
+  if (bad) { focusFirstError(); return; }
   const ownerId = await lookupOwner(user);
-  if (!ownerId || canonId(ownerId) !== typedId) { loginAlert('Username dan ID akun tidak sesuai.'); return; }
+  if (!ownerId) { userError('Username tidak ditemukan.'); focusFirstError(); return; }
+  if (canonId(ownerId) !== typedId) { fieldMsg('loginIdMsg', 'ID akun tidak sesuai dengan username.'); focusFirstError(); return; }
   const cred = await makeCredential(pw);
   const tr = await runTransaction(ref(db, 'credentials/' + ownerId), cur => cur === null ? cred : undefined);
   if (!tr.committed) {
@@ -1275,14 +1343,16 @@ async function doMigrate(user, pw, pw2) {
 
 async function doRegister(user, pw, pw2) {
   const name = $('loginNameInput').value.trim();
-  if (!name) { loginAlert('Silakan masukkan nama.'); return; }
-  if (name.length < 2) { loginAlert('Nama minimal terdiri dari 2 karakter.'); return; }
-  if (name.length > 12) { loginAlert('Nama maksimal 12 karakter.'); return; }
+  let bad = false;
+  if (!name) { fieldMsg('loginNameMsg', 'Silakan masukkan nama.'); bad = true; }
+  else if (name.length < 2) { fieldMsg('loginNameMsg', 'Nama minimal terdiri dari 2 karakter.'); bad = true; }
+  else if (name.length > 12) { fieldMsg('loginNameMsg', 'Nama maksimal 12 karakter.'); bad = true; }
   const uErr = usernameError(user);
-  if (uErr) { loginAlert(uErr + '.'); return; }
+  if (uErr) { userError(uErr + '.'); bad = true; }
   const pe = pwProblem(pw, pw2);
-  if (pe) { loginAlert(pe); return; }
-  if (await usernameTaken(user)) { loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
+  if (pe) { pwError(pe); bad = true; }
+  if (!uErr && await usernameTaken(user)) { userError('Username sudah digunakan. Silakan pilih username lain.'); bad = true; }
+  if (bad) { focusFirstError(); return; }
   const cred = await makeCredential(pw);
   /* Pesan ID 4 huruf secara atomik: transaksi hanya berhasil bila ID benar-benar belum dipakai */
   const userObj = { name, username: user, online: true, lastSeen: Date.now(), photo: '', role: 'user', reserved: { [nameKey(user)]: true } };
@@ -1294,7 +1364,7 @@ async function doRegister(user, pw, pw2) {
   }
   if (!newId) { loginAlert('Gagal membuat ID akun. Silakan coba kembali.'); return; }
   const undo = async () => { try { await remove(ref(db, 'users/' + newId)); } catch (e2) {} };
-  if (!(await claimName(user, newId))) { await undo(); loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
+  if (!(await claimName(user, newId))) { await undo(); userError('Username sudah digunakan. Silakan pilih username lain.'); return; }
   try {
     await set(ref(db, 'credentials/' + newId), cred);
   } catch (e) {
@@ -1312,7 +1382,7 @@ async function doRegister(user, pw, pw2) {
 let loginBusy = false;
 $('loginBtn').addEventListener('click', async () => {
   if (loginBusy) return;
-  loginAlert('');
+  loginAlert(''); clearFieldMsgs();
   if (!hasCrypto()) { loginAlert('Peramban ini tidak mendukung penyimpanan password yang aman. Buka aplikasi melalui HTTPS.'); return; }
   const user = normUsername($('usernameInput').value);
   const pw = $('loginPwInput').value, pw2 = $('loginPw2Input').value;
@@ -1714,8 +1784,6 @@ async function readSession() {
     try { const f = sessionStorage.getItem('chat_flash'); if (f) {
       sessionStorage.removeItem('chat_flash');
       loginAlert(f, 'info');
-      /* Pesan otomatis hilang dalam 3 detik (hanya bila pesan yang sama masih tampil) */
-      setTimeout(() => { const t = $('loginAlertText'); if (t && t.textContent === f) loginAlert(''); }, 3000);
     } } catch (e) {}
   }
 

@@ -1,10 +1,7 @@
 {
-  "version": "1.7.0",
+  "version": "1.7.5",
   "released": "2026-10-17",
   "notes": [
-    "Masuk memakai username dan password 6 angka, tanpa perlu memasukkan ID",
-    "Password dapat diubah di Setelan; perangkat lain otomatis keluar setelah password diganti",
-    "Akun lama diminta membuat password",
-    "Teks aplikasi dirapikan dan ikon status memakai SVG"
+    "Garis dan lingkaran putih dekoratif pada layar Masuk dan Daftar dihapus"
   ]
 }
