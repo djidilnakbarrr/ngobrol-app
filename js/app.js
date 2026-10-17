@@ -1034,7 +1034,7 @@ function setAlert(boxId, textId, msg, kind) {
 const loginAlert = (m, k) => setAlert('loginAlert', 'loginAlertText', m, k);
 
 /* Status ketersediaan username (mode daftar) */
-const UNAME_IDLE = 'Huruf kecil, angka, titik, dan garis bawah (3–20 karakter)';
+const UNAME_IDLE = '';
 let unameTimer = 0, unameSeq = 0;
 function setUnameStatus(kind, msg) {
   const el = $('unameStatus'); if (!el) return;
@@ -1048,8 +1048,8 @@ function checkUsernameLive() {
   const u = normUsername($('usernameInput').value);
   if (!u) { setUnameStatus('', UNAME_IDLE); return; }
   const err = usernameError(u);
-  if (err) { setUnameStatus('bad', err); return; }
-  setUnameStatus('wait', 'Memeriksa ketersediaan...');
+  if (err) { setUnameStatus('bad', err.replace('Silakan masukkan username', 'Username wajib diisi')); return; }
+  setUnameStatus('wait', 'Memeriksa ketersediaan');
   unameTimer = setTimeout(async () => {
     try {
       const taken = await usernameTaken(u);
