@@ -10,7 +10,7 @@
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>',
     arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
-    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14z"/></svg>',
+    play: '<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8.6 6.2v11.6L17.8 12z\" fill=\"currentColor\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linejoin=\"round\"/></svg>',
     trend: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>',
     music: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
     game: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="4"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><circle cx="15.5" cy="11" r=".6"/><circle cx="17.5" cy="13" r=".6"/></svg>',
@@ -42,7 +42,7 @@
     { id: '1', label: 'Film', icon: I.film, cat: '1' }
   ];
 
-  var state = { mode: 'popular', cat: 'popular', query: '', token: '', loading: false, again: false, ready: false, keyKnown: false, current: null };
+  var state = { mode: 'popular', cat: 'popular', query: '', token: '', loading: false, again: false, ready: false, keyKnown: false, current: null, pool: [], pos: 0, lastLoad: 0 };
 
   /* ---------- Utilitas ---------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -68,21 +68,21 @@
   function toast(m) { if (typeof window.showToast === 'function') window.showToast(m); }
 
   /* ---------- Akses API dengan cache ---------- */
-  function cacheGet(k) {
+  function cacheGet(k, ttl) {
     try {
       var raw = localStorage.getItem('yt:' + k); if (!raw) return null;
       var o = JSON.parse(raw);
-      if (Date.now() - o.t > (CFG.CACHE_MINUTES || 10) * 60000) return null;
+      if (Date.now() - o.t > (ttl || CFG.CACHE_MINUTES || 10) * 60000) return null;
       return o.d;
     } catch (e) { return null; }
   }
   function cacheSet(k, d) { try { localStorage.setItem('yt:' + k, JSON.stringify({ t: Date.now(), d: d })); } catch (e) { /* penyimpanan penuh atau diblokir */ } }
 
-  function call(endpoint, params) {
+  function call(endpoint, params, ttl) {
     var q = Object.keys(params).filter(function (k) { return params[k] !== '' && params[k] != null; })
       .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
     var ck = endpoint + '?' + q;
-    var hit = cacheGet(ck);
+    var hit = cacheGet(ck, ttl);
     if (hit) return Promise.resolve(hit);
     return fetch(API + endpoint + '?' + q + '&key=' + encodeURIComponent(CFG.API_KEY)).then(function (r) {
       return r.json().then(function (j) {
@@ -101,29 +101,84 @@
     return call('videos', { part: 'snippet,contentDetails,statistics', id: ids.join(','), hl: CFG.LANGUAGE }).then(function (j) { return j.items || []; });
   }
 
+  var GAME_CAT = '20';
+  var EXTRA_REGIONS = ['MY', 'SG', 'PH', 'US'];
+  /* Kata kunci anime/donghua. Hasil pencarian disimpan lama di perangkat karena boros kuota (100 unit/cari). */
+  var ANIME_Q = ['anime sub indo', 'donghua sub indo', 'anime terbaru', 'donghua terbaru', 'trailer anime', 'amv anime', 'rekomendasi anime', 'rekomendasi donghua'];
+  var SEARCH_TTL = 720; /* menit */
+  /* Buang video pendek (Shorts): durasi di bawah MIN_SECONDS. Siaran langsung tetap ditampilkan. */
+  function secs(iso) {
+    var m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
+    return m ? (+m[1] || 0) * 86400 + (+m[2] || 0) * 3600 + (+m[3] || 0) * 60 + (+m[4] || 0) : 0;
+  }
+  function notShort(v) {
+    if (!v) return false;
+    if (v.snippet && v.snippet.liveBroadcastContent === 'live') return true;
+    var min = (CFG.MIN_SECONDS == null ? 300 : CFG.MIN_SECONDS);
+    return secs(v.contentDetails && v.contentDetails.duration) >= min;
+  }
+  function shuffle(a) {
+    a = a.slice();
+    for (var i = a.length - 1; i > 0; i--) { var k = Math.floor(Math.random() * (i + 1)), t = a[i]; a[i] = a[k]; a[k] = t; }
+    return a;
+  }
+  function takePool(n) {
+    var items = state.pool.slice(state.pos, state.pos + n);
+    state.pos += n;
+    return { items: items, next: state.pos < state.pool.length ? 'pool' : '' };
+  }
+  function popularOf(region) {
+    var p = { part: 'snippet,contentDetails,statistics', chart: 'mostPopular', videoCategoryId: GAME_CAT, regionCode: region, maxResults: 50, hl: CFG.LANGUAGE };
+    return call('videos', p).then(function (j) { return j.items || []; });
+  }
+  function recentDay() { var d = new Date(Date.now() - 21 * 864e5); d.setUTCHours(0, 0, 0, 0); return d.toISOString().replace('.000Z', 'Z'); }
+  function searchTopic(q) {
+    var p = { part: 'snippet', type: 'video', q: q, order: 'viewCount', publishedAfter: recentDay(), maxResults: 40, regionCode: CFG.REGION_CODE || 'ID', relevanceLanguage: CFG.LANGUAGE || 'id', safeSearch: 'moderate' };
+    return call('search', p, SEARCH_TTL).then(function (j) {
+      var ids = (j.items || []).map(function (x) { return x.id && x.id.videoId; }).filter(Boolean);
+      return details(ids);
+    });
+  }
+  /* Beranda: game (chart kategori Gaming) selang-seling dengan anime/donghua (2 kata kunci acak) */
+  function buildPool() {
+    var regs = [CFG.REGION_CODE || 'ID'].concat(shuffle(EXTRA_REGIONS).slice(0, 2));
+    var games = Promise.all(regs.map(function (r, i) { var p = popularOf(r); return i === 0 ? p : p.catch(function () { return []; }); }));
+    var anime = Promise.all(shuffle(ANIME_Q).slice(0, 2).map(function (q) { return searchTopic(q).catch(function () { return []; }); }));
+    return Promise.all([games, anime]).then(function (r) {
+      var seen = {};
+      function uniq(lists) { var out = []; lists.forEach(function (l) { l.forEach(function (v) { if (notShort(v) && v.id && !seen[v.id]) { seen[v.id] = 1; out.push(v); } }); }); return shuffle(out); }
+      var a = uniq(r[1]), g = uniq(r[0]), out = [];
+      while (a.length || g.length) { if (a.length) out.push(a.shift()); if (g.length) out.push(g.shift()); }
+      return out;
+    });
+  }
   function fetchPage() {
     var size = Math.min(50, CFG.PAGE_SIZE || 12);
     if (state.mode === 'popular') {
-      return call('videos', { part: 'snippet,contentDetails,statistics', chart: 'mostPopular', regionCode: CFG.REGION_CODE || 'ID', maxResults: size, pageToken: state.token, hl: CFG.LANGUAGE })
-        .then(function (j) { return { items: j.items || [], next: j.nextPageToken || '' }; });
+      /* Beranda: game + anime/donghua, diacak ulang setiap dimuat */
+      if (state.token === 'pool') return Promise.resolve(takePool(size));
+      return buildPool().then(function (items) { state.pool = shuffle(items); state.pos = 0; return takePool(size); });
     }
-    var p = { part: 'snippet', type: 'video', maxResults: size, pageToken: state.token, regionCode: CFG.REGION_CODE || 'ID', relevanceLanguage: CFG.LANGUAGE || 'id', safeSearch: 'moderate' };
+    var p = { part: 'snippet', type: 'video', maxResults: Math.max(size, 30), pageToken: state.token, regionCode: CFG.REGION_CODE || 'ID', relevanceLanguage: CFG.LANGUAGE || 'id', safeSearch: 'moderate' };
     if (state.mode === 'search') p.q = state.query; else p.videoCategoryId = state.cat;
     return call('search', p).then(function (j) {
       var ids = (j.items || []).map(function (x) { return x.id && x.id.videoId; }).filter(Boolean);
-      return details(ids).then(function (items) { return { items: items, next: j.nextPageToken || '' }; });
+      return details(ids).then(function (items) { return { items: items.filter(notShort), next: j.nextPageToken || '' }; });
     });
   }
 
   /* ---------- Tampilan ---------- */
   function renderChips() {
-    $('ytChips').innerHTML = CATS.map(function (c) {
+    var box = $('ytChips'); if (!box) return;
+    box.innerHTML = CATS.map(function (c) {
       var on = state.mode !== 'search' && state.cat === c.id;
       return '<button type="button" class="yt-chip' + (on ? ' active' : '') + '" data-cat="' + c.id + '">' + c.icon + esc(c.label) + '</button>';
     }).join('');
   }
+  function secTitle() { var t = title(); return t ? '<div class="yt-section-title">' + t + '</div>' : ''; }
   function title() {
     if (state.mode === 'search') return I.search + 'Hasil untuk "' + esc(state.query) + '"';
+    return '';
     var c = CATS.filter(function (x) { return x.id === state.cat; })[0];
     return (c ? c.icon : I.trend) + (state.cat === 'popular' ? 'Video populer' : 'Kategori ' + esc(c.label));
   }
@@ -139,11 +194,11 @@
     var d = v.contentDetails && dur(v.contentDetails.duration);
     var views = st.viewCount ? compact(st.viewCount) + ' ditonton' : '';
     return '<button type="button" class="yt-card" data-id="' + esc(v.id) + '" aria-label="' + esc(sn.title) + '">' +
-      '<div class="yt-thumb"><img loading="lazy" alt="" src="' + esc(th) + '"><div class="yt-play"><span>' + I.play + '</span></div>' +
+      '<div class="yt-thumb"><img loading="lazy" alt="" src="' + esc(th) + '">' +
       (live ? '<span class="yt-live">LIVE</span>' : (d && d !== '0:00' ? '<span class="yt-dur">' + d + '</span>' : '')) + '</div>' +
       '<div class="yt-info"><div class="yt-ch-av">' + esc((sn.channelTitle || '?').trim().charAt(0).toUpperCase()) + '</div>' +
       '<div class="yt-txt"><div class="yt-title">' + esc(sn.title) + '</div>' +
-      '<div class="yt-sub"><b>' + esc(sn.channelTitle) + '</b><br>' + [views, ago(sn.publishedAt)].filter(Boolean).join('  ·  ') + '</div></div></div></button>';
+      '<div class="yt-sub"><b>' + esc(sn.channelTitle) + '</b><br>' + [views, ago(sn.publishedAt)].filter(Boolean).join('  ·  ') + '</div></div><span class="yt-cardgo" aria-hidden="true">' + I.play + '</span></div></button>';
   }
   function stateBox(kind, icon, h, p, btn) {
     return '<div class="yt-state ' + kind + '"><div class="yt-state-ico">' + icon + '</div><h3>' + h + '</h3><p>' + p + '</p>' + (btn || '') + '</div>';
@@ -173,17 +228,17 @@
     if (!hasKey()) {
       $('ytMoreWrap').innerHTML = '';
       /* kunci belum diketahui: tampilkan pemuatan, jangan tampilkan "fitur belum aktif" */
-      if (!state.keyKnown) { $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid">' + skeleton(6) + '</div>'; return; }
+      if (!state.keyKnown) { $('ytList').innerHTML = secTitle() + '<div class="yt-grid">' + skeleton(6) + '</div>'; return; }
       $('ytList').innerHTML = ''; showError(null, true); return;
     }
     state.loading = true;
-    if (fresh) $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid">' + skeleton(6) + '</div>';
+    if (fresh) $('ytList').innerHTML = secTitle() + '<div class="yt-grid">' + skeleton(6) + '</div>';
     var btn = $('ytMore'); if (btn) { btn.disabled = true; }
     fetchPage().then(function (r) {
-      state.token = r.next;
+      state.token = r.next; state.lastLoad = Date.now();
       if (fresh) {
         if (!r.items.length) { $('ytList').innerHTML = stateBox('', I.empty, 'Video tidak ditemukan', 'Coba kata kunci lain atau pilih kategori yang berbeda.'); $('ytMoreWrap').innerHTML = ''; return; }
-        $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid" id="ytGrid"></div>';
+        $('ytList').innerHTML = secTitle() + '<div class="yt-grid" id="ytGrid"></div>';
       }
       $('ytGrid').insertAdjacentHTML('beforeend', r.items.map(card).join(''));
       $('ytMoreWrap').innerHTML = r.next ? '<div class="yt-more"><button type="button" class="yt-btn" id="ytMore">' + I.down + 'Muat lebih banyak</button></div>' : '';
@@ -351,8 +406,19 @@
     $('ytSearchIcon').innerHTML = I.search;
     $('ytClear').innerHTML = I.close; $('ytGo').innerHTML = I.arrow; $('ytClose').innerHTML = I.close;
     renderChips();
+    $('ytRefresh').innerHTML = I.refresh;
+    function refreshHome(spin) {
+      if (state.mode !== 'popular' || state.loading) return;
+      if (spin) { var b = $('ytRefresh'); b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); }
+      $('ytScroll').scrollTop = 0; load(true);
+    }
+    $('ytRefresh').addEventListener('click', function () { if (state.mode === 'search') { $('ytInput').value = ''; $('ytSearchBox').classList.remove('has-text'); state.mode = 'popular'; state.cat = 'popular'; state.query = ''; load(true); $('ytScroll').scrollTop = 0; } else refreshHome(true); });
+    var ytTab = document.querySelector('.bottom-tab[data-pane="paneYoutube"]');
+    if (ytTab) ytTab.addEventListener('click', function () {
+      var pane = $('paneYoutube'), wasActive = pane && pane.classList.contains('active');
+      if (wasActive || Date.now() - state.lastLoad > 30000) refreshHome(false);
+    });
 
-    $('ytChips').addEventListener('click', function (e) { var b = e.target.closest('.yt-chip'); if (b) setCat(b.dataset.cat); });
     $('ytList').addEventListener('click', function (e) {
       var c = e.target.closest('.yt-card[data-id]'); if (c) { openPlayer(c.dataset.id); return; }
       if (e.target.closest('#ytRetry')) load(true);

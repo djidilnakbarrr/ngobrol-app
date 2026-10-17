@@ -3512,7 +3512,7 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
 
 
       <div class="tab-pane" id="paneYoutube">
-        <div class="pane-head"><h1>YouTube</h1><button type="button" class="yt-icon-btn yt-admin-btn" id="ytAdminBtn" hidden aria-label="Pengaturan API key" title="Pengaturan API key (admin)"></button></div>
+        <div class="pane-head"><h1>YouTube</h1><div class="yt-head-actions"><button type="button" class="yt-icon-btn yt-refresh-btn" id="ytRefresh" aria-label="Segarkan video" title="Segarkan video"></button><button type="button" class="yt-icon-btn yt-admin-btn" id="ytAdminBtn" hidden aria-label="Pengaturan API key" title="Pengaturan API key (admin)"></button></div></div>
         <div class="yt-top">
           <div class="yt-search" id="ytSearchBox">
             <span id="ytSearchIcon" style="display:inline-flex"></span>
@@ -3520,7 +3520,6 @@ body:has(#chatView.active) #updFab, body:has(#archivedView.active) #updFab { dis
             <button type="button" class="yt-icon-btn yt-clear" id="ytClear" aria-label="Hapus"></button>
             <button type="button" class="yt-icon-btn yt-go" id="ytGo" aria-label="Cari"></button>
           </div>
-          <div class="yt-chips" id="ytChips"></div>
         </div>
         <div class="yt-scroll" id="ytScroll">
           <div id="ytList"><div class="yt-state"><div class="yt-state-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z"/></svg></div><h3>YouTube</h3><p>Buka tab ini untuk melihat video populer.</p></div></div>
@@ -11647,6 +11646,63 @@ $('clearGroupBtn').addEventListener('click', async () => {
   } catch (err) { showToast('Gagal menghapus: ' + err.message); }
 });
 
+/* ============= TOMBOL BACK (HP / browser) =============
+   Back menutup layer paling atas dulu: viewer, popup, menu, chat, arsip, lalu kembali ke tab Chat.
+   Baru di tab Chat (paling dasar) back dua kali untuk keluar. */
+(function setupBackNav() {
+  const open = id => { const el = $(id); return !!el && el.classList.contains('show'); };
+  const shown = id => { const el = $(id); return !!el && el.style.display === 'flex'; };
+  const hide = id => { const el = $(id); if (el) el.classList.remove('show'); };
+  const OVERLAY_CLOSERS = {
+    deleteAccountModal: () => closeDeleteAccount(),
+    addContactModal: () => closeAddContactModal(),
+    editNameModal: () => closeEditNameModal(),
+    editContactModal: () => closeEditContact(),
+    groupModal: () => closeGroupModal(),
+    groupInfoModal: () => closeGroupInfo(),
+    shareModal: () => closeShare()
+  };
+  /* Menutup satu layer teratas. Mengembalikan true kalau ada yang ditutup. */
+  function closeTopLayer() {
+    if (shown('voViewer')) { closeViewOnce(); return true; }
+    if (shown('imgViewer')) { $('imgViewer').style.display = 'none'; return true; }
+    const yAdm = $('ytAdmin');
+    if (yAdm && yAdm.classList.contains('open')) { yAdm.classList.remove('open'); return true; }
+    const yPl = $('ytPlayer');
+    if (yPl && yPl.classList.contains('open')) { const x = $('ytClose'); if (x) x.click(); else yPl.classList.remove('open'); return true; }
+    if (open('confirmModal')) { closeConfirm(false); return true; }
+    if (open('deleteModal')) { hideDeleteModal(); return true; }
+    if (open('deepModal')) { closeDeep(); return true; }
+    if (open('notifSheet')) { closeNotifSheet(false); return true; }
+    if (open('voChooser')) { hide('voChooser'); return true; }
+    if (open('chatMenu')) { hide('chatMenu'); return true; }
+    if (open('newMenu')) { hide('newMenu'); return true; }
+    const ov = Array.from(document.querySelectorAll('.modal-overlay.show')).pop();
+    if (ov) { const fn = OVERLAY_CLOSERS[ov.id]; if (fn) fn(); else ov.classList.remove('show'); return true; }
+    if (open('archMore')) { hide('archMore'); return true; }
+    if (selectedKeys.size > 0) { exitSelectionMode(); return true; }
+    if ($('chatView').classList.contains('active')) { $('backBtn').click(); return true; }
+    if ($('archivedView').classList.contains('active')) { closeArchivedView(); return true; }
+    const pane = document.querySelector('.tab-pane.active');
+    if (pane && pane.id !== 'paneChats' && $('app') && $('app').style.display !== 'none') { switchPane('paneChats'); return true; }
+    return false;
+  }
+  /* Satu entri riwayat "penjaga" selalu ada di depan, jadi back ditangkap app dulu sebelum keluar. */
+  function arm() { try { history.pushState({ obrolaGuard: 1 }, '', location.href); } catch (e) {} }
+  let lastRootBack = 0;
+  window.addEventListener('popstate', () => {
+    let closed = false;
+    try { closed = closeTopLayer(); } catch (e) { console.warn('Back:', e); }
+    if (closed) { arm(); return; }
+    const now = Date.now();
+    if (now - lastRootBack < 2000) { lastRootBack = 0; history.back(); return; }
+    lastRootBack = now;
+    showToast('Tekan sekali lagi untuk keluar');
+    arm();
+  });
+  arm();
+})();
+
 </script>
 
 <script>
@@ -11714,7 +11770,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
    Naikkan versi dengan:  node rilis.js 1.2.0 "catatan 1" "catatan 2"   (mengubah APP_VERSION di bawah + version.json) */
 (function () {
   'use strict';
-  const APP_VERSION = '1.4.1';
+  const APP_VERSION = '1.5.2';
   const CHECK_URL = 'version.json';
   const $ = id => document.getElementById(id);
   const ss = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };

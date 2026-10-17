@@ -10,6 +10,7 @@ window.YT_CONFIG = {
 
   REGION_CODE: 'ID',        // wilayah untuk video populer (kode negara 2 huruf)
   LANGUAGE: 'id',           // bahasa relevansi hasil pencarian
+  MIN_SECONDS: 300,         // hanya video berdurasi segini (detik) atau lebih yang ditampilkan; 300 = 5 menit, isi 0 untuk semua
   PAGE_SIZE: 12,            // jumlah video per muatan (maks 50)
-  CACHE_MINUTES: 10         // lama simpan hasil di perangkat untuk menghemat kuota
+  CACHE_MINUTES: 5          // lama simpan hasil di perangkat untuk menghemat kuota
 };
