@@ -1345,7 +1345,7 @@ $('loginBtn').addEventListener('click', async () => {
 
 /* ============= PASSWORD AKUN: gerbang akun lama, pemantau versi, ubah password ============= */
 function forceLogout(msg) {
-  try { sessionStorage.setItem('chat_flash', msg); } catch (e) {}
+  try { if (msg) sessionStorage.setItem('chat_flash', msg); else sessionStorage.removeItem('chat_flash'); } catch (e) {}
   doLogout();
 }
 function openPwGate() {
@@ -1364,7 +1364,7 @@ function startCredWatch() {
     closePwGate();
     const v = String(snap.val());
     if (!myPwv) { myPwv = v; saveSession(); return; }
-    if (v !== myPwv) forceLogout('Password akun telah diubah. Silakan masuk kembali menggunakan password baru.');
+    if (v !== myPwv) forceLogout('');
   });
   credEpUnsub = onValue(ref(db, 'credentials/' + myId + '/epoch'), snap => {
     if (!myId || accountDeleting || epochHold) return;
@@ -1711,7 +1711,12 @@ async function readSession() {
   else {
     $('loginScreen').style.display = 'flex';
     setLoginMode('login');
-    try { const f = sessionStorage.getItem('chat_flash'); if (f) { sessionStorage.removeItem('chat_flash'); loginAlert(f, 'info'); } } catch (e) {}
+    try { const f = sessionStorage.getItem('chat_flash'); if (f) {
+      sessionStorage.removeItem('chat_flash');
+      loginAlert(f, 'info');
+      /* Pesan otomatis hilang dalam 3 detik (hanya bila pesan yang sama masih tampil) */
+      setTimeout(() => { const t = $('loginAlertText'); if (t && t.textContent === f) loginAlert(''); }, 3000);
+    } } catch (e) {}
   }
 
 })();
