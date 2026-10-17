@@ -976,6 +976,8 @@ $('confirmModal').addEventListener('click', (e) => { if (e.target === $('confirm
 /* ============= LOGIN ============= */
 
 let loginMode = 'login';   /* 'login' | 'register' | 'migrate' (akun lama tanpa password) */
+let myEp = null;           /* nomor 'angkatan' sesi; naik saat 'Keluar dari semua perangkat lain' ditekan */
+let epochHold = false;
 let myPwv = '';            /* versi password sesi ini; berubah bila password diganti di perangkat lain */
 let credUnsub = null;
 let accountDeleting = false;
@@ -1217,6 +1219,7 @@ async function enterWithAccount(id, fallbackName, ver) {
   myId = id;
   myName = (us.exists() && us.val() && us.val().name) || fallbackName;
   myPwv = ver || '';
+  try { myEp = Number((await get(ref(db, 'credentials/' + id + '/epoch'))).val()) || 0; } catch (e) { myEp = 0; }
   saveSession();
   showToast('Selamat datang kembali, ' + myName);
   enterApp();
@@ -1299,7 +1302,7 @@ async function doRegister(user, pw, pw2) {
     try { await remove(ref(db, 'usernames/' + nameKey(user))); } catch (e2) {}
     throw e;
   }
-  myId = newId; myName = name; myUsername = user; myPwv = cred.ver;
+  myId = newId; myName = name; myUsername = user; myPwv = cred.ver; myEp = 0;
   saveSession();
   $('myIdValue').textContent = dispId(myId);
   $('myIdModal').classList.add('show');
@@ -1352,6 +1355,7 @@ function openPwGate() {
   setTimeout(() => $('pgNew').focus(), 150);
 }
 function closePwGate() { $('pwGateModal').classList.remove('show'); }
+let credEpUnsub = null;
 function startCredWatch() {
   if (credUnsub || !myId) return;
   credUnsub = onValue(ref(db, 'credentials/' + myId + '/ver'), snap => {
@@ -1362,8 +1366,18 @@ function startCredWatch() {
     if (!myPwv) { myPwv = v; saveSession(); return; }
     if (v !== myPwv) forceLogout('Password akun telah diubah. Silakan masuk kembali menggunakan password baru.');
   });
+  credEpUnsub = onValue(ref(db, 'credentials/' + myId + '/epoch'), snap => {
+    if (!myId || accountDeleting || epochHold) return;
+    const e = Number(snap.val()) || 0;
+    if (myEp === null) { if (e === 0) { myEp = 0; saveSession(); return; } forceLogout(EP_MSG); return; }
+    if (e !== myEp) forceLogout(EP_MSG);
+  });
 }
-function stopCredWatch() { if (credUnsub) { try { credUnsub(); } catch (e) {} credUnsub = null; } }
+const EP_MSG = 'Anda telah dikeluarkan dari perangkat ini. Silakan masuk kembali.';
+function stopCredWatch() {
+  if (credUnsub) { try { credUnsub(); } catch (e) {} credUnsub = null; }
+  if (credEpUnsub) { try { credEpUnsub(); } catch (e) {} credEpUnsub = null; }
+}
 
 $('confirmGatePw').addEventListener('click', async () => {
   const pw = $('pgNew').value, pw2 = $('pgNew2').value;
@@ -1421,6 +1435,7 @@ $('confirmChangePw').addEventListener('click', async () => {
     if (r.status === 'locked') { warn(lockMessage(r.until)); return; }
     if (r.status === 'bad') { warn('Password saat ini tidak sesuai.' + (r.left <= 2 ? ' Sisa percobaan: ' + r.left + '.' : '')); return; }
     const cred = await makeCredential(np);
+    if (myEp) cred.epoch = myEp;
     myPwv = cred.ver; saveSession();
     try { await set(ref(db, 'credentials/' + myId), cred); }
     catch (e) { myPwv = prev; saveSession(); throw e; }
@@ -1541,6 +1556,38 @@ $('logoutSettings').addEventListener('click', async () => {
 
 
 
+/* ---- Keluar dari semua perangkat lain (perangkat ini tetap masuk) ---- */
+async function logoutOtherDevices() {
+  if (!myId) throw new Error('Belum masuk');
+  epochHold = true;
+  try {
+    const tr = await runTransaction(ref(db, 'credentials/' + myId + '/epoch'), cur => (Number(cur) || 0) + 1);
+    if (!tr.committed) throw new Error('Gagal memproses. Silakan coba lagi.');
+    myEp = Number(tr.snapshot.val()) || 0;
+    /* Ganti juga versi sesi agar perangkat dengan aplikasi versi lama ikut keluar */
+    const prev = myPwv, nv = randB64(12);
+    myPwv = nv; saveSession();
+    try { await set(ref(db, 'credentials/' + myId + '/ver'), nv); } catch (e) { myPwv = prev; saveSession(); }
+  } finally { epochHold = false; }
+  /* Hentikan notifikasi ke perangkat lain */
+  try {
+    const mine = JSON.parse(localStorage.getItem('fcm_tok_ref') || 'null');
+    const snap = await get(ref(db, 'fcmTokens/' + myId));
+    const up = {};
+    snap.forEach(ch => { if (!mine || ch.key !== mine.key) up['fcmTokens/' + myId + '/' + ch.key] = null; });
+    if (Object.keys(up).length) await update(ref(db), up);
+  } catch (e) {}
+}
+$('logoutOthersSettings').addEventListener('click', async () => {
+  const ok = await confirmDialog({ title: 'Keluar dari semua perangkat lain?', messageHtml: '<p>Semua perangkat lain yang sedang masuk dengan akun ini akan keluar otomatis dan perlu memasukkan username dan password lagi.</p><p>Perangkat ini tetap masuk.</p>', okText: 'Keluarkan', icon: 'logout' });
+  if (!ok) return;
+  try {
+    await logoutOtherDevices();
+    showToast('Semua perangkat lain telah dikeluarkan');
+  } catch (err) { showToast('Gagal: ' + (err && err.message ? err.message : err)); }
+});
+
+
 /* ============= SESSION (login permanen) =============
 
    Sesi disimpan di 3 tempat sekaligus (localStorage, cookie, IndexedDB) supaya
@@ -1599,7 +1646,7 @@ function saveSession() {
 
   if (!myId || !myName) return;
 
-  const v = JSON.stringify({ id: myId, name: myName, pwv: myPwv });
+  const v = JSON.stringify({ id: myId, name: myName, pwv: myPwv, ep: myEp });
 
   try { localStorage.setItem('chat_myName', myName); localStorage.setItem('chat_myId', myId); localStorage.setItem(SESSION_KEY, v); } catch (e) {}
 
@@ -1621,7 +1668,7 @@ async function clearSession() {
 
 function parseSession(raw) {
 
-  try { const o = JSON.parse(raw); if (o && o.id && o.name) return { id: String(o.id), name: String(o.name), pwv: o.pwv ? String(o.pwv) : '' }; } catch (e) {}
+  try { const o = JSON.parse(raw); if (o && o.id && o.name) return { id: String(o.id), name: String(o.name), pwv: o.pwv ? String(o.pwv) : '', ep: (o.ep === null || o.ep === undefined) ? null : (Number(o.ep) || 0) }; } catch (e) {}
 
   return null;
 
@@ -1659,7 +1706,7 @@ async function readSession() {
 
   const sess = await readSession();
 
-  if (sess) { myName = sess.name; myId = sess.id; myPwv = sess.pwv || ''; saveSession(); enterApp(); }
+  if (sess) { myName = sess.name; myId = sess.id; myPwv = sess.pwv || ''; myEp = (sess.ep === undefined ? null : sess.ep); saveSession(); enterApp(); }
 
   else {
     $('loginScreen').style.display = 'flex';

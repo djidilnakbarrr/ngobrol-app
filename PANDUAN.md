@@ -146,3 +146,6 @@ Agar tidak bisa ditembus lewat penulisan langsung ke database, tempel isi `datab
 ## Aturan username dan ID
 - **Username terkunci permanen.** Username yang pernah dipakai sebuah akun tidak bisa dipakai akun lain, bahkan setelah pemiliknya menggantinya. Username baru dilepas hanya ketika akun pemiliknya **dihapus permanen**.
 - **ID akun baru berupa 4 huruf besar acak** (tanpa I, L, O), misalnya `KMRT`. Pemesanan ID dilakukan atomik sehingga tidak mungkin ada dua akun dengan ID yang sama. Akun lama tetap memakai ID angkanya.
+
+## Keluar dari semua perangkat lain
+Di Setelan > tab **Lainnya** ada tombol **Keluar dari Semua Perangkat Lain**. Perangkat yang menekan tombol tetap masuk, semua perangkat lain keluar otomatis, termasuk yang sedang offline atau aplikasinya ditutup (mereka keluar begitu aplikasi dibuka dan terhubung). Caranya: nomor `credentials/<id>/epoch` dinaikkan dan versi sesi (`ver`) diganti; token notifikasi perangkat lain juga dihapus. Mengganti password tidak menghapus nomor ini.
