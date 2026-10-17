@@ -1046,15 +1046,15 @@ function setLoginMode(mode, keepAlert) {
   $('loginPw2Wrap').style.display = (reg || mig) ? 'block' : 'none';
   $('loginTitle').textContent = reg ? 'Buat Akun Baru' : (mig ? 'Aktifkan Password' : 'Masuk ke Akun');
   $('loginSubtitle').textContent = reg
-    ? 'Lengkapi data berikut. ID akun dibuat otomatis dan akun dilindungi password 6 angka.'
+    ? 'Lengkapi data berikut untuk membuat akun. ID akun dibuat otomatis dan akun dilindungi password 6 angka.'
     : (mig ? 'Buat password 6 angka untuk akun Anda. Setelah itu, password wajib digunakan setiap kali masuk.'
-           : 'Masukkan username dan password Anda untuk melanjutkan.');
+           : 'Silakan masukkan username dan password Anda untuk masuk.');
   $('loginFoot').textContent = reg
     ? 'Dengan mendaftar, Anda bertanggung jawab menjaga kerahasiaan password akun.'
     : 'Akun dilindungi password 6 angka. Tanpa password yang benar, akun tidak dapat dibuka.';
   ['loginPwInput', 'loginPw2Input', 'loginIdInput'].forEach(i => { $(i).value = ''; });
   document.querySelectorAll('#loginScreen .pw-eye.shown').forEach(b => b.click());
-  $('loginPwInput').placeholder = mig ? 'Password baru (6 digit angka)' : '6 digit angka';
+  $('loginPwInput').placeholder = mig ? 'Masukkan password baru (6 angka)' : 'Masukkan 6 digit angka';
   $('loginPwWrap').querySelector('label').textContent = mig ? 'Password baru' : 'Password';
   if (!keepAlert) loginAlert('');
   setLogin(false);
@@ -1181,7 +1181,7 @@ async function doSignIn(user, pw) {
   const r = await verifyPassword(ownerId, pw);
   if (r.status === 'nocred') {
     setLoginMode('migrate', true);
-    loginAlert('Akun ini belum memiliki password. Verifikasi dengan ID akun, lalu buat password 6 angka.', 'info');
+    loginAlert('Akun ini belum memiliki password. Verifikasi dengan ID akun, kemudian buat password 6 angka.', 'info');
     setTimeout(() => $('loginIdInput').focus(), 100);
     return;
   }

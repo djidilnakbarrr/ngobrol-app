@@ -21,17 +21,19 @@
 /* Kolom password: disamakan dengan kolom isian lain di layar login */
 .pw-field { position: relative; }
 .login-box .pw-field input, .modal-body .pw-field input {
-  width: 100%; padding: 13px 48px 13px 15px; border-radius: 14px;
+  display: block; width: 100%; height: 54px; padding: 0 48px 0 16px; border-radius: 14px;
   border: 1.5px solid #e3e8ea; background: #f4f6f7; color: #111b21;
-  font-size: 20px; letter-spacing: 6px; margin-bottom: 16px; outline: none;
-  font-family: inherit;
+  font-size: 16px; line-height: normal; letter-spacing: normal; margin-bottom: 16px; outline: none;
+  font-family: inherit; text-align: left;
 }
+/* Titik password dibuat lebih besar hanya saat ada isian, agar placeholder tetap rata tengah */
+.login-box .pw-field input:not(:placeholder-shown), .modal-body .pw-field input:not(:placeholder-shown) { font-size: 22px; letter-spacing: 6px; }
 .login-box .pw-field input:focus, .modal-body .pw-field input:focus {
   background: #fff; border-color: #0b8a79; box-shadow: 0 0 0 4px rgba(11, 138, 121, 0.12);
 }
-.pw-field input::placeholder { font-size: 14px; letter-spacing: 0.2px; color: #9aa7ae; }
+.pw-field input::placeholder { font-size: 16px; letter-spacing: normal; color: #9aa7ae; opacity: 1; }
 .login-box .pw-eye, .modal-body .pw-eye {
-  position: absolute; right: 6px; top: 5px; width: 38px; height: 38px; padding: 0;
+  position: absolute; right: 6px; top: 8px; width: 38px; height: 38px; padding: 0;
   display: flex; align-items: center; justify-content: center;
   border-radius: 8px; border: none; background: transparent; color: #667781;
   box-shadow: none; cursor: pointer; text-transform: none;

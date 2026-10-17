@@ -42,7 +42,7 @@
     </svg>
     <div class="login-brand">Chat App</div>
     <h2 id="loginTitle">Masuk ke Akun</h2>
-    <p class="subtitle" id="loginSubtitle">Masukkan username dan password Anda untuk melanjutkan.</p>
+    <p class="subtitle" id="loginSubtitle">Silakan masukkan username dan password Anda untuk masuk.</p>
 
     <div class="auth-tabs" id="authTabs" role="tablist">
       <button type="button" class="auth-tab active" id="tabLogin" role="tab" aria-selected="true">Masuk</button>
@@ -56,33 +56,33 @@
 
     <div id="loginNameWrap" style="display:none">
       <label for="loginNameInput">Nama</label>
-      <input type="text" id="loginNameInput" maxlength="12" placeholder="Nama lengkap Anda" autocomplete="off" autocapitalize="words" enterkeyhint="next">
+      <input type="text" id="loginNameInput" maxlength="12" placeholder="Masukkan nama lengkap" autocomplete="off" autocapitalize="words" enterkeyhint="next">
     </div>
 
     <label for="usernameInput">Username</label>
-    <input type="text" id="usernameInput" maxlength="20" placeholder="Contoh: budi.santoso" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
-    <div class="hint" id="loginHint" style="display:none">Username bersifat unik (3–20 karakter) dan hanya boleh berisi huruf kecil, angka, titik, serta garis bawah.</div>
+    <input type="text" id="usernameInput" maxlength="20" placeholder="Masukkan username" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+    <div class="hint" id="loginHint" style="display:none">Username bersifat unik, terdiri atas 3–20 karakter: huruf kecil, angka, titik, dan garis bawah.</div>
 
     <div id="loginIdWrap" style="display:none">
       <label for="loginIdInput">ID akun</label>
-      <input type="text" id="loginIdInput" maxlength="20" inputmode="numeric" placeholder="ID akun Anda" autocomplete="off">
-      <div class="hint">Akun ini dibuat sebelum fitur password tersedia. Masukkan ID akun untuk verifikasi, lalu buat password baru.</div>
+      <input type="text" id="loginIdInput" maxlength="20" inputmode="numeric" placeholder="Masukkan ID akun" autocomplete="off">
+      <div class="hint">Akun ini dibuat sebelum fitur password tersedia. Masukkan ID akun untuk verifikasi, kemudian buat password baru.</div>
     </div>
 
     <div id="loginPwWrap">
       <label for="loginPwInput">Password</label>
       <div class="pw-field">
-        <input type="password" id="loginPwInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="6 digit angka" autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="loginPwInput" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan 6 digit angka" autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="loginPwInput" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
     </div>
     <div id="loginPw2Wrap" style="display:none">
       <label for="loginPw2Input">Konfirmasi password</label>
       <div class="pw-field">
-        <input type="password" id="loginPw2Input" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Ulangi 6 digit angka" autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="loginPw2Input" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Ulangi password 6 angka" autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="loginPw2Input" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
-      <div class="hint">Password terdiri dari tepat 6 angka. Simpan dengan baik; password dapat diubah kapan saja di menu Setelan.</div>
+      <div class="hint">Password terdiri atas tepat 6 angka. Simpan dengan baik; password dapat diubah kapan saja melalui menu Setelan.</div>
     </div>
 
     <button id="loginBtn" type="button">
@@ -869,17 +869,17 @@
     <div class="modal-body auth-modal-body">
       <label for="cpOld">Password saat ini</label>
       <div class="pw-field">
-        <input type="password" id="cpOld" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="6 digit angka" autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="cpOld" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan 6 digit angka" autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="cpOld" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <label for="cpNew">Password baru</label>
       <div class="pw-field">
-        <input type="password" id="cpNew" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="6 digit angka" autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="cpNew" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan 6 digit angka" autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="cpNew" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <label for="cpNew2">Konfirmasi password baru</label>
       <div class="pw-field">
-        <input type="password" id="cpNew2" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Ulangi 6 digit angka" autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="cpNew2" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Ulangi password 6 angka" autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="cpNew2" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <div class="auth-alert" id="cpAlert" role="alert" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="cpAlertText"></span></div>
@@ -904,12 +904,12 @@
       <p class="gate-text">Untuk keamanan, setiap akun kini wajib dilindungi password 6 angka. Buat password Anda untuk melanjutkan menggunakan aplikasi.</p>
       <label for="pgNew">Password baru</label>
       <div class="pw-field">
-        <input type="password" id="pgNew" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="6 digit angka" autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="pgNew" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Masukkan 6 digit angka" autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="pgNew" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <label for="pgNew2">Konfirmasi password</label>
       <div class="pw-field">
-        <input type="password" id="pgNew2" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Ulangi 6 digit angka" autocomplete="off" enterkeyhint="done" >
+        <input type="password" id="pgNew2" maxlength="6" inputmode="numeric" pattern="[0-9]*" placeholder="Ulangi password 6 angka" autocomplete="off" enterkeyhint="done" >
         <button type="button" class="pw-eye" data-target="pgNew2" aria-label="Tampilkan atau sembunyikan password"><svg class="eye-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg><svg class="eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
       </div>
       <div class="auth-alert" id="pgAlert" role="alert" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span id="pgAlertText"></span></div>
