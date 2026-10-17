@@ -532,7 +532,7 @@ const nsPerm = () => ('Notification' in window ? Notification.permission : 'unsu
 function nsSteps(variant, env) {
   const S = (t, d) => ({ t, d });
   if (variant === 'inapp') return [
-    S('Buka melalui browser utama', 'Ketuk menu (⋮) lalu pilih "Buka di Chrome" atau "Buka di browser", atau salin tautan di bawah.'),
+    S('Buka melalui browser utama', 'Ketuk menu (tiga titik) lalu pilih "Buka di Chrome" atau "Buka di browser", atau salin tautan di bawah.'),
     S('Masuk kembali', 'Gunakan nama pengguna dan ID akun yang sama.'),
     S('Izinkan notifikasi', 'Pilih "Izinkan" pada jendela izin yang muncul.')
   ];
@@ -547,7 +547,7 @@ function nsSteps(variant, env) {
     S('Aktifkan "Izinkan Notifikasi"', 'Kembali ke aplikasi, lalu ketuk "Saya Sudah Mengaktifkan".')
   ];
   if (env.br === 'samsung') return [
-    S('Buka menu (≡) lalu Setelan', 'Pada Samsung Internet.'),
+    S('Buka menu (tiga garis) lalu Setelan', 'Pada Samsung Internet.'),
     S('Situs dan unduhan > Izin > Notifikasi', 'Cari situs ini, lalu ubah menjadi "Izinkan".'),
     S('Kembali ke aplikasi', 'Ketuk "Saya Sudah Mengaktifkan". Pastikan juga notifikasi Samsung Internet aktif di Setelan HP.')
   ];
@@ -694,6 +694,7 @@ $('delAccConfirmBtn').addEventListener('click', async () => {
     await deleteMyAccount();
   } catch (err) {
     console.error(err);
+    accountDeleting = false; startCredWatch();
     showToast('Gagal menghapus akun: ' + (err && err.message ? err.message : err));
     $('delAccConfirmBtn').disabled = false;
     $('delAccConfirmBtn').textContent = 'Hapus Akun';
@@ -703,6 +704,7 @@ $('delAccConfirmBtn').addEventListener('click', async () => {
 async function deleteMyAccount() {
   const id = myId;
   if (!id) throw new Error('Belum masuk');
+  accountDeleting = true; stopCredWatch();
   const updates = {};
   /* 1) grup: keluar; pembuat memindahkan kepemilikan; grup kosong dihapus */
   Object.keys(groupsCache).forEach(gid => {
@@ -732,7 +734,7 @@ async function deleteMyAccount() {
     updates['blocked/' + p + '/' + id] = null;
   });
   /* 3) data milik sendiri */
-  ['contacts', 'blocked', 'fcmTokens', 'unread'].forEach(n => { updates[n + '/' + id] = null; });
+  ['contacts', 'blocked', 'fcmTokens', 'unread', 'credentials'].forEach(n => { updates[n + '/' + id] = null; });
   try {
     for (const k of new Set([nameKey(myName), myUsername ? nameKey(myUsername) : ''])) {
       if (!k) continue;
@@ -868,7 +870,7 @@ const CONFIRM_ICONS = {
 
 let confirmResolver = null;
 
-function confirmDialog({ title, message, messageHtml = '', okText = 'OK', icon = 'trash', danger = true }) {
+function confirmDialog({ title, message, messageHtml = '', okText = 'Konfirmasi', icon = 'trash', danger = true }) {
 
   return new Promise(resolve => {
 
@@ -956,16 +958,105 @@ $('confirmModal').addEventListener('click', (e) => { if (e.target === $('confirm
 
 /* ============= LOGIN ============= */
 
-let loginMode = 'register';
+let loginMode = 'login';   /* 'login' | 'register' | 'migrate' (akun lama tanpa password) */
+let myPwv = '';            /* versi password sesi ini; berubah bila password diganti di perangkat lain */
+let credUnsub = null;
+let accountDeleting = false;
 
-function setLoginMode(mode) {
+/* ---- Password 6 angka: disimpan sebagai hash PBKDF2-SHA256 + salt acak, tidak pernah sebagai teks asli ---- */
+const PW_RE = /^\d{6}$/;
+const PW_ITER = 150000;
+const PW_MAX_FAILS = 5;
+const PW_LOCK_MS = 5 * 60 * 1000;
+const hasCrypto = () => !!(window.crypto && crypto.subtle && crypto.getRandomValues);
+const toB64 = buf => btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
+const fromB64 = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
+const randB64 = n => toB64(crypto.getRandomValues(new Uint8Array(n)));
+
+async function hashPw(pw, saltB64, iter) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(pw)), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: fromB64(saltB64), iterations: iter }, key, 256);
+  return toB64(bits);
+}
+async function makeCredential(pw) {
+  const salt = randB64(16);
+  return { salt, hash: await hashPw(pw, salt, PW_ITER), iter: PW_ITER, ver: randB64(12), updatedAt: Date.now(), fails: 0, lockUntil: 0 };
+}
+/* Tolak password yang terlalu mudah ditebak: angka berulang (111111) atau berurutan (123456, 654321) */
+function pwWeak(pw) {
+  if (/^(\d)\1{5}$/.test(pw)) return true;
+  const d = pw.split('').map(Number);
+  const up = d.every((x, i) => i === 0 || x === d[i - 1] + 1);
+  const down = d.every((x, i) => i === 0 || x === d[i - 1] - 1);
+  return up || down;
+}
+function pwProblem(pw, pw2) {
+  if (!PW_RE.test(pw)) return 'Password harus terdiri dari tepat 6 angka.';
+  if (pwWeak(pw)) return 'Password terlalu mudah ditebak. Hindari angka berulang atau berurutan.';
+  if (pw2 !== undefined && pw !== pw2) return 'Konfirmasi password tidak sama dengan password.';
+  return '';
+}
+/* Verifikasi password terhadap hash tersimpan, dengan pembatasan percobaan (5 salah = kunci 5 menit) */
+async function verifyPassword(id, pw) {
+  const refC = ref(db, 'credentials/' + id);
+  const snap = await get(refC);
+  if (!snap.exists()) return { status: 'nocred' };
+  const c = snap.val() || {};
+  if (!c.salt || !c.hash) return { status: 'nocred' };
+  if (c.lockUntil && c.lockUntil > Date.now()) return { status: 'locked', until: c.lockUntil };
+  const h = await hashPw(pw, c.salt, c.iter || PW_ITER);
+  if (h === c.hash) {
+    if (c.fails || c.lockUntil) { try { await update(refC, { fails: 0, lockUntil: 0 }); } catch (e) {} }
+    return { status: 'ok', ver: String(c.ver || '') };
+  }
+  const tr = await runTransaction(ref(db, 'credentials/' + id + '/fails'), cur => (Number(cur) || 0) + 1);
+  const fails = Number(tr.snapshot.val()) || 1;
+  if (fails >= PW_MAX_FAILS) {
+    const until = Date.now() + PW_LOCK_MS;
+    try { await update(refC, { fails: 0, lockUntil: until }); } catch (e) {}
+    return { status: 'locked', until };
+  }
+  return { status: 'bad', left: PW_MAX_FAILS - fails };
+}
+function lockMessage(until) {
+  const m = Math.max(1, Math.ceil((until - Date.now()) / 60000));
+  return 'Terlalu banyak percobaan yang salah. Akun dikunci sementara. Coba lagi dalam ' + m + ' menit.';
+}
+
+/* Peringatan inline (login, ubah password, buat password) */
+function setAlert(boxId, textId, msg, kind) {
+  const box = $(boxId); if (!box) return;
+  if (!msg) { box.style.display = 'none'; return; }
+  $(textId).textContent = msg;
+  box.classList.toggle('info', kind === 'info');
+  box.style.display = 'flex';
+}
+const loginAlert = (m, k) => setAlert('loginAlert', 'loginAlertText', m, k);
+
+function setLoginMode(mode, keepAlert) {
   loginMode = mode;
-  $('loginNameWrap').style.display = mode === 'verify' ? 'none' : 'block';
-  $('loginIdWrap').style.display = mode === 'verify' ? 'block' : 'none';
-  $('loginHint').style.display = mode === 'verify' ? 'none' : 'block';
-  $('loginSubtitle').textContent = mode === 'verify'
-    ? 'Username ini sudah terdaftar. Masukkan ID akun Anda untuk masuk kembali, atau gunakan username lain untuk mendaftar.'
-    : 'Masukkan nama dan username Anda. ID akun akan dibuat secara otomatis.';
+  const reg = mode === 'register', mig = mode === 'migrate';
+  $('tabLogin').classList.toggle('active', !reg);
+  $('tabRegister').classList.toggle('active', reg);
+  $('tabLogin').setAttribute('aria-selected', String(!reg));
+  $('tabRegister').setAttribute('aria-selected', String(reg));
+  $('loginNameWrap').style.display = reg ? 'block' : 'none';
+  $('loginHint').style.display = reg ? 'block' : 'none';
+  $('loginIdWrap').style.display = mig ? 'block' : 'none';
+  $('loginPw2Wrap').style.display = (reg || mig) ? 'block' : 'none';
+  $('loginTitle').textContent = reg ? 'Buat Akun Baru' : (mig ? 'Aktifkan Password' : 'Masuk ke Akun');
+  $('loginSubtitle').textContent = reg
+    ? 'Lengkapi data berikut. ID akun dibuat otomatis dan akun dilindungi password 6 angka.'
+    : (mig ? 'Buat password 6 angka untuk akun Anda. Setelah itu, password wajib digunakan setiap kali masuk.'
+           : 'Masukkan username dan password Anda untuk melanjutkan.');
+  $('loginFoot').textContent = reg
+    ? 'Dengan mendaftar, Anda bertanggung jawab menjaga kerahasiaan password akun.'
+    : 'Akun dilindungi password 6 angka. Tanpa password yang benar, akun tidak dapat dibuka.';
+  ['loginPwInput', 'loginPw2Input', 'loginIdInput'].forEach(i => { $(i).value = ''; });
+  document.querySelectorAll('#loginScreen .pw-eye.shown').forEach(b => b.click());
+  $('loginPwInput').placeholder = mig ? 'Password baru (6 digit angka)' : '6 digit angka';
+  $('loginPwWrap').querySelector('label').textContent = mig ? 'Password baru' : 'Password';
+  if (!keepAlert) loginAlert('');
   setLogin(false);
 }
 
@@ -973,7 +1064,7 @@ function setLogin(loading) {
   const b = $('loginBtn');
   b.disabled = loading;
   b.classList.toggle('loading', loading);
-  b.querySelector('.btn-label').textContent = loading ? 'Memproses...' : (loginMode === 'verify' ? 'Masuk' : 'Daftar Sekarang');
+  b.querySelector('.btn-label').textContent = loading ? 'Memproses...' : (loginMode === 'register' ? 'Daftar' : (loginMode === 'migrate' ? 'Simpan dan Masuk' : 'Masuk'));
 }
 
 /* Indeks unik: usernames/{kunci-huruf-kecil} = ID pemilik */
@@ -1042,95 +1133,248 @@ async function ensureMyUsername() {
   myUsername = chosen; renderMyUsername();
 }
 
+/* Kolom password: hanya angka, ikon mata untuk menampilkan/menyembunyikan */
+document.addEventListener('input', (e) => {
+  if (e.target && e.target.closest && e.target.closest('.pw-field')) e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6);
+});
+document.addEventListener('click', (e) => {
+  const eye = e.target && e.target.closest ? e.target.closest('.pw-eye') : null;
+  if (!eye) return;
+  const inp = $(eye.getAttribute('data-target'));
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  eye.classList.toggle('shown', show);
+});
+
 $('usernameInput').addEventListener('input', (e) => {
-  e.target.value = e.target.value.replace(/^@+/, '');
-  if (loginMode === 'verify') { $('loginIdInput').value = ''; setLoginMode('register'); }
+  e.target.value = e.target.value.replace(/^@+/, '').replace(/\s/g, '').toLowerCase();
+  if (loginMode === 'migrate') setLoginMode('login');
 });
-
 $('loginIdInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, ''); });
+$('tabLogin').addEventListener('click', () => { if (loginMode !== 'login') setLoginMode('login'); });
+$('tabRegister').addEventListener('click', () => { if (loginMode !== 'register') setLoginMode('register'); });
 
-$('loginNameInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') { e.preventDefault(); $('usernameInput').focus(); }
-});
+async function enterWithAccount(id, fallbackName, ver) {
+  const us = await get(ref(db, 'users/' + id));
+  myId = id;
+  myName = (us.exists() && us.val() && us.val().name) || fallbackName;
+  myPwv = ver || '';
+  saveSession();
+  showToast('Selamat datang kembali, ' + myName);
+  enterApp();
+}
 
-$('loginBtn').addEventListener('click', async () => {
-  const typedUser = normUsername($('usernameInput').value);
+async function lookupOwner(user) {
+  const snap = await get(ref(db, 'usernames/' + nameKey(user)));
+  if (!snap.exists()) return null;
+  const id = String(snap.val());
+  const us = await get(ref(db, 'users/' + id));
+  return us.exists() ? id : null;
+}
+
+async function doSignIn(user, pw) {
+  if (!user) { loginAlert('Silakan masukkan username.'); return; }
+  if (!PW_RE.test(pw)) { loginAlert('Password harus terdiri dari 6 angka.'); return; }
+  const ownerId = await lookupOwner(user);
+  if (!ownerId) { loginAlert('Username atau password tidak sesuai.'); return; }
+  const r = await verifyPassword(ownerId, pw);
+  if (r.status === 'nocred') {
+    setLoginMode('migrate', true);
+    loginAlert('Akun ini belum memiliki password. Verifikasi dengan ID akun, lalu buat password 6 angka.', 'info');
+    setTimeout(() => $('loginIdInput').focus(), 100);
+    return;
+  }
+  if (r.status === 'locked') { loginAlert(lockMessage(r.until)); $('loginPwInput').value = ''; return; }
+  if (r.status === 'bad') {
+    loginAlert('Username atau password tidak sesuai.' + (r.left <= 2 ? ' Sisa percobaan: ' + r.left + '.' : ''));
+    $('loginPwInput').value = '';
+    $('loginPwInput').focus();
+    return;
+  }
+  await enterWithAccount(ownerId, user, r.ver);
+}
+
+async function doMigrate(user, pw, pw2) {
+  const typedId = canonId($('loginIdInput').value);
+  if (!user) { loginAlert('Silakan masukkan username.'); return; }
+  if (!typedId) { loginAlert('Silakan masukkan ID akun untuk verifikasi.'); return; }
+  const pe = pwProblem(pw, pw2);
+  if (pe) { loginAlert(pe); return; }
+  const ownerId = await lookupOwner(user);
+  if (!ownerId || canonId(ownerId) !== typedId) { loginAlert('Username dan ID akun tidak sesuai.'); return; }
+  const cred = await makeCredential(pw);
+  const tr = await runTransaction(ref(db, 'credentials/' + ownerId), cur => cur === null ? cred : undefined);
+  if (!tr.committed) {
+    setLoginMode('login', true);
+    loginAlert('Akun ini sudah memiliki password. Silakan masuk menggunakan password tersebut.', 'info');
+    return;
+  }
+  await enterWithAccount(ownerId, user, cred.ver);
+}
+
+async function doRegister(user, pw, pw2) {
   const name = $('loginNameInput').value.trim();
-  if (!typedUser) { showToast('Silakan masukkan username'); return; }
+  if (!name) { loginAlert('Silakan masukkan nama.'); return; }
+  if (name.length < 2) { loginAlert('Nama minimal terdiri dari 2 karakter.'); return; }
+  if (name.length > 12) { loginAlert('Nama maksimal 12 karakter.'); return; }
+  const uErr = usernameError(user);
+  if (uErr) { loginAlert(uErr + '.'); return; }
+  const pe = pwProblem(pw, pw2);
+  if (pe) { loginAlert(pe); return; }
+  if (await lookupOwner(user)) { loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
+  let newId = null;
+  for (let i = 0; i < 5; i++) {
+    const candidate = generateId();
+    const snap = await get(ref(db, 'users/' + candidate));
+    if (!snap.exists()) { newId = candidate; break; }
+  }
+  if (!newId) { loginAlert('Gagal membuat ID akun. Silakan coba kembali.'); return; }
+  if (!(await claimName(user, newId))) { loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
+  const cred = await makeCredential(pw);
+  try {
+    const up = {};
+    up['users/' + newId] = { name, username: user, online: true, lastSeen: Date.now(), photo: '', role: 'user' };
+    up['credentials/' + newId] = cred;
+    await update(ref(db), up);
+  } catch (e) {
+    try { await remove(ref(db, 'usernames/' + nameKey(user))); } catch (e2) {}
+    throw e;
+  }
+  myId = newId; myName = name; myUsername = user; myPwv = cred.ver;
+  saveSession();
+  $('myIdValue').textContent = dispId(myId);
+  $('myIdModal').classList.add('show');
+  enterApp();
+}
+
+let loginBusy = false;
+$('loginBtn').addEventListener('click', async () => {
+  if (loginBusy) return;
+  loginAlert('');
+  if (!hasCrypto()) { loginAlert('Peramban ini tidak mendukung penyimpanan password yang aman. Buka aplikasi melalui HTTPS.'); return; }
+  const user = normUsername($('usernameInput').value);
+  const pw = $('loginPwInput').value, pw2 = $('loginPw2Input').value;
+  loginBusy = true;
   setLogin(true);
   try {
-    /* 1) username sudah terdaftar -> masuk dengan ID */
-    let ownerId = null;
-    const ownerSnap = await get(ref(db, 'usernames/' + nameKey(typedUser)));
-    if (ownerSnap.exists()) ownerId = String(ownerSnap.val());
-    if (ownerId) {
-      if (loginMode !== 'verify') {
-        setLoginMode('verify');
-        showToast('Username sudah terdaftar. Masukkan ID Anda untuk masuk');
-        setTimeout(() => $('loginIdInput').focus(), 100);
-        return;
-      }
-      const typed = $('loginIdInput').value.trim();
-      if (!typed) { showToast('Silakan masukkan ID akun'); setLogin(false); return; }
-      if (typed !== ownerId && canonId(typed) !== ownerId) { showToast('ID tidak sesuai dengan username'); setLogin(false); return; }
-      const us = await get(ref(db, 'users/' + ownerId));
-      myId = ownerId;
-      myName = (us.exists() && us.val() && us.val().name) || typedUser;
-      saveSession();
-      showToast('Selamat datang kembali, ' + myName);
-      enterApp();
-      return;
-    }
-    /* 2) pendaftaran baru: nama + username */
-    if (!name) { showToast('Silakan masukkan nama'); setLogin(false); return; }
-    if (name.length < 2) { showToast('Nama minimal terdiri dari 2 karakter'); setLogin(false); return; }
-    if (name.length > 12) { showToast('Nama melebihi batas karakter'); setLogin(false); return; }
-    const uErr = usernameError(typedUser);
-    if (uErr) { showToast(uErr); setLogin(false); return; }
-    let newId = null;
-    for (let i = 0; i < 5; i++) {
-      const candidate = generateId();
-      const snap = await get(ref(db, 'users/' + candidate));
-      if (!snap.exists()) { newId = candidate; break; }
-    }
-    if (!newId) {
-      showToast('Gagal membuat ID. Silakan coba lagi');
-      setLogin(false);
-      return;
-    }
-    if (!(await claimName(typedUser, newId))) {
-      setLoginMode('verify');
-      showToast('Username sudah terdaftar. Masukkan ID atau gunakan username lain');
-      return;
-    }
-    myId = newId;
-    myName = name;
-    myUsername = typedUser;
-    try {
-      await set(ref(db, 'users/' + myId), { name: myName, username: typedUser, online: true, lastSeen: Date.now(), photo: "", role: 'user' });
-    } catch (e) {
-      try { await remove(ref(db, 'usernames/' + nameKey(typedUser))); } catch (e2) {}
-      myId = ''; myName = ''; myUsername = '';
-      throw e;
-    }
-    saveSession();
-    $('myIdValue').textContent = dispId(myId);
-    $('myIdModal').classList.add('show');
-    enterApp();
+    if (loginMode === 'register') await doRegister(user, pw, pw2);
+    else if (loginMode === 'migrate') await doMigrate(user, pw, pw2);
+    else await doSignIn(user, pw);
   } catch (err) {
     console.error(err);
-    showToast('Gagal masuk: ' + err.message);
-    setLogin(false);
+    loginAlert('Tidak dapat memproses permintaan: ' + (err && err.message ? err.message : err));
+  } finally {
+    loginBusy = false;
+    if (!myId) setLogin(false);
   }
 });
 
-$('usernameInput').addEventListener('keypress', e => {
-
-  if (e.key === 'Enter') $('loginBtn').click();
-
+['loginNameInput', 'usernameInput', 'loginIdInput', 'loginPwInput', 'loginPw2Input'].forEach(id => {
+  $(id).addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const order = ['loginNameInput', 'usernameInput', 'loginIdInput', 'loginPwInput', 'loginPw2Input']
+      .filter(i => $(i).offsetParent !== null);
+    const idx = order.indexOf(id);
+    if (idx > -1 && idx < order.length - 1) $(order[idx + 1]).focus();
+    else $('loginBtn').click();
+  });
 });
 
+/* ============= PASSWORD AKUN: gerbang akun lama, pemantau versi, ubah password ============= */
+function forceLogout(msg) {
+  try { sessionStorage.setItem('chat_flash', msg); } catch (e) {}
+  doLogout();
+}
+function openPwGate() {
+  if (!myId || accountDeleting || $('pwGateModal').classList.contains('show')) return;
+  $('pgNew').value = ''; $('pgNew2').value = ''; setAlert('pgAlert', 'pgAlertText', '');
+  $('pwGateModal').classList.add('show');
+  setTimeout(() => $('pgNew').focus(), 150);
+}
+function closePwGate() { $('pwGateModal').classList.remove('show'); }
+function startCredWatch() {
+  if (credUnsub || !myId) return;
+  credUnsub = onValue(ref(db, 'credentials/' + myId + '/ver'), snap => {
+    if (!myId || accountDeleting) return;
+    if (!snap.exists()) { openPwGate(); return; }
+    closePwGate();
+    const v = String(snap.val());
+    if (!myPwv) { myPwv = v; saveSession(); return; }
+    if (v !== myPwv) forceLogout('Password akun telah diubah. Silakan masuk kembali menggunakan password baru.');
+  });
+}
+function stopCredWatch() { if (credUnsub) { try { credUnsub(); } catch (e) {} credUnsub = null; } }
 
+$('confirmGatePw').addEventListener('click', async () => {
+  const pw = $('pgNew').value, pw2 = $('pgNew2').value;
+  setAlert('pgAlert', 'pgAlertText', '');
+  if (!hasCrypto()) { setAlert('pgAlert', 'pgAlertText', 'Peramban ini tidak mendukung penyimpanan password yang aman. Buka aplikasi melalui HTTPS.'); return; }
+  const pe = pwProblem(pw, pw2);
+  if (pe) { setAlert('pgAlert', 'pgAlertText', pe); return; }
+  const btn = $('confirmGatePw');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  const prev = myPwv;
+  try {
+    const cred = await makeCredential(pw);
+    myPwv = cred.ver; saveSession();
+    const tr = await runTransaction(ref(db, 'credentials/' + myId), cur => cur === null ? cred : undefined);
+    if (!tr.committed) { myPwv = prev; forceLogout('Akun ini sudah memiliki password. Silakan masuk menggunakan password tersebut.'); return; }
+    closePwGate();
+    showToast('Password berhasil dibuat');
+  } catch (err) {
+    myPwv = prev; saveSession();
+    setAlert('pgAlert', 'pgAlertText', 'Password belum tersimpan: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Simpan Password';
+  }
+});
+['pgNew', 'pgNew2'].forEach(id => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (id === 'pgNew') $('pgNew2').focus(); else $('confirmGatePw').click(); } }));
+
+function openChangePw() {
+  ['cpOld', 'cpNew', 'cpNew2'].forEach(i => { $(i).value = ''; });
+  document.querySelectorAll('#changePwModal .pw-eye.shown').forEach(b => b.click());
+  setAlert('cpAlert', 'cpAlertText', '');
+  $('changePwModal').classList.add('show');
+  setTimeout(() => $('cpOld').focus(), 120);
+}
+function closeChangePw() { $('changePwModal').classList.remove('show'); }
+$('settingsPasswordRow').addEventListener('click', openChangePw);
+$('closeChangePw').addEventListener('click', closeChangePw);
+$('cancelChangePw').addEventListener('click', closeChangePw);
+$('changePwModal').addEventListener('click', (e) => { if (e.target === $('changePwModal')) closeChangePw(); });
+['cpOld', 'cpNew', 'cpNew2'].forEach((id, i, arr) => $(id).addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); if (i < arr.length - 1) $(arr[i + 1]).focus(); else $('confirmChangePw').click(); } }));
+$('confirmChangePw').addEventListener('click', async () => {
+  const oldPw = $('cpOld').value, np = $('cpNew').value, np2 = $('cpNew2').value;
+  const warn = m => setAlert('cpAlert', 'cpAlertText', m);
+  warn('');
+  if (!hasCrypto()) { warn('Peramban ini tidak mendukung penyimpanan password yang aman. Buka aplikasi melalui HTTPS.'); return; }
+  if (!PW_RE.test(oldPw)) { warn('Masukkan password saat ini (6 angka).'); return; }
+  const pe = pwProblem(np, np2);
+  if (pe) { warn(pe); return; }
+  if (np === oldPw) { warn('Password baru harus berbeda dari password saat ini.'); return; }
+  const btn = $('confirmChangePw');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  let prev = myPwv;
+  try {
+    const r = await verifyPassword(myId, oldPw);
+    if (r.status === 'nocred') { closeChangePw(); openPwGate(); return; }
+    if (r.status === 'locked') { warn(lockMessage(r.until)); return; }
+    if (r.status === 'bad') { warn('Password saat ini tidak sesuai.' + (r.left <= 2 ? ' Sisa percobaan: ' + r.left + '.' : '')); return; }
+    const cred = await makeCredential(np);
+    myPwv = cred.ver; saveSession();
+    try { await set(ref(db, 'credentials/' + myId), cred); }
+    catch (e) { myPwv = prev; saveSession(); throw e; }
+    closeChangePw();
+    showToast('Password berhasil diubah');
+  } catch (err) {
+    console.error(err);
+    warn('Password belum tersimpan: ' + (err && err.message ? err.message : err));
+  } finally {
+    btn.disabled = false; btn.textContent = 'Simpan';
+  }
+});
 
 $('closeMyIdModal').addEventListener('click', () => $('myIdModal').classList.remove('show'));
 
@@ -1173,7 +1417,7 @@ function enterApp() {
 
   update(ref(db, 'users/' + myId), { name: myName, online: true, lastSeen: Date.now() })
 
-    .then(() => { get(ref(db, 'users/' + myId + '/role')).then(r => { if (!r.exists()) set(ref(db, 'users/' + myId + '/role'), 'user').catch(() => {}); }).catch(() => {}); loadContacts(); loadChatMeta(); loadGroups(); loadMyProfile(); startNotifSystem(); ensureMyUsername().catch(() => {}); setTimeout(handleDeepLink, 400); })
+    .then(() => { get(ref(db, 'users/' + myId + '/role')).then(r => { if (!r.exists()) set(ref(db, 'users/' + myId + '/role'), 'user').catch(() => {}); }).catch(() => {}); loadContacts(); loadChatMeta(); loadGroups(); loadMyProfile(); startNotifSystem(); ensureMyUsername().catch(() => {}); startCredWatch(); setTimeout(handleDeepLink, 400); })
 
     .catch(err => {
 
@@ -1232,8 +1476,7 @@ function doLogout() {
 
 $('logoutSettings').addEventListener('click', async () => {
 
-  const ok = await confirmDialog({ title: 'Keluar dari akun?', messageHtml: '<p>Pastikan Anda telah menyimpan ID akun Anda:</p><span class="confirm-id">' + esc(dispId(myId)) + '</span><button type="button" class="confirm-copy" id="confirmCopyBtn" data-copy="' + esc(dispId(myId)) + '">' + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg><span>Salin ID</span></button>' + '<p>Untuk masuk kembali, gunakan nama dan ID akun yang sama.</p>', okText: 'Keluar', icon: 'logout' });
-
+  const ok = await confirmDialog({ title: 'Keluar dari akun?', messageHtml: '<p>Untuk masuk kembali, Anda memerlukan username dan password akun ini.</p><span class="confirm-id">@' + esc(myUsername || '') + '</span><p>Pastikan password Anda telah tersimpan dengan aman.</p>', okText: 'Keluar', icon: 'logout' });
   if (ok) doLogout();
 
 });
@@ -1298,7 +1541,7 @@ function saveSession() {
 
   if (!myId || !myName) return;
 
-  const v = JSON.stringify({ id: myId, name: myName });
+  const v = JSON.stringify({ id: myId, name: myName, pwv: myPwv });
 
   try { localStorage.setItem('chat_myName', myName); localStorage.setItem('chat_myId', myId); localStorage.setItem(SESSION_KEY, v); } catch (e) {}
 
@@ -1320,7 +1563,7 @@ async function clearSession() {
 
 function parseSession(raw) {
 
-  try { const o = JSON.parse(raw); if (o && o.id && o.name) return { id: String(o.id), name: String(o.name) }; } catch (e) {}
+  try { const o = JSON.parse(raw); if (o && o.id && o.name) return { id: String(o.id), name: String(o.name), pwv: o.pwv ? String(o.pwv) : '' }; } catch (e) {}
 
   return null;
 
@@ -1328,15 +1571,7 @@ function parseSession(raw) {
 
 async function readSession() {
 
-  try {
-
-    const n = localStorage.getItem('chat_myName'), i = localStorage.getItem('chat_myId');
-
-    if (n && i) return { id: i, name: n };
-
-    const r = parseSession(localStorage.getItem(SESSION_KEY)); if (r) return r;
-
-  } catch (e) {}
+  try { const r = parseSession(localStorage.getItem(SESSION_KEY)); if (r) return r; } catch (e) {}
 
   try {
 
@@ -1348,6 +1583,14 @@ async function readSession() {
 
   try { const r = parseSession(await idbGet(SESSION_KEY)); if (r) return r; } catch (e) {}
 
+  try {
+
+    const n = localStorage.getItem('chat_myName'), i = localStorage.getItem('chat_myId');
+
+    if (n && i) return { id: i, name: n, pwv: '' };
+
+  } catch (e) {}
+
   return null;
 
 }
@@ -1358,9 +1601,13 @@ async function readSession() {
 
   const sess = await readSession();
 
-  if (sess) { myName = sess.name; myId = sess.id; saveSession(); enterApp(); }
+  if (sess) { myName = sess.name; myId = sess.id; myPwv = sess.pwv || ''; saveSession(); enterApp(); }
 
-  else { $('loginScreen').style.display = 'flex'; }
+  else {
+    $('loginScreen').style.display = 'flex';
+    setLoginMode('login');
+    try { const f = sessionStorage.getItem('chat_flash'); if (f) { sessionStorage.removeItem('chat_flash'); loginAlert(f, 'info'); } } catch (e) {}
+  }
 
 })();
 
@@ -2495,7 +2742,7 @@ $('menuBlock').addEventListener('click', async () => {
 
     }
 
-  } catch (err) { showToast('Gagal: ' + err.message); }
+  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
 });
 
@@ -2687,7 +2934,7 @@ $('confirmAddContact').addEventListener('click', async () => {
   const typedUser = normUsername($('contactUsernameInput').value);
   const typedId = canonId($('contactIdInput').value);
   if (!alias) { showToast('Silakan masukkan nama kontak'); return; }
-  if (!typedUser && !typedId) { showToast('Isi username atau ID teman (salah satu sudah cukup)'); return; }
+  if (!typedUser && !typedId) { showToast('Isi username atau ID teman (salah satu)'); return; }
   $('confirmAddContact').disabled = true;
   $('confirmAddContact').textContent = 'Menyimpan...';
   try {
@@ -2695,7 +2942,7 @@ $('confirmAddContact').addEventListener('click', async () => {
     if (typedUser) {
       const uid = await findUserIdByUsername(typedUser);
       if (!uid) { showToast('Username "@' + typedUser + '" tidak ditemukan'); return; }
-      if (typedId && typedId !== uid) { showToast('Username dan ID tidak cocok, kosongkan salah satunya'); return; }
+      if (typedId && typedId !== uid) { showToast('Username dan ID tidak cocok. Kosongkan salah satunya'); return; }
       id = uid;
     }
     if (id === myId) { showToast('Anda tidak dapat menambahkan diri sendiri'); return; }
@@ -3067,7 +3314,7 @@ async function addMemberToDraft() {
 
   if (!id) { showToast('Silakan masukkan ID kontak'); return; }
 
-  if (id === myId) { showToast('ID Anda sudah otomatis terdaftar'); return; }
+  if (id === myId) { showToast('ID Anda otomatis tercantum sebagai anggota grup'); return; }
 
   if (newGroupMembers.includes(id)) { showToast('ID sudah ada dalam daftar'); return; }
 
@@ -3083,7 +3330,7 @@ async function addMemberToDraft() {
 
     renderGroupMemberChips();
 
-  } catch (err) { showToast('Gagal: ' + err.message); }
+  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
   finally { $('groupMemberAddBtn').disabled = false; }
 
@@ -3306,7 +3553,7 @@ async function addMemberToGroup() {
 
     showToast('Anggota berhasil ditambahkan');
 
-  } catch (err) { showToast('Gagal: ' + err.message); }
+  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
   finally { $('groupInfoAddBtn').disabled = false; }
 
@@ -3326,7 +3573,7 @@ async function setGroupAdmin(gid, id, makeAdmin) {
 
     showToast(makeAdmin ? displayName(id) + ' dijadikan admin' : 'Admin dihapus dari ' + displayName(id));
 
-  } catch (err) { showToast('Gagal: ' + err.message); }
+  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
 }
 
@@ -3482,7 +3729,7 @@ $('blockedListBtn').addEventListener('click', () => {
 
           $('blockedModal').classList.remove('show');
 
-        } catch (err) { showToast('Gagal: ' + err.message); }
+        } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
       });
 
@@ -5459,7 +5706,7 @@ function buildViewOnce(m, isSent) {
   const used = gone || voSeen(m.key) || !!m.viewedAt || !!(m.viewedBy && m.viewedBy[myId]);
   if (used) {
     wrap.className = 'vo-bubble used';
-    wrap.innerHTML = icon('✓') + '<div class="vo-txt"><b>Foto sekali lihat</b><span>Sudah dibuka</span></div>';
+    wrap.innerHTML = icon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>') + '<div class="vo-txt"><b>Foto sekali lihat</b><span>Sudah dibuka</span></div>';
     return wrap;
   }
   wrap.className = 'vo-bubble';
@@ -6140,7 +6387,7 @@ function renderInviteSection(gid, g) {
 
       $('giInvCreate').disabled = true;
 
-      try { await makeInvite(gid); showToast('Tautan undangan berhasil dibuat'); } catch (err) { showToast('Gagal: ' + err.message); }
+      try { await makeInvite(gid); showToast('Tautan undangan berhasil dibuat'); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
     };
 
@@ -6166,7 +6413,7 @@ function renderInviteSection(gid, g) {
 
     if (!ok) return;
 
-    try { await makeInvite(gid); showToast('Tautan baru berhasil dibuat'); } catch (err) { showToast('Gagal: ' + err.message); }
+    try { await makeInvite(gid); showToast('Tautan baru berhasil dibuat'); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
   };
 
@@ -6176,7 +6423,7 @@ function renderInviteSection(gid, g) {
 
     if (!ok) return;
 
-    try { await revokeInvite(gid); showToast('Tautan undangan dinonaktifkan'); } catch (err) { showToast('Gagal: ' + err.message); }
+    try { await revokeInvite(gid); showToast('Tautan undangan dinonaktifkan'); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
   };
 
@@ -6232,7 +6479,7 @@ $('deepOk').addEventListener('click', async () => {
 
   btn.disabled = true; btn.textContent = 'Memproses...';
 
-  try { await deepOnOk(alias); } catch (err) { showToast('Gagal: ' + err.message); }
+  try { await deepOnOk(alias); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
 
   finally { btn.disabled = false; btn.textContent = label; }
 

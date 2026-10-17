@@ -129,3 +129,12 @@ Peran disimpan di `users/<id>/role` dengan nilai `user` atau `admin`.
 - `config/youtube` hanya bisa ditulis jika `updatedBy` menunjuk pengguna ber-role `admin`, dan node ini tidak bisa dihapus dari aplikasi (penghapusan hanya lewat konsol Firebase). Tombol "Hapus kunci" milik admin hanya mengosongkan nilai kunci, datanya tetap ada.
 - Jika Rules Anda punya `".write": true` di root, `config`, atau `users`, izin dari tingkat atas menimpa aturan di atas. Batasi izin tulis yang terlalu luas itu.
 - Batasan: karena login memakai ID, siapa pun yang mengetahui ID akun admin dapat bertindak sebagai admin. Rahasiakan ID akun admin dan jangan menambahkannya sebagai kontak orang lain.
+
+## Password akun (6 angka)
+- **Daftar:** isi nama, username, password 6 angka, dan konfirmasi password. ID akun dibuat otomatis dan tidak perlu dimasukkan saat masuk.
+- **Masuk:** cukup username dan password. Password yang salah tidak dapat membuka akun. Setelah 5 kali salah, akun dikunci 5 menit.
+- **Ubah password:** Setelan > Password. Wajib memasukkan password saat ini. Setelah diubah, semua perangkat lain yang sedang masuk keluar otomatis dan harus memakai password baru.
+- **Akun lama (tanpa password):** pengguna yang sudah masuk diminta membuat password sebelum dapat memakai aplikasi. Pengguna yang sudah keluar masuk lewat tab Masuk, lalu diminta verifikasi ID akun dan membuat password.
+- **Penyimpanan:** password tidak pernah disimpan sebagai teks asli. Aplikasi menyimpan hash PBKDF2-SHA256 (150.000 iterasi) dengan salt acak di `credentials/<id>`. Password sederhana (111111, 123456, dan sejenisnya) ditolak.
+- **Perhatian keamanan:** karena aplikasi memakai Realtime Database tanpa Firebase Authentication, pemeriksaan password berjalan di sisi aplikasi. Rules pada `database.rules.youtube.json` membatasi bentuk data, tetapi tidak dapat melarang akses langsung ke database. Untuk perlindungan penuh di sisi server, migrasikan login ke Firebase Authentication (custom token lewat Cloud Functions), lalu batasi Rules berdasarkan `auth.uid`.
+- Hapus akun ikut menghapus `credentials/<id>`.

@@ -1,9 +1,10 @@
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "released": "2026-10-17",
   "notes": [
-    "Daftar akun kini memakai nama dan username terpisah",
-    "Tambah kontak lewat username atau ID, cukup isi salah satu",
-    "Username bisa diganti di Setelan; akun lama otomatis dibuatkan username dari namanya"
+    "Masuk memakai username dan password 6 angka, tanpa perlu memasukkan ID",
+    "Password dapat diubah di Setelan; perangkat lain otomatis keluar setelah password diganti",
+    "Akun lama diminta membuat password",
+    "Teks aplikasi dirapikan dan ikon status memakai SVG"
   ]
 }

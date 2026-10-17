@@ -5,13 +5,40 @@
         ".read": true,
         ".write": "newData.exists() && root.child('users').child(newData.child('updatedBy').val()).child('role').val() === 'admin'",
         ".validate": "newData.hasChildren(['apiKey', 'updatedBy', 'updatedAt'])",
-        "apiKey": { ".validate": "newData.isString() && newData.val().length < 200" }
+        "apiKey": {
+          ".validate": "newData.isString() && newData.val().length < 200"
+        }
       }
     },
     "users": {
       "$uid": {
         "role": {
           ".validate": "(newData.val() === 'user' && data.val() !== 'admin') || (newData.val() === 'admin' && data.val() === 'admin')"
+        }
+      }
+    },
+    "credentials": {
+      "$uid": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['salt','hash','iter','ver'])",
+        "salt": {
+          ".validate": "newData.isString() && newData.val().length <= 64"
+        },
+        "hash": {
+          ".validate": "newData.isString() && newData.val().length <= 64"
+        },
+        "iter": {
+          ".validate": "newData.isNumber() && newData.val() >= 100000"
+        },
+        "ver": {
+          ".validate": "newData.isString() && newData.val().length <= 64"
+        },
+        "fails": {
+          ".validate": "newData.isNumber()"
+        },
+        "lockUntil": {
+          ".validate": "newData.isNumber()"
         }
       }
     }
