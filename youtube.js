@@ -42,7 +42,7 @@
     { id: '1', label: 'Film', icon: I.film, cat: '1' }
   ];
 
-  var state = { mode: 'popular', cat: 'popular', query: '', token: '', loading: false, ready: false, current: null };
+  var state = { mode: 'popular', cat: 'popular', query: '', token: '', loading: false, again: false, ready: false, keyKnown: false, current: null };
 
   /* ---------- Utilitas ---------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -168,9 +168,14 @@
   }
 
   function load(fresh) {
-    if (state.loading) return;
+    if (state.loading) { if (fresh) state.again = true; return; }
     if (fresh) { state.token = ''; }
-    if (!hasKey()) { $('ytList').innerHTML = ''; showError(null, true); $('ytMoreWrap').innerHTML = ''; return; }
+    if (!hasKey()) {
+      $('ytMoreWrap').innerHTML = '';
+      /* kunci belum diketahui: tampilkan pemuatan, jangan tampilkan "fitur belum aktif" */
+      if (!state.keyKnown) { $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid">' + skeleton(6) + '</div>'; return; }
+      $('ytList').innerHTML = ''; showError(null, true); return;
+    }
     state.loading = true;
     if (fresh) $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid">' + skeleton(6) + '</div>';
     var btn = $('ytMore'); if (btn) { btn.disabled = true; }
@@ -183,7 +188,7 @@
       $('ytGrid').insertAdjacentHTML('beforeend', r.items.map(card).join(''));
       $('ytMoreWrap').innerHTML = r.next ? '<div class="yt-more"><button type="button" class="yt-btn" id="ytMore">' + I.down + 'Muat lebih banyak</button></div>' : '';
     }).catch(function (e) { showError(e, fresh); if (!fresh) { var b = $('ytMore'); if (b) b.disabled = false; } })
-      .then(function () { state.loading = false; });
+      .then(function () { state.loading = false; if (state.again) { state.again = false; load(true); } });
   }
 
   function setCat(id) {
@@ -245,12 +250,12 @@
 
   /* Berlangganan config/youtube (semua pengguna) dan users/<id>/role (peran sendiri) */
   function startSync() {
-    return waitBridge(5000).then(function (b) {
-      if (!b) return;
+    return waitBridge(60000).then(function (b) {
+      if (!b) { state.keyKnown = true; if (state.ready) load(true); return; }
       var id = b.getMyId();
       return new Promise(function (resolve) {
         var first = true;
-        var done = function () { if (first) { first = false; resolve(); } };
+        var done = function () { if (first) { first = false; state.keyKnown = true; resolve(); if (state.ready && !state.loading) load(true); else if (state.ready) state.again = true; } };
         b.onValue(b.ref(b.db, 'config/youtube'), function (snap) {
           var v = snap.val() || {};
           var k = String(v.apiKey || '').trim();
@@ -386,13 +391,13 @@
     $('ytKeyEye').addEventListener('click', function () { setReveal(!isRevealed()); $('ytKeyInput').focus(); });
     $('ytAdmin').addEventListener('click', function (e) { if (e.target === $('ytAdmin')) closeAdmin(); });
 
-    /* sinkronkan kunci dan peran saat tab dibuka pertama kali, lalu muat video */
+    /* sinkronkan kunci dan peran sejak aplikasi dibuka, jadi saat tab YouTube dibuka kunci sudah siap */
+    startSync().catch(function () { state.keyKnown = true; if (state.ready) load(true); });
     var tab = document.querySelector('.bottom-tab[data-pane="paneYoutube"]');
     if (tab) tab.addEventListener('click', function () {
       if (state.ready) return;
       state.ready = true;
-      $('ytList').innerHTML = '<div class="yt-section-title">' + title() + '</div><div class="yt-grid">' + skeleton(6) + '</div>';
-      Promise.race([startSync(), new Promise(function (r) { setTimeout(r, 6000); })]).catch(function () {}).then(function () { load(true); });
+      load(true); /* bila kunci belum diketahui, tampil pemuatan lalu otomatis lanjut saat kunci tiba */
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
