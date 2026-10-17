@@ -131,7 +131,7 @@ Peran disimpan di `users/<id>/role` dengan nilai `user` atau `admin`.
 - Batasan: karena login memakai ID, siapa pun yang mengetahui ID akun admin dapat bertindak sebagai admin. Rahasiakan ID akun admin dan jangan menambahkannya sebagai kontak orang lain.
 
 ## Password akun (6 angka)
-- **Daftar:** isi nama, username, password 6 angka, dan konfirmasi password. ID akun dibuat otomatis dan tidak perlu dimasukkan saat masuk.
+- **Daftar:** isi nama, username, password 6 angka, dan konfirmasi password. ID akun (4 huruf acak, contoh: KMRT) dibuat otomatis dan tidak perlu dimasukkan saat masuk.
 - **Masuk:** cukup username dan password. Password yang salah tidak dapat membuka akun. Setelah 5 kali salah, akun dikunci 5 menit.
 - **Ubah password:** Setelan > Password. Wajib memasukkan password saat ini. Setelah diubah, semua perangkat lain yang sedang masuk keluar otomatis dan harus memakai password baru.
 - **Akun lama (tanpa password):** pengguna yang sudah masuk diminta membuat password sebelum dapat memakai aplikasi. Pengguna yang sudah keluar masuk lewat tab Masuk, lalu diminta verifikasi ID akun dan membuat password.
@@ -142,3 +142,7 @@ Peran disimpan di `users/<id>/role` dengan nilai `user` atau `admin`.
 ## Username unik 100%
 Setiap username dikunci di `usernames/<username>` berisi ID pemilik. Aplikasi memakai transaksi Firebase sehingga dua orang yang mendaftar bersamaan tidak mungkin mendapat username yang sama, dan di layar Daftar tersedia pemeriksaan langsung ("Username tersedia" atau "Username sudah digunakan").
 Agar tidak bisa ditembus lewat penulisan langsung ke database, tempel isi `database/database.rules.usernames.json` ke Rules Firebase (gabungkan dengan rules yang sudah ada). Pastikan tidak ada aturan di tingkat atas (`.write: true` di root atau `usernames`) karena akan menimpa aturan ini.
+
+## Aturan username dan ID
+- **Username terkunci permanen.** Username yang pernah dipakai sebuah akun tidak bisa dipakai akun lain, bahkan setelah pemiliknya menggantinya. Username baru dilepas hanya ketika akun pemiliknya **dihapus permanen**.
+- **ID akun baru berupa 4 huruf besar acak** (tanpa I, L, O), misalnya `KMRT`. Pemesanan ID dilakukan atomik sehingga tidak mungkin ada dua akun dengan ID yang sama. Akun lama tetap memakai ID angkanya.

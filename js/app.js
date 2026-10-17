@@ -736,7 +736,8 @@ async function deleteMyAccount() {
   /* 3) data milik sendiri */
   ['contacts', 'blocked', 'fcmTokens', 'unread', 'credentials'].forEach(n => { updates[n + '/' + id] = null; });
   try {
-    for (const k of new Set([nameKey(myName), myUsername ? nameKey(myUsername) : ''])) {
+    const resv = (await get(ref(db, 'users/' + id + '/reserved'))).val() || {};
+    for (const k of new Set([nameKey(myName), myUsername ? nameKey(myUsername) : '', ...Object.keys(resv)])) {
       if (!k) continue;
       const us = await get(ref(db, 'usernames/' + k));
       if (us.exists() && String(us.val()) === id) updates['usernames/' + k] = null;
@@ -775,17 +776,23 @@ function showToast(msg, action) {
 
 
 window.showToast = showToast;
+/* ID akun baru: 4 huruf besar acak (tanpa I, L, O agar mudah dibaca dan dihafal). Akun lama tetap memakai ID angkanya. */
+const ID_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 function generateId() {
-
-  const rand = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0');   /* 10 angka acak */
-
-  return '08' + rand;   /* ID = 08 + 10 angka (12 angka), disimpan PERSIS seperti ini di database */
+  const buf = new Uint32Array(4);
+  (window.crypto || window.msCrypto).getRandomValues(buf);
+  let out = '';
+  for (let k = 0; k < 4; k++) out += ID_LETTERS[buf[k] % ID_LETTERS.length];
+  return out;
 }
-/* Semua ID berformat 08xxxxxxxxxx, di layar maupun di database. */
-function canonId(x) { return String(x == null ? '' : x).replace(/\D/g, ''); }
+/* Rapikan ID yang diketik: huruf dan angka saja; ID huruf selalu huruf besar */
+function canonId(x) {
+  const t = String(x == null ? '' : x).replace(/[^A-Za-z0-9]/g, '');
+  return /^[A-Za-z]+$/.test(t) ? t.toUpperCase() : t;
+}
 function dispId(id) { return String(id == null ? '' : id); }
 async function resolveUserId(typed) {
-  return canonId(String(typed || '').replace(/\D/g, ''));
+  return canonId(typed);
 }
 
 
@@ -1104,6 +1111,18 @@ async function claimName(name, id) {
   /* Berhasil hanya jika transaksi tersimpan DAN pemilik kunci di server memang ID ini */
   return r.committed && r.snapshot.exists() && String(r.snapshot.val()) === String(id);
 }
+/* Username yang pernah dipakai akun ini tetap terkunci untuk akun ini; hanya dilepas saat akun dihapus permanen */
+async function markReserved(uid, uname) {
+  try { await update(ref(db, 'users/' + uid + '/reserved'), { [nameKey(uname)]: true }); } catch (e) {}
+}
+/* Kunci nama yang tidak boleh dilepas (username aktif atau pernah dipakai) */
+async function isProtectedKey(uid, key) {
+  try {
+    const v = (await get(ref(db, 'users/' + uid))).val() || {};
+    if (v.username && nameKey(normUsername(v.username)) === key) return true;
+    return !!(v.reserved && v.reserved[key]);
+  } catch (e) { return true; }
+}
 /* Username dianggap terpakai bila kuncinya ada di indeks, apa pun kondisi akun pemiliknya */
 async function usernameTaken(u) {
   const snap = await get(ref(db, 'usernames/' + nameKey(u)));
@@ -1147,7 +1166,7 @@ async function ensureMyUsername() {
   if (!myId) return;
   const snap = await get(ref(db, 'users/' + myId + '/username'));
   let cur = snap.exists() ? normUsername(snap.val()) : '';
-  if (cur && !usernameError(cur) && await claimName(cur, myId)) { myUsername = cur; renderMyUsername(); return; }
+  if (cur && !usernameError(cur) && await claimName(cur, myId)) { myUsername = cur; renderMyUsername(); markReserved(myId, cur); return; }
   const base = usernameFromName(myName);
   let chosen = null;
   for (let i = 0; i < 6 && !chosen; i++) {
@@ -1156,14 +1175,7 @@ async function ensureMyUsername() {
   }
   if (!chosen) return;
   await update(ref(db, 'users/' + myId), { username: chosen });
-  /* lepas kunci lama (nama) bila berbeda dan milik sendiri */
-  try {
-    const oldKey = nameKey(myName);
-    if (oldKey !== nameKey(chosen)) {
-      const o = await get(ref(db, 'usernames/' + oldKey));
-      if (o.exists() && String(o.val()) === myId) await remove(ref(db, 'usernames/' + oldKey));
-    }
-  } catch (e) {}
+  markReserved(myId, chosen);
   myUsername = chosen; renderMyUsername();
 }
 
@@ -1186,7 +1198,7 @@ $('usernameInput').addEventListener('input', (e) => {
   if (loginMode === 'migrate') setLoginMode('login');
   checkUsernameLive();
 });
-$('loginIdInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, ''); });
+$('loginIdInput').addEventListener('input', (e) => { e.target.value = canonId(e.target.value); });
 $('tabLogin').addEventListener('click', () => { if (loginMode !== 'login') setLoginMode('login'); });
 $('tabRegister').addEventListener('click', () => { if (loginMode !== 'register') setLoginMode('register'); });
 
@@ -1258,21 +1270,22 @@ async function doRegister(user, pw, pw2) {
   const pe = pwProblem(pw, pw2);
   if (pe) { loginAlert(pe); return; }
   if (await usernameTaken(user)) { loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
+  const cred = await makeCredential(pw);
+  /* Pesan ID 4 huruf secara atomik: transaksi hanya berhasil bila ID benar-benar belum dipakai */
+  const userObj = { name, username: user, online: true, lastSeen: Date.now(), photo: '', role: 'user', reserved: { [nameKey(user)]: true } };
   let newId = null;
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 40 && !newId; i++) {
     const candidate = generateId();
-    const snap = await get(ref(db, 'users/' + candidate));
-    if (!snap.exists()) { newId = candidate; break; }
+    const r = await runTransaction(ref(db, 'users/' + candidate), cur => (cur === null ? userObj : undefined));
+    if (r.committed) newId = candidate;
   }
   if (!newId) { loginAlert('Gagal membuat ID akun. Silakan coba kembali.'); return; }
-  if (!(await claimName(user, newId))) { loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
-  const cred = await makeCredential(pw);
+  const undo = async () => { try { await remove(ref(db, 'users/' + newId)); } catch (e2) {} };
+  if (!(await claimName(user, newId))) { await undo(); loginAlert('Username sudah digunakan. Silakan pilih username lain.'); return; }
   try {
-    const up = {};
-    up['users/' + newId] = { name, username: user, online: true, lastSeen: Date.now(), photo: '', role: 'user' };
-    up['credentials/' + newId] = cred;
-    await update(ref(db), up);
+    await set(ref(db, 'credentials/' + newId), cred);
   } catch (e) {
+    await undo();
     try { await remove(ref(db, 'usernames/' + nameKey(user))); } catch (e2) {}
     throw e;
   }
@@ -1813,7 +1826,7 @@ $('confirmEditName').addEventListener('click', async () => {
 
         const o = await get(ref(db, 'usernames/' + oldKey));
 
-        if (o.exists() && String(o.val()) === myId) await remove(ref(db, 'usernames/' + oldKey));
+        if (o.exists() && String(o.val()) === myId && !(await isProtectedKey(myId, oldKey))) await remove(ref(db, 'usernames/' + oldKey));
 
       } catch (e) {}
 
@@ -1869,15 +1882,11 @@ $('confirmEditUsername').addEventListener('click', async () => {
     try {
       await update(ref(db, 'users/' + myId), { username: nu });
     } catch (e) {
-      if (!oldU || nameKey(nu) !== nameKey(oldU)) { try { await remove(ref(db, 'usernames/' + nameKey(nu))); } catch (e2) {} }
       throw e;
     }
-    if (oldU && nameKey(oldU) !== nameKey(nu)) {
-      try {
-        const o = await get(ref(db, 'usernames/' + nameKey(oldU)));
-        if (o.exists() && String(o.val()) === myId) await remove(ref(db, 'usernames/' + nameKey(oldU)));
-      } catch (e) {}
-    }
+    /* Username lama TIDAK dilepas: tetap terkunci untuk akun ini sampai akun dihapus permanen */
+    await markReserved(myId, nu);
+    if (oldU) await markReserved(myId, oldU);
     myUsername = nu;
     renderMyUsername();
     closeEditUsername();
@@ -2406,7 +2415,7 @@ function renderChatList() {
 
   });
 
-  if (q) arr = arr.filter(id => displayName(id).toLowerCase().includes(q) || id.toLowerCase().includes(q) || dispId(id).includes(q));
+  if (q) arr = arr.filter(id => displayName(id).toLowerCase().includes(q) || id.toLowerCase().includes(q) || dispId(id).toLowerCase().includes(q));
   const entries = arr.map(id => ({ kind: 'user', id, ts: chatMeta[id] ? (chatMeta[id].ts || 0) : 0, name: displayName(id) }));
 
   Object.keys(groupsCache).forEach(gid => {
@@ -2799,7 +2808,7 @@ function renderContactList() {
 
     const name = displayName(id).toLowerCase();
 
-    return name.includes(q) || id.toLowerCase().includes(q) || dispId(id).includes(q);
+    return name.includes(q) || id.toLowerCase().includes(q) || dispId(id).toLowerCase().includes(q);
 
   });
 
@@ -2952,7 +2961,7 @@ $('addContactModal').addEventListener('click', (e) => {
 });
 
 $('contactIdInput').addEventListener('input', (e) => {
-  e.target.value = e.target.value.replace(/\D/g, '');
+  e.target.value = canonId(e.target.value);
 });
 
 $('contactUsernameInput').addEventListener('input', (e) => {
@@ -3325,9 +3334,9 @@ $('cancelGroupModal').addEventListener('click', closeGroupModal);
 
 $('groupModal').addEventListener('click', (e) => { if (e.target === $('groupModal')) closeGroupModal(); });
 
-$('groupMemberIdInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, ''); });
+$('groupMemberIdInput').addEventListener('input', (e) => { e.target.value = canonId(e.target.value); });
 
-$('groupInfoIdInput').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, ''); });
+$('groupInfoIdInput').addEventListener('input', (e) => { e.target.value = canonId(e.target.value); });
 
 
 
@@ -3483,7 +3492,7 @@ function renderGroupInfo() {
 
   const q = giQuery.trim().toLowerCase();
 
-  const shown = q ? ids.filter(id => ((id === myId ? 'anda' : displayName(id)).toLowerCase().includes(q)) || id.includes(q) || dispId(id).includes(q)) : ids;
+  const shown = q ? ids.filter(id => ((id === myId ? 'anda' : displayName(id)).toLowerCase().includes(q)) || id.toLowerCase().includes(q) || dispId(id).toLowerCase().includes(q)) : ids;
 
   $('groupInfoCount').textContent = q ? 'Anggota (' + shown.length + ' dari ' + ids.length + ')' : 'Anggota (' + ids.length + ')';
 
@@ -6652,7 +6661,7 @@ function parseDeepLink() {
 
   if ((m = h.match(/^#join=([A-Za-z0-9]{6,40})$/))) return { type: 'join', code: m[1] };
 
-  if ((m = h.match(/^#add=(\d{6,20})$/))) return { type: 'add', id: m[1] };
+  if ((m = h.match(/^#add=([A-Za-z0-9]{4,20})$/))) return { type: 'add', id: canonId(m[1]) };
 
   return null;
 
