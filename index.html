@@ -23,12 +23,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 
-<link rel="stylesheet" href="css/base.css?v=1.7.15">
+<link rel="stylesheet" href="css/base.css?v=1.7.20">
 
-<link rel="stylesheet" href="css/update.css?v=1.7.15">
-<link rel="stylesheet" href="css/chat-video.css?v=1.7.15">
-<link rel="stylesheet" href="css/youtube.css?v=1.7.15">
-<link rel="stylesheet" href="css/auth.css?v=1.7.15">
+<link rel="stylesheet" href="css/update.css?v=1.7.20">
+<link rel="stylesheet" href="css/chat-video.css?v=1.7.20">
+<link rel="stylesheet" href="css/youtube.css?v=1.7.20">
+<link rel="stylesheet" href="css/auth.css?v=1.7.20">
 </head>
 
 <body>
@@ -1739,15 +1739,15 @@
 
 
 
-<script src="js/chat-video.js?v=1.7.15"></script>
-<script type="module" src="js/app.js?v=1.7.15"></script>
+<script src="js/chat-video.js?v=1.7.20"></script>
+<script type="module" src="js/app.js?v=1.7.20"></script>
 
-<script src="js/keyboard.js?v=1.7.15"></script>
-<script src="js/avatar.js?v=1.7.15"></script>
+<script src="js/keyboard.js?v=1.7.20"></script>
+<script src="js/avatar.js?v=1.7.20"></script>
 
 
 
-<script src="js/updater.js?v=1.7.15"></script>
+<script src="js/updater.js?v=1.7.20"></script>
 <div id="ytPlayer" role="dialog" aria-modal="true" aria-label="Pemutar video">
   <div class="yt-sheet">
     <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
@@ -1757,7 +1757,7 @@
 </div>
 
 <div id="ytAdmin" role="dialog" aria-modal="true" aria-labelledby="ytAdmTitle">
-  <div class="yt-adm-card">
+  <div class="yt-adm-card" id="ytAdmCard">
     <div class="yt-adm-head">
       <div class="yt-state-ico" id="ytAdmIco"></div>
       <div class="yt-adm-title"><h3 id="ytAdmTitle">API key YouTube</h3><p>Pengaturan khusus admin</p></div>
@@ -1776,30 +1776,31 @@
           <div class="yt-stat ok"><b id="ytStOn">0</b><span>Aktif</span></div>
           <div class="yt-stat warn"><b id="ytStLimit">0</b><span>Limit</span></div>
         </div>
-        <div class="yt-adm-sec"><h4>Daftar kunci</h4><small>Dipakai dari atas ke bawah</small></div>
+        <div class="yt-adm-sec"><h4>Daftar kunci</h4><small>Pilih kunci utama</small></div>
         <div class="yt-key-list" id="ytKeyList"></div>
         <div class="yt-adm-meta" id="ytAdmMeta"></div>
       </div>
 
       <div class="yt-adm-pane" id="ytPaneAdd" role="tabpanel">
-        <label class="yt-adm-label" for="ytKeyInput">API key baru <span id="ytAdmCount" style="float:right;letter-spacing:0;text-transform:none;font-weight:600;color:var(--muted,#667781)"></span></label>
-        <div class="yt-adm-field">
+        <div class="yt-adm-sec first"><label class="yt-adm-lbl" for="ytKeyInput">API key baru</label><small id="ytAdmCount"></small></div>
+        <div class="yt-adm-field" id="ytAdmField">
           <input type="text" id="ytKeyInput" class="yt-secret" placeholder="Tempel API key di sini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" name="yt-key-field">
           <button type="button" class="yt-icon-btn" id="ytKeyEye" aria-label="Tampilkan kunci"></button>
         </div>
+        <div class="yt-adm-help">Salin dari Google Cloud Console. Biasanya diawali <b>AIza</b> dan sepanjang 39 karakter.</div>
         <div class="yt-adm-note">
           <div><i>1</i><span>Kunci diuji ke YouTube dulu dan hanya disimpan jika valid.</span></div>
-          <div><i>2</i><span>Jika kuota satu kunci habis, aplikasi otomatis memakai kunci berikutnya.</span></div>
+          <div><i>2</i><span>Pilih kunci utama dengan tombol "Pakai". Kunci lain baru dipakai saat kunci utama limit.</span></div>
           <div><i>3</i><span>Gunakan kunci dari proyek Google Cloud berbeda agar kuotanya terpisah.</span></div>
         </div>
       </div>
     </div>
 
-    <div class="yt-adm-msg" id="ytAdmMsg" role="status" aria-live="polite"></div>
-
     <div class="yt-adm-actions" id="ytAdmActions" hidden>
       <button type="button" class="yt-btn primary" id="ytAdmSave">Tambah kunci</button>
     </div>
+
+    <div class="yt-adm-msg" id="ytAdmMsg" role="status" aria-live="polite"></div>
 
     <div class="yt-cf" id="ytAdmConfirm" role="alertdialog" aria-modal="true" aria-labelledby="ytCfTitle" aria-describedby="ytCfText">
       <div class="yt-cf-sheet">
@@ -1816,8 +1817,8 @@
   </div>
 </div>
 
-<script src="js/youtube-config.js?v=1.7.15"></script>
-<script src="js/youtube.js?v=1.7.15"></script>
+<script src="js/youtube-config.js?v=1.7.20"></script>
+<script src="js/youtube.js?v=1.7.20"></script>
 </body>
 
 </html>

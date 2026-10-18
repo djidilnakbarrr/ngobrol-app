@@ -19,6 +19,9 @@
           "$i": {
             ".validate": "newData.isString() && newData.val().length < 200"
           }
+        },
+        "primary": {
+          ".validate": "newData.isString() && newData.val().length < 200"
         }
       }
     },

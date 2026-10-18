@@ -145,7 +145,7 @@
 .yt-stat b { font-size: 19px; line-height: 1; font-weight: 800; color: var(--ink, #0f1c22); }
 .yt-stat span { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--muted, #667781); }
 .yt-stat.ok b { color: #168a55; }
-.yt-stat.warn b { color: #b07400; }
+.yt-stat.warn b { color: #d63b34; }
 
 .yt-adm-sec { flex: 0 0 auto; display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 14px 2px 8px; }
 .yt-adm-sec h4 { font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-2, #3b4a54); }
@@ -156,7 +156,7 @@
 .yt-key-mask { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; font-weight: 600; color: var(--ink, #0f1c22); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .yt-key-badge { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 2px 8px 2px 7px; border-radius: 999px; background: #e3f6ec; color: #168a55; white-space: nowrap; }
 .yt-key-badge::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-.yt-key-badge.limit { background: #fff3dc; color: #a56a00; }
+.yt-key-badge.limit { background: #fdeceb; color: #c0322c; }
 .yt-key-badge.bad { background: var(--danger-tint, #fdeceb); color: var(--danger, #d63b34); }
 .yt-key-badge.off { background: #eceff1; color: #6b7a82; }
 .yt-sw { position: relative; flex: 0 0 auto; width: 46px; height: 28px; padding: 0; border: 0; border-radius: 999px; background: #c9d3d7; cursor: pointer; transition: background .18s; }
@@ -178,9 +178,6 @@
 .yt-adm-note div { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; font-size: 13px; line-height: 1.5; color: var(--ink-2, #3b4a54); }
 .yt-adm-note i { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11.5px; font-weight: 800; background: var(--brand-tint, #e8f5f2); color: var(--brand, #075e54); }
 
-.yt-adm-msg { flex: 0 0 auto; margin: 0 16px; font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--danger, #d63b34); overflow-wrap: anywhere; }
-.yt-adm-msg:not(:empty) { margin-top: 8px; padding: 9px 12px; border-radius: 12px; background: var(--danger-tint, #fdeceb); }
-.yt-adm-msg.ok { color: #0d6e60; background: var(--brand-tint, #e8f5f2); }
 
 
 /* Konfirmasi hapus */
@@ -210,7 +207,7 @@
 }
 
 /* Kartu kunci: baris atas (info) dan bilah bawah (saklar + hapus) */
-.yt-key-row { flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #fff; border: 1px solid var(--line, #e9eef0); border-radius: 16px; transition: background .15s; }
+.yt-key-row { position: relative; overflow: hidden; --st: #c9d3d7; flex: 0 0 auto; display: flex; flex-direction: column; gap: 10px; padding: 12px; background: #fff; border: 1px solid var(--line, #e9eef0); border-radius: 16px; transition: background .15s; }
 .yt-key-row.is-off { background: var(--surface-2, #f6f8f8); }
 .yt-key-top { display: flex; align-items: center; gap: 12px; }
 .yt-key-no { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; background: var(--brand-tint, #e8f5f2); color: var(--brand, #075e54); }
@@ -227,3 +224,58 @@
 .yt-adm-actions .yt-btn { width: 100%; height: 50px; padding: 0 14px; justify-content: center; white-space: nowrap; font-size: 15px; border-radius: 14px; }
 .yt-adm-meta { padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 @media (max-width: 600px) { .yt-adm-actions { padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px)); } }
+.yt-key-badge.standby { background: #fff1dc; color: #b45f00; }
+
+/* Keterangan status tiap kunci */
+.yt-key-note { font-size: 12px; line-height: 1.45; color: var(--muted, #667781); overflow-wrap: anywhere; }
+/* Garis warna di sisi kiri kartu: selalu tampil. Hijau = dipakai, oranye = siaga, merah = limit/bermasalah, abu-abu = nonaktif */
+.yt-key-row::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--st); pointer-events: none; }
+.yt-key-row.st-using { --st: #168a55; border-color: #bfe6d6; }
+.yt-key-row.st-standby { --st: #f08a00; border-color: #f6dcae; }
+.yt-key-row.st-limit { --st: #d63b34; background: #fff6f5; border-color: #f3c9c6; }
+.yt-key-row.st-bad { --st: #d63b34; background: #fff6f5; border-color: #f3c9c6; }
+.yt-key-row.st-off { --st: #aab6bc; }
+.yt-key-badge.limit { font-weight: 800; letter-spacing: .6px; }
+.yt-key-row.st-limit .yt-key-note { color: #c0322c; font-weight: 600; }
+.yt-key-row.st-bad .yt-key-note { color: var(--danger, #d63b34); }
+
+/* ===== Penyempurnaan panel: notifikasi melayang, form rapi, mode ringkas saat keyboard terbuka ===== */
+.yt-adm-card { overscroll-behavior: contain; }
+/* Notifikasi ngambang di bawah, gaya sama dengan toast aplikasi. Merah = galat, hijau = berhasil. */
+.yt-adm-msg { position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); z-index: 6; display: flex; align-items: center; gap: 9px; width: max-content; max-width: min(88%, 360px); padding: 9px 16px 9px 12px; border-radius: 12px; background: #fff; color: #c0322c; border: 1.5px solid #d63b34; font-size: 13px; font-weight: 600; line-height: 1.4; box-shadow: 0 0 0 4px rgba(214,59,52,.14), 0 10px 26px rgba(8,20,26,.18); opacity: 0; visibility: hidden; transform: translate(-50%, 10px); pointer-events: none; transition: opacity .18s, transform .18s, visibility 0s linear .18s; overflow-wrap: anywhere; }
+.yt-adm-msg::before { content: ""; flex: 0 0 18px; width: 18px; height: 18px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23d63b34' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E") center / contain no-repeat; }
+.yt-adm-msg.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
+.yt-adm-msg.ok { color: #075e54; border-color: #0b8a79; box-shadow: 0 0 0 4px rgba(11,138,121,.14), 0 10px 26px rgba(5,74,66,.16); }
+.yt-adm-msg.ok::before { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b8a79' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E"); }
+.yt-adm-card.has-actions .yt-adm-msg { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.yt-adm-card.compact.has-actions .yt-adm-msg { bottom: calc(70px + env(safe-area-inset-bottom, 0px)); }
+
+#ytPaneAdd { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+#ytPaneAdd .yt-adm-sec.first { margin-top: 6px; }
+.yt-adm-lbl { font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--ink-2, #3b4a54); }
+.yt-adm-field.err { border-color: var(--danger, #d63b34); box-shadow: 0 0 0 4px rgba(214,59,52,.12); }
+.yt-adm-help { margin: 10px 2px 0; font-size: 12.5px; line-height: 1.5; color: var(--muted, #667781); }
+.yt-adm-note { margin-top: 18px; }
+
+.yt-key-use { flex: 0 0 auto; align-self: center; height: 34px; padding: 0 16px; border: 1.5px solid #bcd9d2; border-radius: 999px; background: #fff; color: var(--brand, #075e54); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.yt-key-use:hover { background: var(--brand-tint, #e8f5f2); }
+.yt-key-use:focus-visible { outline: 3px solid rgba(11,138,121,.35); outline-offset: 2px; }
+.yt-key-prim { flex: 0 0 auto; align-self: center; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px 0 11px; border-radius: 999px; background: var(--brand, #075e54); color: #fff; font-size: 13px; font-weight: 700; }
+.yt-key-prim svg { width: 14px; height: 14px; }
+
+.yt-adm-card.compact .yt-adm-head { padding: calc(8px + env(safe-area-inset-top, 0px)) 14px 8px 16px; }
+.yt-adm-card.compact .yt-adm-head .yt-state-ico { width: 34px; height: 34px; flex-basis: 34px; border-radius: 11px; }
+.yt-adm-card.compact .yt-adm-head .yt-state-ico svg { width: 18px; height: 18px; }
+.yt-adm-card.compact .yt-adm-title h3 { font-size: 16px; }
+.yt-adm-card.compact .yt-adm-title p { display: none; }
+.yt-adm-card.compact .yt-adm-x { width: 32px; height: 32px; flex-basis: 32px; }
+.yt-adm-card.compact .yt-adm-tabs { margin: 10px 16px 0; }
+.yt-adm-card.compact .yt-adm-tab { height: 36px; }
+.yt-adm-card.compact .yt-adm-body { padding-top: 8px; }
+.yt-adm-card.compact .yt-adm-note, .yt-adm-card.compact .yt-adm-help { display: none; }
+.yt-adm-card.compact .yt-adm-actions { padding: 8px 16px calc(10px + env(safe-area-inset-bottom, 0px)); margin-top: 6px; }
+.yt-adm-card.compact .yt-adm-actions .yt-btn { height: 44px; }
+
+
+/* Saat penyimpanan berjalan, daftar kunci tidak bisa diketuk */
+#ytKeyList.is-busy { pointer-events: none; opacity: .65; transition: opacity .15s; }
