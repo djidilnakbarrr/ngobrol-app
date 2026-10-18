@@ -23,12 +23,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 
-<link rel="stylesheet" href="css/base.css?v=1.7.22">
+<link rel="stylesheet" href="css/base.css?v=1.7.25">
 
-<link rel="stylesheet" href="css/update.css?v=1.7.22">
-<link rel="stylesheet" href="css/chat-video.css?v=1.7.22">
-<link rel="stylesheet" href="css/youtube.css?v=1.7.22">
-<link rel="stylesheet" href="css/auth.css?v=1.7.22">
+<link rel="stylesheet" href="css/update.css?v=1.7.25">
+<link rel="stylesheet" href="css/chat-video.css?v=1.7.25">
+<link rel="stylesheet" href="css/youtube.css?v=1.7.25">
+<link rel="stylesheet" href="css/auth.css?v=1.7.25">
+<script src="js/youtube-gate.js?v=1.7.25"></script>
 </head>
 
 <body>
@@ -387,6 +388,30 @@
               </div>
             </div>
             </div>
+<div class="yt-admin-only" id="setYtAdmin">
+<div class="set-title">Admin YouTube</div>
+<div class="settings-group">
+            <div class="settings-item" id="setYtRow">
+              <div class="settings-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z"/></svg>
+              </div>
+              <div class="settings-body">
+                <h4 id="setYtTitle">Layanan YouTube</h4>
+                <p id="setYtState">Aktif untuk semua pengguna</p>
+              </div>
+              <button type="button" class="yt-sw" id="setYtSw" role="switch" aria-checked="true" aria-labelledby="setYtTitle"></button>
+            </div>
+            <div class="settings-item" id="setYtKeys">
+              <div class="settings-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2"/><path d="M17 6l3 3"/><path d="M14 9l2 2"/></svg>
+              </div>
+              <div class="settings-body">
+                <h4>Kelola API key</h4>
+                <p>Daftar kunci, kunci utama, dan penambahan kunci</p>
+              </div>
+            </div>
+</div>
+</div>
 <div class="set-title">Sesi &amp; Akun</div>
 <div class="settings-group">
 <div class="settings-item" id="logoutOthersSettings">
@@ -1739,15 +1764,15 @@
 
 
 
-<script src="js/chat-video.js?v=1.7.22"></script>
-<script type="module" src="js/app.js?v=1.7.22"></script>
+<script src="js/chat-video.js?v=1.7.25"></script>
+<script type="module" src="js/app.js?v=1.7.25"></script>
 
-<script src="js/keyboard.js?v=1.7.22"></script>
-<script src="js/avatar.js?v=1.7.22"></script>
+<script src="js/keyboard.js?v=1.7.25"></script>
+<script src="js/avatar.js?v=1.7.25"></script>
 
 
 
-<script src="js/updater.js?v=1.7.22"></script>
+<script src="js/updater.js?v=1.7.25"></script>
 <div id="ytPlayer" role="dialog" aria-modal="true" aria-label="Pemutar video">
   <div class="yt-sheet">
     <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
@@ -1762,6 +1787,13 @@
       <div class="yt-state-ico" id="ytAdmIco"></div>
       <div class="yt-adm-title"><h3 id="ytAdmTitle">API key YouTube</h3><p>Pengaturan khusus admin</p></div>
       <button type="button" class="yt-adm-x" id="ytAdmX" aria-label="Tutup"></button>
+    </div>
+
+    <div class="yt-adm-scroll" id="ytAdmScroll">
+    <div class="yt-svc" id="ytSvc">
+      <div class="yt-svc-ico" id="ytSvcIco" aria-hidden="true"></div>
+      <div class="yt-svc-txt"><b id="ytSvcTitle">Layanan YouTube</b><span id="ytSvcState">Aktif untuk semua pengguna</span></div>
+      <button type="button" class="yt-sw" id="ytSvcSw" role="switch" aria-checked="true" aria-labelledby="ytSvcTitle"></button>
     </div>
 
     <div class="yt-adm-tabs" role="tablist">
@@ -1795,6 +1827,7 @@
         </div>
       </div>
     </div>
+    </div>
 
     <div class="yt-adm-actions" id="ytAdmActions" hidden>
       <button type="button" class="yt-btn primary" id="ytAdmSave">Tambah kunci</button>
@@ -1817,8 +1850,8 @@
   </div>
 </div>
 
-<script src="js/youtube-config.js?v=1.7.22"></script>
-<script src="js/youtube.js?v=1.7.22"></script>
+<script src="js/youtube-config.js?v=1.7.25"></script>
+<script src="js/youtube.js?v=1.7.25"></script>
 </body>
 
 </html>

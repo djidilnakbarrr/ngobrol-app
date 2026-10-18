@@ -23,6 +23,26 @@
         "primary": {
           ".validate": "newData.isString() && newData.val().length < 200"
         }
+      },
+      "youtubeSwitch": {
+        ".read": true,
+        ".write": "newData.exists() && root.child('users').child(newData.child('updatedBy').val()).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['enabled', 'updatedBy', 'updatedAt'])",
+        "enabled": {
+          ".validate": "newData.isBoolean()"
+        },
+        "updatedBy": {
+          ".validate": "newData.isString() && newData.val().length < 100"
+        },
+        "updatedByName": {
+          ".validate": "newData.isString() && newData.val().length < 100"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "users": {

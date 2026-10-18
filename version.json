@@ -1,7 +1,7 @@
 {
-  "version": "1.7.22",
+  "version": "1.7.25",
   "released": "2026-10-18",
   "notes": [
-    "Panel API key: kunci yang pertama dipakai otomatis jadi utama, dan saat kunci utama limit atau nonaktif kunci sehat berikutnya otomatis jadi utama"
+    "Saat YouTube dinonaktifkan, tab YouTube tetap ada untuk semua pengguna dan admin, tetapi hanya menampilkan tulisan YouTube dinonaktifkan tanpa video"
   ]
 }

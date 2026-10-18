@@ -6,8 +6,13 @@
     mute: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>',
     open: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
-    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>'
+    link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5"/></svg>',
+    ban: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z"/><line x1="4" y1="20" x2="20" y2="4"/></svg>'
   };
+
+  /* ---------- sakelar YouTube (diatur admin, lihat youtube-gate.js) ---------- */
+  const ytOff = () => !!window.YTGate && !window.YTGate.isEnabled();
+  const isYt = raw => !!window.YTGate && window.YTGate.isYouTubeUrl(raw);
   const httpOK = /^https?:$/.test(location.protocol);
 
   /* ---------- pengenal link video ---------- */
@@ -124,6 +129,14 @@
     let pos = 0;
     urls.forEach(x => {
       if (x.index > pos) el.appendChild(document.createTextNode(text.slice(pos, x.index)));
+      if (ytOff() && isYt(x.url)) {
+        const b = document.createElement('span');
+        b.className = 'msg-link yt-blocked';
+        b.textContent = x.url;
+        el.appendChild(b);
+        pos = x.index + x.url.length;
+        return;
+      }
       const a = document.createElement('a');
       a.className = 'msg-link';
       a.href = /^https?:\/\//i.test(x.url) ? x.url : 'https://' + x.url;
@@ -174,6 +187,7 @@
   function makeCard(info, href) {
     const card = mk('div', 'vid-card' + (info.portrait ? ' portrait' : ''));
     card.style.setProperty('--vc', info.color || '#17323a');
+    if (info.name === 'YouTube') card.setAttribute('data-yt', '1');
     card.innerHTML =
       '<div class="vid-media">' +
         '<div class="vid-poster">' + (info.thumb ? '<img alt="" referrerpolicy="no-referrer" src="' + esc(info.thumb) + '">' : '') +
@@ -210,6 +224,7 @@
     function fail() { card.classList.add('failed'); card.classList.remove('playing', 'ready'); }
     function start() {
       if (mounted || card.classList.contains('failed')) return;
+      if (info.name === 'YouTube' && ytOff()) return;   /* YouTube dinonaktifkan: jangan pernah memasang pemutar */
       mounted = true; card.classList.add('playing');
       if (info.kind === 'file') {
         const v = document.createElement('video');
@@ -260,17 +275,51 @@
     return card;
   }
 
+  /* pemberitahuan statis pengganti video YouTube saat fitur dinonaktifkan */
+  function blockedCard() {
+    const c = mk('div', 'vid-blocked',
+      '<span class="vid-blocked-ic">' + NS_SVG.ban + '</span>' +
+      '<span class="vid-blocked-tx"><b>Video YouTube dinonaktifkan</b><span>Fitur ini dimatikan oleh admin.</span></span>');
+    c.setAttribute('role', 'note');
+    c.setAttribute('data-yt-blocked', '1');
+    return c;
+  }
+  /* langsung hentikan dan ganti semua video YouTube yang sedang tampil di layar */
+  function purgeYouTube() {
+    document.querySelectorAll('.vid-card[data-yt]').forEach(c => {
+      try { c.stop && c.stop(); } catch (e) { /* diabaikan */ }
+      if (io) { try { io.unobserve(c); } catch (e) { /* diabaikan */ } }
+      try { c.replaceWith(blockedCard()); } catch (e) { c.remove(); }
+    });
+    document.querySelectorAll('a.msg-link').forEach(a => {
+      if (!isYt(a.getAttribute('href'))) return;
+      const b = document.createElement('span');
+      b.className = 'msg-link yt-blocked';
+      b.textContent = a.textContent;
+      try { a.replaceWith(b); } catch (e) { /* diabaikan */ }
+    });
+  }
+  if (window.YTGate) window.YTGate.onChange(on => { if (!on) purgeYouTube(); });
+  if (ytOff()) document.addEventListener('DOMContentLoaded', purgeYouTube);
+  /* apakah teks memuat tautan YouTube (dipakai app.js agar pesan dibangun ulang saat status berubah) */
+  function hasYouTube(text) {
+    text = String(text || '');
+    if (!/youtu/i.test(text)) return false;
+    return findUrls(text).some(x => isYt(x.url));
+  }
+
   /* kartu untuk satu pesan teks (null bila tidak ada link video) */
   function card(text) {
     text = String(text || '');
     const urls = findUrls(text);
     for (const x of urls) {
       const info = parse(x.url);
+      if (info && info.name === 'YouTube' && ytOff()) return blockedCard();
       if (info) return makeCard(info, /^https?:\/\//i.test(x.url) ? x.url : 'https://' + x.url);
     }
     /* link polos yang tidak dikenali: coba cek apakah berkas video (tanpa ekstensi) */
     const bare = /^\s*(https?:\/\/[^\s]+)\s*$/i.exec(text);
-    if (bare && !/\.(jpe?g|png|gif|webp|svg|pdf|html?|php|aspx?)([?#]|$)/i.test(bare[1]) && !(location.protocol === 'https:' && /^http:/i.test(bare[1]))) {
+    if (bare && !(ytOff() && isYt(bare[1])) && !/\.(jpe?g|png|gif|webp|svg|pdf|html?|php|aspx?)([?#]|$)/i.test(bare[1]) && !(location.protocol === 'https:' && /^http:/i.test(bare[1]))) {
       const holder = mk('div', 'vid-probe');
       holder.hidden = true;
       probe(bare[1], holder);
@@ -293,5 +342,5 @@
     v.src = url;
   }
 
-  window.ChatVideo = { card, linkify, parse, findUrls };
+  window.ChatVideo = { card, linkify, parse, findUrls, hasYouTube };
 })();

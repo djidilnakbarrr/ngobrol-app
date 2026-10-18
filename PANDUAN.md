@@ -4,7 +4,7 @@
 Unggah seluruh isi folder dengan struktur apa adanya (jangan diratakan):
 - `index.html`, `firebase-messaging-sw.js`, `manifest.webmanifest`, `version.json`, ikon `*.png` (di root)
 - `css/` (tampilan): `base.css`, `update.css`, `chat-video.css`, `youtube.css`
-- `js/` (logika): `app.js`, `database.js`, `firebase-config.js`, `youtube.js`, `youtube-config.js`, `chat-video.js`, `avatar.js`, `updater.js`
+- `js/` (logika): `app.js`, `database.js`, `firebase-config.js`, `youtube.js`, `youtube-config.js`, `youtube-gate.js`, `chat-video.js`, `avatar.js`, `updater.js`
 - `database/` (aturan database): `database.rules.youtube.json`
 
 `index.html` dan `firebase-messaging-sw.js` harus tetap satu folder (root).
@@ -156,3 +156,10 @@ Di Setelan > tab **Lainnya** ada tombol **Keluar dari Semua Perangkat Lain**. Pe
 ## ID akun unik selamanya
 
 Saat mendaftar, ID 4 huruf dipesan secara atomik di `ids/<ID>` (tidak pernah dihapus, bahkan ketika akun dihapus), kemudian di `users/<ID>`. Dengan begitu tidak ada dua akun yang pernah memiliki ID yang sama, dan ID akun lama tidak dipakai ulang. ID juga tidak boleh sama dengan username siapa pun. Tempel isi `database/database.rules.ids.json` ke Rules Firebase (gabungkan dengan rules yang sudah ada) agar server ikut menegakkan aturan ini.
+
+## Menonaktifkan YouTube (admin)
+- Buka tab **YouTube**, ketuk ikon kunci di kanan atas, lalu gunakan sakelar **Layanan YouTube** di bagian atas panel. Admin juga dapat mengatur sakelar dan API key lewat **Setelan > Lainnya > Admin YouTube** (hanya tampil untuk admin).
+- Saat dinonaktifkan: tab YouTube tetap ada untuk semua orang tetapi hanya menampilkan tulisan "YouTube dinonaktifkan" tanpa video, pemutar yang sedang terbuka langsung ditutup, video YouTube di dalam chat diganti pemberitahuan, dan tautan YouTube di chat tidak dapat diketuk. Tidak ada lagi permintaan ke YouTube dari aplikasi. Admin juga tidak dapat menonton selama nonaktif.
+- Perubahan berlaku langsung di semua perangkat yang sedang terbuka. Status terakhir disimpan di perangkat, jadi YouTube tetap terkunci sejak aplikasi dibuka, bahkan sebelum database menjawab.
+- Status disimpan di `config/youtubeSwitch` (`enabled`, `updatedBy`, `updatedByName`, `updatedAt`). **Wajib** tambahkan blok `youtubeSwitch` dari `database/database.rules.youtube.json` ke Rules Realtime Database (sejajar dengan `youtube` di dalam `config`), lalu Publish. Tanpa itu, penyimpanan ditolak dan panel menampilkan pesan "Ditolak oleh aturan database".
+- Batasan: aplikasi hanya dapat mengunci pemutaran di dalam aplikasi. Tautan YouTube yang dibuka pengguna di luar aplikasi (peramban lain, tautan singkat) tidak dapat dicegah oleh web.

@@ -35,3 +35,14 @@
 .vid-btn:active { background: rgba(255,255,255,.14); }
 .vid-btn svg { width: 18px; height: 18px; }
 @media (prefers-reduced-motion: reduce) { .vid-load i, .vid-card.playing.ready .vid-name b { animation: none; } }
+
+
+/* Video YouTube dinonaktifkan oleh admin */
+.msg:has(.vid-blocked) { max-width: min(82%, 332px); }
+.vid-blocked { display: flex; align-items: center; gap: 10px; width: 300px; max-width: 100%; margin: 2px 0 6px; padding: 10px 12px; border-radius: 12px; background: rgba(15,28,34,.06); border: 1px solid rgba(15,28,34,.08); color: #51636b; box-sizing: border-box; }
+.vid-blocked-ic { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: rgba(15,28,34,.08); color: #6b7a82; }
+.vid-blocked-ic svg { width: 18px; height: 18px; }
+.vid-blocked-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.vid-blocked-tx b { font-size: 13px; line-height: 1.3; font-weight: 700; color: #2b3a42; }
+.vid-blocked-tx span { font-size: 12px; line-height: 1.3; color: #667781; }
+.msg .msg-link.yt-blocked, .msg.sent .msg-link.yt-blocked { color: #7b8a92; text-decoration: line-through; text-decoration-thickness: 1px; cursor: default; }

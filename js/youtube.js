@@ -29,7 +29,10 @@
     user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
     link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>',
     share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>',
-    external: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>'
+    external: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+    off: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z"/><line x1="4" y1="20" x2="20" y2="4"/></svg>',
+    power: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>',
+    play2: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="3.5"/><path d="M10 9.5v5l4.5-2.5z"/></svg>'
   };
 
   var CATS = [
@@ -47,6 +50,9 @@
   /* ---------- Utilitas ---------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function hasKey() { return KEYS.length > 0; }
+  /* Sakelar global YouTube (js/youtube-gate.js). Bila tidak termuat, YouTube dianggap aktif. */
+  function ytOn() { return !window.YTGate || window.YTGate.isEnabled(); }
+  function disabledError() { var e = new Error('YouTube dinonaktifkan.'); e.reason = 'disabled'; return e; }
 
   /* ---------- Banyak API key: otomatis pindah ke kunci lain saat kuota habis ---------- */
   var KEYS = [];            /* daftar kunci dari database */
@@ -184,6 +190,7 @@
     var q = Object.keys(params).filter(function (k) { return params[k] !== '' && params[k] != null; })
       .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
     var ck = endpoint + '?' + q;
+    if (!ytOn()) return Promise.reject(disabledError());
     if (allOff()) { var eo = new Error('Semua API key dinonaktifkan.'); eo.reason = 'allOff'; return Promise.reject(eo); }
     var hit = cacheGet(ck, ttl);
     if (hit) return Promise.resolve(hit);
@@ -236,6 +243,7 @@
         if (more.length) { pool = pool.concat(more); return attempt(i); }
         return Promise.reject(lastErr || noUsableError());
       }
+      if (!ytOn()) return Promise.reject(disabledError());   /* dimatikan saat permintaan berjalan */
       var k = pool[i];
       var st = keyState(k);
       if (st === 'off' || st === 'limit') return attempt(i + 1);   /* berubah saat permintaan lain berjalan */
@@ -381,6 +389,15 @@
   function stateBox(kind, icon, h, p, btn) {
     return '<div class="yt-state ' + kind + '"><div class="yt-state-ico">' + icon + '</div><h3>' + h + '</h3><p>' + p + '</p>' + (btn || '') + '</div>';
   }
+  function offBox() {
+    return stateBox('', I.off, 'YouTube dinonaktifkan', 'Fitur ini sedang dinonaktifkan oleh admin dan tidak dapat digunakan.');
+  }
+  function renderOff() {
+    closePlayer();
+    var l = $('ytList'), m = $('ytMoreWrap');
+    if (l) l.innerHTML = offBox();
+    if (m) m.innerHTML = '';
+  }
   function showError(e, fresh) {
     var box;
     if (!hasKey()) {
@@ -405,6 +422,7 @@
   }
 
   function load(fresh) {
+    if (!ytOn()) { renderOff(); return; }
     if (state.loading) { if (fresh) state.again = true; return; }
     if (fresh) { state.token = ''; }
     if (!hasKey()) {
@@ -418,6 +436,7 @@
     if (fresh) $('ytList').innerHTML = secTitle() + '<div class="yt-grid">' + skeleton(6) + '</div>';
     var btn = $('ytMore'); if (btn) { btn.disabled = true; }
     fetchPage().then(function (r) {
+      if (!ytOn()) { renderOff(); return; }   /* dinonaktifkan saat memuat: buang hasilnya */
       state.token = r.next; state.lastLoad = Date.now();
       if (fresh) {
         if (!r.items.length) { $('ytList').innerHTML = stateBox('', I.empty, 'Video tidak ditemukan', 'Coba kata kunci lain atau pilih kategori yang berbeda.'); $('ytMoreWrap').innerHTML = ''; return; }
@@ -425,7 +444,7 @@
       }
       $('ytGrid').insertAdjacentHTML('beforeend', r.items.map(card).join(''));
       $('ytMoreWrap').innerHTML = r.next ? '<div class="yt-more"><button type="button" class="yt-btn" id="ytMore">' + I.down + 'Muat lebih banyak</button></div>' : '';
-    }).catch(function (e) { showError(e, fresh); if (!fresh) { var b = $('ytMore'); if (b) b.disabled = false; } })
+    }).catch(function (e) { if (!ytOn()) { renderOff(); return; } showError(e, fresh); if (!fresh) { var b = $('ytMore'); if (b) b.disabled = false; } })
       .then(function () { state.loading = false; if (state.again) { state.again = false; load(true); } });
   }
 
@@ -444,12 +463,13 @@
 
   /* ---------- Pemutar ---------- */
   function openPlayer(id) {
+    if (!ytOn()) { renderOff(); return; }
     $('ytFrameWrap').innerHTML = '<iframe src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(id) + '?autoplay=1&rel=0&playsinline=1&modestbranding=1" title="Pemutar video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>';
     $('ytDetail').innerHTML = '<div class="yt-line" style="height:18px;width:80%;border-radius:6px;background:#e6ecee"></div>';
     $('ytPlayer').classList.add('open');
     state.current = { id: id };
     details([id]).then(function (items) {
-      var v = items[0]; if (!v || state.current.id !== id) return;
+      var v = items[0]; if (!v || !state.current || state.current.id !== id || !ytOn()) return;
       var sn = v.snippet || {}, st = v.statistics || {};
       state.current = { id: id, title: sn.title };
       var desc = String(sn.description || '').trim();
@@ -517,10 +537,13 @@
           /* akun lama tanpa peran diberi "user". Peran "admin" hanya bisa diberikan manual di konsol Firebase */
           if (r === null || r === undefined) b.set(b.ref(b.db, 'users/' + id + '/role'), 'user').catch(function () {});
           admin.is = r === 'admin';
+          try { document.documentElement.classList.toggle('yt-adm', admin.is); } catch (er) { /* diabaikan */ }
           autoMain();
           $('ytAdminBtn').hidden = !admin.is;
           if (!admin.is) closeAdmin();
-          if (state.ready && !hasKey()) load(true);
+          syncService();
+          if (state.ready && !ytOn()) renderOff();
+          else if (state.ready && !hasKey()) load(true);
         }, function () {});
       });
     });
@@ -586,6 +609,7 @@
     $('ytTabKeys').setAttribute('aria-selected', add ? 'false' : 'true'); $('ytTabAdd').setAttribute('aria-selected', add ? 'true' : 'false');
     $('ytPaneKeys').classList.toggle('on', !add); $('ytPaneAdd').classList.toggle('on', add);
     $('ytAdmActions').hidden = !add; $('ytAdmCard').classList.toggle('has-actions', add);
+    if ($('ytAdmScroll')) $('ytAdmScroll').scrollTop = 0;
     admMsg('');
   }
   /* Tempelkan panel persis pada area layar yang terlihat, agar tidak bergeser atau tertutup keyboard */
@@ -610,8 +634,55 @@
     if (el) ['left', 'top', 'width', 'height', 'right', 'bottom'].forEach(function (p) { el.style.removeProperty(p); });
     var c = $('ytAdmCard'); if (c) c.classList.remove('compact');
   }
+  /* ---------- Sakelar layanan YouTube (admin) ---------- */
+  function syncService() {
+    var on = ytOn(), label = on ? 'Nonaktifkan YouTube untuk semua pengguna' : 'Aktifkan YouTube untuk semua pengguna';
+    var text = on ? 'Aktif untuk semua pengguna' : 'Nonaktif untuk semua pengguna';
+    ['ytSvcSw', 'setYtSw'].forEach(function (id) {
+      var sw = $(id); if (!sw) return;
+      sw.setAttribute('aria-checked', on ? 'true' : 'false');
+      sw.setAttribute('aria-label', label);
+      sw.disabled = !!svcBusy;
+    });
+    if ($('ytSvcState')) $('ytSvcState').textContent = text;
+    if ($('setYtState')) $('setYtState').textContent = text;
+    if ($('ytSvcIco')) $('ytSvcIco').innerHTML = on ? I.play2 : I.off;
+    if ($('ytSvc')) $('ytSvc').classList.toggle('off', !on);
+  }
+  var svcBusy = false;
+  function svcError(e) {
+    if (e && e.code === 'PERMISSION_DENIED') return 'Ditolak oleh aturan database. Perbarui Rules Firebase.';
+    return 'Pengaturan gagal disimpan. Periksa koneksi internet.';
+  }
+  function svcNotify(text, ok) {
+    if ($('ytAdmin').classList.contains('open')) admMsg(text, ok); else toast(text);
+  }
+  function setService(on) {
+    if (svcBusy || locked || !admin.is || !window.YTGate) return;
+    if (on === ytOn()) return;
+    svcBusy = true; syncService();
+    window.YTGate.set(on).then(function () {
+      svcNotify(on ? 'YouTube diaktifkan untuk semua pengguna.' : 'YouTube dinonaktifkan untuk semua pengguna.', true);
+    }).catch(function (e) { svcNotify(svcError(e), false); })
+      .then(function () { svcBusy = false; syncService(); });
+  }
+  /* Dipanggil setiap status berubah (lokal maupun dari admin lain) */
+  function onGate(on) {
+    syncService();
+    if (!on) {
+      state.mode = 'popular'; state.cat = 'popular'; state.query = ''; state.token = ''; state.pool = []; state.pos = 0; state.lastLoad = 0;
+      var inp = $('ytInput'); if (inp) { inp.value = ''; var sb = $('ytSearchBox'); if (sb) sb.classList.remove('has-text'); }
+      renderChips();
+      renderOff();
+    } else if (state.ready) {
+      var pane = $('paneYoutube');
+      if (pane && pane.classList.contains('active')) load(true); else $('ytList').innerHTML = '';
+    }
+  }
+
   function openAdmin() {
     if (!admin.is) return;
+    syncService();
     $('ytKeyInput').value = ''; setReveal(false);
     renderKeys(); setTab(KEYS.length ? 'keys' : 'add'); $('ytAdmin').classList.add('open'); pinOn();
   }
@@ -722,11 +793,12 @@
     renderChips();
     $('ytRefresh').innerHTML = I.refresh;
     function refreshHome(spin) {
+      if (!ytOn()) { renderOff(); return; }
       if (state.mode !== 'popular' || state.loading) return;
       if (spin) { var b = $('ytRefresh'); b.classList.remove('spin'); void b.offsetWidth; b.classList.add('spin'); }
       $('ytScroll').scrollTop = 0; load(true);
     }
-    $('ytRefresh').addEventListener('click', function () { if (state.mode === 'search') { $('ytInput').value = ''; $('ytSearchBox').classList.remove('has-text'); state.mode = 'popular'; state.cat = 'popular'; state.query = ''; load(true); $('ytScroll').scrollTop = 0; } else refreshHome(true); });
+    $('ytRefresh').addEventListener('click', function () { if (!ytOn()) return; if (state.mode === 'search') { $('ytInput').value = ''; $('ytSearchBox').classList.remove('has-text'); state.mode = 'popular'; state.cat = 'popular'; state.query = ''; load(true); $('ytScroll').scrollTop = 0; } else refreshHome(true); });
     var ytTab = document.querySelector('.bottom-tab[data-pane="paneYoutube"]');
     if (ytTab) ytTab.addEventListener('click', function () {
       var pane = $('paneYoutube'), wasActive = pane && pane.classList.contains('active');
@@ -763,6 +835,13 @@
 
     /* muat pertama kali saat tab dibuka */
     $('ytAdminBtn').innerHTML = I.key; $('ytAdmIco').innerHTML = I.key; setReveal(false);
+    $('ytSvcSw').addEventListener('click', function () { setService(!ytOn()); });
+    if ($('setYtSw')) $('setYtSw').addEventListener('click', function (e) { e.stopPropagation(); setService(!ytOn()); });
+    if ($('setYtKeys')) $('setYtKeys').addEventListener('click', openAdmin);
+    if ($('setYtRow')) $('setYtRow').addEventListener('click', function (e) { if (!e.target.closest('#setYtSw')) setService(!ytOn()); });
+    if (window.YTGate) window.YTGate.onChange(onGate);
+    syncService();
+    if (!ytOn()) renderOff();
     $('ytAdminBtn').addEventListener('click', openAdmin);
     $('ytAdmX').innerHTML = I.close; $('ytAdmX').addEventListener('click', closeAdmin);
     $('ytCfNo').addEventListener('click', closeConfirm);
@@ -780,6 +859,7 @@
     startSync().catch(function () { state.keyKnown = true; if (state.ready) load(true); });
     var tab = document.querySelector('.bottom-tab[data-pane="paneYoutube"]');
     if (tab) tab.addEventListener('click', function () {
+      if (!ytOn()) { state.ready = true; renderOff(); return; }
       if (state.ready) return;
       state.ready = true;
       load(true); /* bila kunci belum diketahui, tampil pemuatan lalu otomatis lanjut saat kunci tiba */

@@ -4045,6 +4045,7 @@ function visibleMsgs() {
 }
 
 function rerenderCurrent() { if (currentChat) renderMessages(visibleMsgs()); }
+window.addEventListener('ytgate', () => { try { rerenderCurrent(); } catch (e) { console.warn('ytgate:', e); } });
 
 
 
@@ -4234,6 +4235,8 @@ function msgSig(m) {
 
   if (isSent) sig += '|rd' + (isReadMsg(m) ? 1 : 0);
   if (m.type === 'audio') sig += '|p' + String(getPhotoFor(isSent ? myId : m.from) || '').length + (isSent ? myName : displayName(m.from));
+  /* pesan bertautan YouTube dibangun ulang saat admin menyalakan atau mematikan YouTube */
+  if (m.text && window.ChatVideo && window.YTGate && window.ChatVideo.hasYouTube(m.text)) sig += '|yt' + (window.YTGate.isEnabled() ? 1 : 0);
 
   return sig;
 

@@ -2,7 +2,7 @@
    Naikkan versi dengan:  node rilis.js 1.2.0 "catatan 1" "catatan 2"   (mengubah APP_VERSION di bawah + version.json) */
 (function () {
   'use strict';
-  const APP_VERSION = '1.7.22';
+  const APP_VERSION = '1.7.25';
   const CHECK_URL = 'version.json';
   const $ = id => document.getElementById(id);
   const ss = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
@@ -82,7 +82,7 @@
       /* 1) unduh: paksa ambil ulang halaman, service worker, dan manifest dari server */
       setStep(0, 12);
       const base = location.pathname.replace(/[^/]*$/, '');
-      const ASSETS = ['css/base.css','css/update.css','css/chat-video.css','css/youtube.css','css/auth.css','js/keyboard.js','js/firebase-config.js','js/database.js','js/app.js','js/chat-video.js','js/avatar.js','js/updater.js','js/youtube-config.js','js/youtube.js'];
+      const ASSETS = ['css/base.css','css/update.css','css/chat-video.css','css/youtube.css','css/auth.css','js/keyboard.js','js/firebase-config.js','js/database.js','js/app.js','js/chat-video.js','js/avatar.js','js/updater.js','js/youtube-config.js','js/youtube-gate.js','js/youtube.js'];
       const targets = [location.pathname, base + 'firebase-messaging-sw.js', base + 'manifest.webmanifest', base + CHECK_URL].concat(ASSETS.map(a => base + a));
       const got = await Promise.all(targets.map(u => withTimeout(fetch(u, { cache: 'reload' }), 20000).then(r => r.ok, () => false)));
       if (!got[0]) throw new Error('unduh gagal');
