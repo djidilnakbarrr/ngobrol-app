@@ -106,6 +106,17 @@
     var t = tmpBad[k]; if (t && t.until > Date.now()) return 'bad';
     return 'ok';
   }
+  /* Kunci utama pengganti: kunci aktif pertama di daftar (yang belum limit didahulukan), selain 'except'. Kosong bila tak ada. */
+  function pickPrimary(list, off, except) {
+    var on = list.filter(function (k) { return k !== except && off.indexOf(k) === -1; });
+    var ok = on.filter(function (k) { return !exhLoad()[k]; });
+    return (ok[0] || on[0] || '');
+  }
+  /* Kunci utama yang ditampilkan: pilihan admin bila masih aktif; bila sudah nonaktif, kunci aktif pertama menggantikannya */
+  function mainKey() {
+    if (!PRIMARY) return '';
+    return OFF.indexOf(PRIMARY) === -1 ? PRIMARY : pickPrimary(KEYS, OFF, PRIMARY);
+  }
   function allOff() { return KEYS.length > 0 && KEYS.every(function (k) { return OFF.indexOf(k) !== -1; }); }
   function usableKeys() { return KEYS.filter(function (k) { return keyState(k) === 'ok'; }); }
   function keysChanged() { try { if (admin.is && $('ytAdmin').classList.contains('open')) renderKeys(); } catch (e) { /* panel belum siap */ } }
@@ -531,7 +542,7 @@
     var lim = KEYS.filter(function (k) { return keyState(k) === 'limit'; }).length;
     $('ytStTotal').textContent = n; $('ytStOn').textContent = on; $('ytStLimit').textContent = lim;
     $('ytAdmCount').textContent = n + ' dari 10 terpakai'; $('ytTabCnt').textContent = n;
-    var cur = currentKey();
+    var cur = currentKey(), main = mainKey();
     $('ytKeyList').innerHTML = n ? KEYS.map(function (k, i) {
       var st = keyState(k), isOn = OFF.indexOf(k) === -1;
       if (st === 'ok') st = k === cur ? 'using' : 'standby';
@@ -539,7 +550,7 @@
         '<div class="yt-key-top"><div class="yt-key-no">' + (i + 1) + '</div>' +
         '<div class="yt-key-info"><span class="yt-key-mask">' + esc(maskKey(k)) + '</span><span class="yt-key-badge ' + st + '">' + STATE_LABEL[st] + '</span>' +
         '<span class="yt-key-note">' + esc(stateNote(k, st)) + '</span></div>' +
-        (k === PRIMARY ? '<span class="yt-key-prim">' + CHECK + 'Utama</span>' : '<button type="button" class="yt-key-use" data-i="' + i + '" aria-label="Jadikan kunci ' + (i + 1) + ' sebagai kunci utama">Pakai</button>') + '</div>' +
+        (k === main ? '<span class="yt-key-prim">' + CHECK + 'Utama</span>' : '<button type="button" class="yt-key-use" data-i="' + i + '" aria-label="Jadikan kunci ' + (i + 1) + ' sebagai kunci utama">Pakai</button>') + '</div>' +
         '<div class="yt-key-bar"><div class="yt-key-sw"><button type="button" class="yt-sw" role="switch" data-i="' + i + '" aria-checked="' + (isOn ? 'true' : 'false') + '" aria-label="' + (isOn ? 'Nonaktifkan' : 'Aktifkan') + ' kunci ' + (i + 1) + '"></button>' +
         '<span class="yt-key-swlbl">' + (isOn ? 'Kunci aktif' : 'Kunci nonaktif') + '</span></div>' +
         '<button type="button" class="yt-key-del" data-i="' + i + '" aria-label="Hapus kunci ' + (i + 1) + '">' + TRASH + '<span>Hapus</span></button></div></div>';
@@ -639,14 +650,18 @@
     if (locked) return;
     var k = KEYS[i]; if (k == null) return;
     var off = OFF.indexOf(k) === -1 ? OFF.concat([k]) : OFF.filter(function (x) { return x !== k; });
+    var turnOff = off.indexOf(k) !== -1, np = PRIMARY, promoted = false;
+    if (turnOff && k === PRIMARY) { np = pickPrimary(KEYS, off, k); promoted = !!np; }   /* kunci utama dinonaktifkan: kunci aktif berikutnya otomatis jadi utama */
     busy(true); admMsg('');
-    writeKeys(KEYS, off).then(function () { admMsg(off.indexOf(k) === -1 ? 'Kunci ' + (i + 1) + ' diaktifkan.' : 'Kunci ' + (i + 1) + ' dinonaktifkan.', true); })
+    writeKeys(KEYS, off, np).then(function () {
+      var ni = promoted ? KEYS.indexOf(np) : -1;
+      admMsg(!turnOff ? 'Kunci ' + (i + 1) + ' diaktifkan.' : 'Kunci ' + (i + 1) + ' dinonaktifkan.' + (ni >= 0 ? ' Kunci ' + (ni + 1) + ' jadi utama.' : ''), true); })
       .catch(function (e) { admMsg(dbErr(e)); })
       .then(function () { busy(false); });
   }
   function setPrimary(i) {
     if (locked) return;
-    var k = KEYS[i]; if (k == null || k === PRIMARY) return;
+    var k = KEYS[i]; if (k == null || (k === PRIMARY && OFF.indexOf(k) === -1)) return;
     var wasOff = OFF.indexOf(k) !== -1, lim = keyState(k) === 'limit';
     busy(true); admMsg('');
     writeKeys(KEYS, OFF.filter(function (x) { return x !== k; }), k).then(function () {
@@ -669,7 +684,8 @@
     var k = pendingDel; if (k == null || locked) return;
     busy(true);
     $('ytCfOk').disabled = true; $('ytCfNo').disabled = true; $('ytCfOk').textContent = 'Menghapus...';
-    writeKeys(KEYS.filter(function (x) { return x !== k; }), OFF, k === PRIMARY ? '' : PRIMARY)
+    var rest = KEYS.filter(function (x) { return x !== k; });
+    writeKeys(rest, OFF, k === PRIMARY ? pickPrimary(rest, OFF, k) : PRIMARY)
       .then(function () { closeConfirm(); admMsg('Kunci dihapus.', true); })
       .catch(function (e) { closeConfirm(); admMsg(dbErr(e)); })
       .then(function () { $('ytCfOk').textContent = 'Ya, hapus'; busy(false); });

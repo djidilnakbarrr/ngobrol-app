@@ -1,8 +1,7 @@
 {
-  "version": "1.7.20",
+  "version": "1.7.21",
   "released": "2026-10-18",
   "notes": [
-    "YouTube: kunci yang limit otomatis pindah ke kunci siaga, kunci siaga tidak dipakai selama kunci utama masih sehat",
-    "Panel API key: notifikasi ngambang di bawah, garis warna status kartu (hijau, oranye, merah, abu-abu), anti ketuk ganda"
+    "Panel API key: bila kunci utama dinonaktifkan atau dihapus, kunci aktif berikutnya otomatis jadi utama"
   ]
 }
