@@ -7,6 +7,18 @@
         ".validate": "newData.hasChildren(['apiKey', 'updatedBy', 'updatedAt'])",
         "apiKey": {
           ".validate": "newData.isString() && newData.val().length < 200"
+        },
+        "apiKeys": {
+          ".validate": "newData.hasChildren() || !newData.exists()",
+          "$i": {
+            ".validate": "newData.isString() && newData.val().length < 200"
+          }
+        },
+        "keysOff": {
+          ".validate": "newData.hasChildren() || !newData.exists()",
+          "$i": {
+            ".validate": "newData.isString() && newData.val().length < 200"
+          }
         }
       }
     },

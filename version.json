@@ -1,7 +1,7 @@
 {
-  "version": "1.7.8",
+  "version": "1.7.15",
   "released": "2026-10-18",
   "notes": [
-    "Perbaikan kolom ketik chat: huruf kini selalu muncul"
+    "YouTube: pindah otomatis ke API key lain lebih andal saat kuota habis atau kunci bermasalah"
   ]
 }

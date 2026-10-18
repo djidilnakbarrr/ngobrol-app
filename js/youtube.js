@@ -46,7 +46,50 @@
 
   /* ---------- Utilitas ---------- */
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function hasKey() { return String(CFG.API_KEY || '').length > 10; }
+  function hasKey() { return KEYS.length > 0; }
+
+  /* ---------- Banyak API key: otomatis pindah ke kunci lain saat kuota habis ---------- */
+  var KEYS = [];            /* daftar kunci dari database */
+  var OFF = [];             /* kunci yang dinonaktifkan admin */
+  var tmpBad = {};          /* kunci yang gagal sementara (sesi ini): { kunci: { until, reason } } */
+  var memExh = { day: '', keys: {} };   /* cadangan di memori bila localStorage diblokir */
+  var EXH = 'yt:exhausted';
+  /* Kuota YouTube pulih tiap tengah malam waktu Pasifik (Los Angeles). Hari itu dipakai sebagai penanda. */
+  function pacificDay() {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date()); }
+    catch (e) { return new Date().toISOString().slice(0, 10); }
+  }
+  function exhLoad() {
+    var day = pacificDay(), out = {}, k;
+    if (memExh.day === day) for (k in memExh.keys) out[k] = 1;
+    try { var o = JSON.parse(localStorage.getItem(EXH) || '{}'); if (o && o.day === day && o.keys) for (k in o.keys) out[k] = 1; } catch (e) { /* diabaikan */ }
+    return out;
+  }
+  function markExhausted(k) {
+    var day = pacificDay();
+    if (memExh.day !== day) memExh = { day: day, keys: {} };
+    memExh.keys[k] = 1;
+    try { localStorage.setItem(EXH, JSON.stringify({ day: day, keys: exhLoad() })); } catch (e) { /* diabaikan */ }
+    keysChanged();
+  }
+  function keyState(k) {
+    if (OFF.indexOf(k) !== -1) return 'off';
+    if (exhLoad()[k]) return 'limit';
+    var t = tmpBad[k]; if (t && t.until > Date.now()) return 'bad';
+    return 'ok';
+  }
+  function allOff() { return KEYS.length > 0 && KEYS.every(function (k) { return OFF.indexOf(k) !== -1; }); }
+  function usableKeys() { return KEYS.filter(function (k) { return keyState(k) === 'ok'; }); }
+  function keysChanged() { try { if (admin.is && $('ytAdmin').classList.contains('open')) renderKeys(); } catch (e) { /* panel belum siap */ } }
+  /* Golongkan galat API: quota (habis hari ini), rate (terlalu cepat), keybad (kunci bermasalah), other (bukan urusan kunci) */
+  function classify(status, reason, msg) {
+    msg = String(msg || '');
+    if (reason === 'quotaExceeded' || reason === 'dailyLimitExceeded' || ((status === 403 || status === 429) && /quota/i.test(msg))) return 'quota';
+    if (reason === 'rateLimitExceeded' || reason === 'userRateLimitExceeded' || status === 429) return 'rate';
+    if (reason === 'keyInvalid' || reason === 'keyExpired' || reason === 'accessNotConfigured' || reason === 'ipRefererBlocked' || reason === 'forbidden' ||
+        (reason === 'badRequest' && /API key/i.test(msg)) || /API key (not valid|expired)/i.test(msg)) return 'keybad';
+    return 'other';
+  }
   function dur(iso) {
     var m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso || '');
     if (!m) return '';
@@ -82,18 +125,65 @@
     var q = Object.keys(params).filter(function (k) { return params[k] !== '' && params[k] != null; })
       .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(params[k]); }).join('&');
     var ck = endpoint + '?' + q;
+    if (allOff()) { var eo = new Error('Semua API key dinonaktifkan.'); eo.reason = 'allOff'; return Promise.reject(eo); }
     var hit = cacheGet(ck, ttl);
     if (hit) return Promise.resolve(hit);
-    return fetch(API + endpoint + '?' + q + '&key=' + encodeURIComponent(CFG.API_KEY)).then(function (r) {
-      return r.json().then(function (j) {
-        if (!r.ok) {
-          var e = new Error((j.error && j.error.message) || ('HTTP ' + r.status));
-          e.reason = j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason;
-          e.status = r.status; throw e;
-        }
-        cacheSet(ck, j); return j;
-      });
+    return request(endpoint, q, ck);
+  }
+
+  /* Alasan bila tidak ada kunci yang bisa dipakai saat ini */
+  function noUsableError() {
+    var on = KEYS.filter(function (k) { return OFF.indexOf(k) === -1; });
+    var e, reason;
+    if (!KEYS.length) { e = new Error('API key belum diatur.'); e.reason = 'noKey'; return e; }
+    if (!on.length) { e = new Error('Semua API key dinonaktifkan.'); e.reason = 'allOff'; return e; }
+    if (on.some(function (k) { return keyState(k) === 'limit'; })) { e = new Error('Kuota semua API key habis.'); e.reason = 'quotaExceeded'; return e; }
+    var t = tmpBad[on[0]]; reason = (t && t.reason) || 'rateLimitExceeded';
+    e = new Error(reason === 'rateLimitExceeded' ? 'Terlalu banyak permintaan.' : 'API key bermasalah.'); e.reason = reason; return e;
+  }
+
+  function fetchTimeout(url, ms) {
+    if (typeof AbortController === 'undefined') return fetch(url);
+    var ac = new AbortController(), timer = setTimeout(function () { ac.abort(); }, ms);
+    return fetch(url, { signal: ac.signal }).then(function (r) { clearTimeout(timer); return r; }, function (err) {
+      clearTimeout(timer);
+      if (err && err.name === 'AbortError') { var e = new Error('Waktu tunggu habis. Periksa koneksi internet.'); e.timeout = true; throw e; }
+      throw err;
     });
+  }
+
+  /* Coba kunci aktif dari atas ke bawah; kunci yang limit atau bermasalah dilewati otomatis */
+  function request(endpoint, q, ck) {
+    var pool = usableKeys();
+    if (!pool.length) return Promise.reject(noUsableError());
+    var lastErr = null;
+    function attempt(i) {
+      if (i >= pool.length) {
+        /* semua kunci yang dicoba gagal: laporkan alasan yang paling relevan */
+        return Promise.reject(usableKeys().length ? lastErr : noUsableError());
+      }
+      var k = pool[i];
+      if (keyState(k) !== 'ok') return attempt(i + 1);   /* berubah saat permintaan lain berjalan */
+      return fetchTimeout(API + endpoint + '?' + q + '&key=' + encodeURIComponent(k), 20000).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          if (!r.ok) {
+            var er = j && j.error || {};
+            var e = new Error(er.message || ('HTTP ' + r.status));
+            e.reason = er.errors && er.errors[0] && er.errors[0].reason;
+            e.status = r.status; e.cls = classify(r.status, e.reason, er.message);
+            throw e;
+          }
+          cacheSet(ck, j); return j;
+        });
+      }).catch(function (e) {
+        if (!e || !e.cls || e.cls === 'other') throw e;   /* jaringan, waktu habis, atau galat non-kunci: jangan ganti kunci */
+        lastErr = e;
+        if (e.cls === 'quota') markExhausted(k);
+        else { tmpBad[k] = { until: Date.now() + (e.cls === 'rate' ? 60000 : 600000), reason: e.reason || (e.cls === 'rate' ? 'rateLimitExceeded' : 'keyInvalid') }; keysChanged(); }
+        return attempt(i + 1);
+      });
+    }
+    return attempt(0);
   }
 
   function details(ids) {
@@ -209,8 +299,12 @@
       box = admin.is
         ? stateBox('', I.key, 'API key belum diatur', 'Fitur YouTube membutuhkan API key. Sebagai admin, Anda dapat mengisinya sekarang.', '<button type="button" class="yt-btn primary" id="ytSetKey">' + I.key + 'Atur API key</button>')
         : stateBox('', I.key, 'Fitur belum aktif', 'API key YouTube belum diatur. Silakan hubungi admin aplikasi.');
-    } else if (e && (e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded' || e.reason === 'rateLimitExceeded')) {
-      box = stateBox('error', I.alert, 'Kuota harian habis', 'Kuota YouTube Data API untuk kunci ini sudah terpakai. Kuota akan pulih otomatis setiap hari, atau tambah kuota di Google Cloud Console.');
+    } else if (e && e.reason === 'allOff') {
+      box = stateBox('error', I.key, 'API key dinonaktifkan', admin.is ? 'Semua API key sedang dinonaktifkan. Aktifkan salah satu lewat ikon kunci di kanan atas.' : 'Fitur YouTube sedang dinonaktifkan. Silakan hubungi admin aplikasi.');
+    } else if (e && e.reason === 'rateLimitExceeded') {
+      box = stateBox('error', I.alert, 'Terlalu banyak permintaan', 'YouTube membatasi permintaan sesaat. Tunggu sekitar satu menit lalu coba lagi.', '<button type="button" class="yt-btn primary" id="ytRetry">' + I.refresh + 'Coba lagi</button>');
+    } else if (e && (e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded')) {
+      box = stateBox('error', I.alert, 'Kuota harian habis', (KEYS.length > 1 ? 'Kuota semua ' + KEYS.length + ' API key sudah terpakai.' : 'Kuota YouTube Data API untuk kunci ini sudah terpakai.') + ' Kuota pulih otomatis setiap hari' + (admin.is ? ', atau tambahkan API key lain lewat ikon kunci.' : '.'));
     } else if (e && (e.reason === 'keyInvalid' || e.reason === 'badRequest' && /API key/i.test(e.message))) {
       box = stateBox('error', I.key, 'API key tidak valid', admin.is ? 'Perbarui kunci melalui ikon kunci di kanan atas.' : 'Silakan hubungi admin aplikasi untuk memperbarui kunci.');
     } else if (e && (e.reason === 'accessNotConfigured' || e.reason === 'forbidden' || e.reason === 'ipRefererBlocked')) {
@@ -231,6 +325,7 @@
       if (!state.keyKnown) { $('ytList').innerHTML = secTitle() + '<div class="yt-grid">' + skeleton(6) + '</div>'; return; }
       $('ytList').innerHTML = ''; showError(null, true); return;
     }
+    if (allOff()) { closePlayer(); $('ytMoreWrap').innerHTML = ''; $('ytList').innerHTML = ''; showError({ reason: 'allOff' }, true); return; }
     state.loading = true;
     if (fresh) $('ytList').innerHTML = secTitle() + '<div class="yt-grid">' + skeleton(6) + '</div>';
     var btn = $('ytMore'); if (btn) { btn.disabled = true; }
@@ -288,7 +383,6 @@
   function url() { return state.current ? 'https://www.youtube.com/watch?v=' + state.current.id : ''; }
 
   /* ---------- Kunci dari database dan peran admin ---------- */
-  CFG.API_KEY = '';
   var admin = { is: false, meta: null };
 
   function waitBridge(ms) {
@@ -313,11 +407,18 @@
         var done = function () { if (first) { first = false; state.keyKnown = true; resolve(); if (state.ready && !state.loading) load(true); else if (state.ready) state.again = true; } };
         b.onValue(b.ref(b.db, 'config/youtube'), function (snap) {
           var v = snap.val() || {};
-          var k = String(v.apiKey || '').trim();
           admin.meta = v;
-          var eff = k;
-          var changed = eff !== CFG.API_KEY;
-          CFG.API_KEY = eff;
+          var list = [];
+          var raw = v.apiKeys;
+          if (raw && typeof raw === 'object') Object.keys(raw).forEach(function (i) { list.push(raw[i]); });
+          if (v.apiKey) list.unshift(v.apiKey);   /* dukung data lama (satu kunci) */
+          var seen = {};
+          list = list.map(function (x) { return String(x || '').trim(); }).filter(function (x) { if (x.length < 10 || seen[x]) return false; seen[x] = 1; return true; });
+          var off = [];
+          if (v.keysOff && typeof v.keysOff === 'object') Object.keys(v.keysOff).forEach(function (i) { if (list.indexOf(v.keysOff[i]) !== -1) off.push(v.keysOff[i]); });
+          var changed = list.join('|') !== KEYS.join('|') || off.join('|') !== OFF.join('|');
+          KEYS = list; OFF = off; if (changed) tmpBad = {};
+          if (admin.is && $('ytAdmin').classList.contains('open')) renderKeys();
           if (first) done(); else if (changed && state.ready) load(true);
         }, done);
         b.onValue(b.ref(b.db, 'users/' + id + '/role'), function (snap) {
@@ -346,58 +447,111 @@
   function isRevealed() { return $('ytKeyEye').getAttribute('aria-pressed') === 'true'; }
   function maskKey(k) { return k && k.length > 10 ? k.slice(0, 4) + '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + k.slice(-4) : ''; }
   function admMsg(t, ok) { var m = $('ytAdmMsg'); m.textContent = t || ''; m.classList.toggle('ok', !!ok); }
+  var TRASH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>';
+  var STATE_LABEL = { ok: 'Aktif', limit: 'Limit hari ini', bad: 'Bermasalah', off: 'Nonaktif' };
+  function renderKeys() {
+    var m = admin.meta || {}, n = KEYS.length;
+    var on = KEYS.filter(function (k) { return OFF.indexOf(k) === -1; }).length;
+    var lim = KEYS.filter(function (k) { return keyState(k) === 'limit'; }).length;
+    $('ytStTotal').textContent = n; $('ytStOn').textContent = on; $('ytStLimit').textContent = lim;
+    $('ytAdmCount').textContent = n + ' dari 10 terpakai'; $('ytTabCnt').textContent = n;
+    $('ytKeyList').innerHTML = n ? KEYS.map(function (k, i) {
+      var st = keyState(k), isOn = OFF.indexOf(k) === -1;
+      return '<div class="yt-key-row' + (isOn ? '' : ' is-off') + '">' +
+        '<div class="yt-key-top"><div class="yt-key-no">' + (i + 1) + '</div>' +
+        '<div class="yt-key-info"><span class="yt-key-mask">' + esc(maskKey(k)) + '</span><span class="yt-key-badge ' + st + '">' + STATE_LABEL[st] + '</span></div></div>' +
+        '<div class="yt-key-bar"><div class="yt-key-sw"><button type="button" class="yt-sw" role="switch" data-i="' + i + '" aria-checked="' + (isOn ? 'true' : 'false') + '" aria-label="' + (isOn ? 'Nonaktifkan' : 'Aktifkan') + ' kunci ' + (i + 1) + '"></button>' +
+        '<span class="yt-key-swlbl">' + (isOn ? 'Kunci aktif' : 'Kunci nonaktif') + '</span></div>' +
+        '<button type="button" class="yt-key-del" data-i="' + i + '" aria-label="Hapus kunci ' + (i + 1) + '">' + TRASH + '<span>Hapus</span></button></div></div>';
+    }).join('') : '<div class="yt-key-empty">Belum ada API key.<br>Tempel kunci pertama Anda di bawah.</div>';
+    var meta = '';
+    if (n && m.updatedAt) meta = 'Terakhir diubah oleh ' + (m.updatedByName || m.updatedBy || 'admin') + ', ' + ago(new Date(m.updatedAt).toISOString());
+    $('ytAdmMeta').textContent = meta; $('ytAdmMeta').style.display = meta ? '' : 'none';
+  }
+  function setTab(t) {
+    var add = t === 'add';
+    $('ytTabKeys').setAttribute('aria-selected', add ? 'false' : 'true'); $('ytTabAdd').setAttribute('aria-selected', add ? 'true' : 'false');
+    $('ytPaneKeys').classList.toggle('on', !add); $('ytPaneAdd').classList.toggle('on', add);
+    $('ytAdmActions').hidden = !add;
+    admMsg('');
+    if (add) setTimeout(function () { $('ytKeyInput').focus(); }, 60);
+  }
   function openAdmin() {
     if (!admin.is) return;
-    var m = admin.meta || {}, has = hasKey();
     $('ytKeyInput').value = ''; setReveal(false);
-    $('ytStatusDot').className = 'yt-dot' + (has ? ' on' : '');
-    $('ytStatusText').textContent = has ? 'Aktif' : 'Belum diatur';
-    $('ytKeyMasked').textContent = has ? maskKey(CFG.API_KEY) : 'Tidak ada kunci tersimpan'; $('ytKeyMasked').classList.toggle('empty', !has);
-    var meta = '';
-    if (has && m.updatedAt) meta = 'Diubah oleh ' + (m.updatedByName || m.updatedBy || 'admin') + ', ' + ago(new Date(m.updatedAt).toISOString());
-    $('ytAdmMeta').textContent = meta; $('ytAdmMeta').style.display = meta ? '' : 'none';
-    $('ytAdmReset').style.display = has ? '' : 'none';
-    $('ytAdmReset').textContent = 'Hapus kunci'; $('ytAdmReset').dataset.confirm = '';
-    admMsg(''); $('ytAdmin').classList.add('open');
-    setTimeout(function () { $('ytKeyInput').focus(); }, 60);
+    renderKeys(); setTab(KEYS.length ? 'keys' : 'add'); $('ytAdmin').classList.add('open');
   }
-  function closeAdmin() { var a = $('ytAdmin'); if (a) a.classList.remove('open'); }
+  function closeAdmin() { var a = $('ytAdmin'); if (a) a.classList.remove('open'); closeConfirm(); }
 
-  function writeKey(key) {
+  /* Simpan daftar kunci. "apiKey" tetap diisi kunci pertama agar kompatibel dengan data dan aturan lama. */
+  function writeKeys(list, off) {
     var b = window.__ngobrolFB;
     if (!b || !admin.is) return Promise.reject(new Error('Hanya admin yang dapat mengubah API key.'));
-    return b.set(b.ref(b.db, 'config/youtube'), { apiKey: key, updatedBy: b.getMyId(), updatedByName: b.getMyName(), updatedAt: Date.now() });
+    off = (off || OFF).filter(function (k) { return list.indexOf(k) !== -1; });
+    return b.set(b.ref(b.db, 'config/youtube'), { apiKey: list[0] || '', apiKeys: list, keysOff: off, updatedBy: b.getMyId(), updatedByName: b.getMyName(), updatedAt: Date.now() });
   }
-  function busy(on) { ['ytAdmSave', 'ytAdmReset', 'ytAdmCancel'].forEach(function (i) { $(i).disabled = on; }); }
+  function busy(on) { ['ytAdmSave', 'ytAdmX', 'ytTabKeys', 'ytTabAdd'].forEach(function (i) { $(i).disabled = on; }); }
   function failText(e) {
-    if (e && (e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded')) return 'Kunci valid, tetapi kuota harian habis.';
-    if (e && e.reason === 'keyInvalid') return 'API key tidak valid.';
+    var c = classify(e && e.status, e && e.reason, e && e.message);
+    if (c === 'quota') return 'Kunci valid, tetapi kuota harian habis.';
+    if (c === 'rate') return 'Terlalu banyak permintaan. Coba lagi sebentar lagi.';
     if (e && (e.reason === 'accessNotConfigured' || e.reason === 'forbidden' || e.reason === 'ipRefererBlocked')) return 'Kunci ditolak. Aktifkan YouTube Data API v3 dan cek pembatasan referrer.';
+    if (c === 'keybad') return 'API key tidak valid.';
     return (e && e.message) || 'Gagal memeriksa kunci.';
   }
+  function dbErr(e) { return e && e.reason ? failText(e) : (e && e.code === 'PERMISSION_DENIED' ? 'Ditolak oleh aturan database. Periksa Rules Firebase.' : failText(e)); }
   function saveKey() {
     var k = $('ytKeyInput').value.trim();
     if (!k) { admMsg('Masukkan API key.'); return; }
     if (/\s/.test(k) || k.length < 20) { admMsg('Format API key tidak valid.'); return; }
+    if (KEYS.indexOf(k) !== -1) { admMsg('Kunci ini sudah ada dalam daftar.'); return; }
+    if (KEYS.length >= 10) { admMsg('Maksimal 10 API key.'); return; }
     busy(true); admMsg('Memeriksa kunci...', true);
     /* uji kunci dengan satu permintaan ringan (1 unit kuota) sebelum disimpan */
+    var quotaHit = false;
     fetch(API + 'videos?part=id&id=dQw4w9WgXcQ&key=' + encodeURIComponent(k)).then(function (r) {
-      return r.json().then(function (j) {
-        if (!r.ok) { var e = new Error((j.error && j.error.message) || 'HTTP ' + r.status); e.reason = j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason; throw e; }
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) {
+          var e = new Error((j.error && j.error.message) || 'HTTP ' + r.status); e.reason = j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason;
+          if (!e.reason && classify(r.status, '', e.message) === 'quota') e.reason = 'quotaExceeded';
+          /* kunci sah tetapi kuota hari ini habis: tetap boleh disimpan, akan dipakai lagi saat kuota pulih */
+          if (e.reason === 'quotaExceeded' || e.reason === 'dailyLimitExceeded') { quotaHit = true; return; }
+          throw e;
+        }
       });
-    }).then(function () { return writeKey(k); }).then(function () {
-      admMsg('API key tersimpan dan langsung dipakai semua pengguna.', true); toast('API key YouTube diperbarui');
-      setTimeout(closeAdmin, 900);
-    }).catch(function (e) { admMsg(e && e.reason ? failText(e) : (e && e.code === 'PERMISSION_DENIED' ? 'Ditolak oleh aturan database. Periksa Rules Firebase.' : failText(e))); })
+    }).then(function () { return writeKeys(KEYS.concat([k]), OFF); }).then(function () {
+      if (quotaHit) markExhausted(k);
+      $('ytKeyInput').value = '';
+      setTab('keys'); admMsg(quotaHit ? 'Kunci ditambahkan, tetapi kuota hari ini sudah habis. Akan dipakai lagi saat kuota pulih.' : 'Kunci berhasil ditambahkan.', true); toast('API key YouTube ditambahkan');
+    }).catch(function (e) { admMsg(dbErr(e)); })
       .then(function () { busy(false); });
   }
-  function resetKey() {
-    var b = $('ytAdmReset');
-    if (b.dataset.confirm !== '1') { b.dataset.confirm = '1'; b.textContent = 'Yakin hapus?'; return; }
-    busy(true);
-    writeKey('').then(function () { toast('API key dihapus'); closeAdmin(); })
-      .catch(function (e) { admMsg(e && e.code === 'PERMISSION_DENIED' ? 'Ditolak oleh aturan database. Periksa Rules Firebase.' : failText(e)); })
-      .then(function () { busy(false); b.dataset.confirm = ''; b.textContent = 'Hapus kunci'; });
+  function toggleKey(i) {
+    var k = KEYS[i]; if (k == null) return;
+    var off = OFF.indexOf(k) === -1 ? OFF.concat([k]) : OFF.filter(function (x) { return x !== k; });
+    busy(true); admMsg('');
+    writeKeys(KEYS, off).then(function () { toast(off.indexOf(k) === -1 ? 'Kunci ' + (i + 1) + ' diaktifkan' : 'Kunci ' + (i + 1) + ' dinonaktifkan'); })
+      .catch(function (e) { admMsg(dbErr(e)); })
+      .then(function () { busy(false); });
+  }
+  var pendingDel = null;
+  function askDelete(i) {
+    var k = KEYS[i]; if (k == null) return;
+    pendingDel = k;
+    $('ytCfIco').innerHTML = I.alert;
+    $('ytCfKey').textContent = 'Kunci ' + (i + 1) + '  ·  ' + maskKey(k);
+    $('ytCfOk').disabled = false; $('ytCfNo').disabled = false;
+    $('ytAdmConfirm').classList.add('open');
+    setTimeout(function () { $('ytCfNo').focus(); }, 40);
+  }
+  function closeConfirm() { pendingDel = null; var c = $('ytAdmConfirm'); if (c) c.classList.remove('open'); }
+  function doDelete() {
+    var k = pendingDel; if (k == null) return;
+    $('ytCfOk').disabled = true; $('ytCfNo').disabled = true; $('ytCfOk').textContent = 'Menghapus...';
+    writeKeys(KEYS.filter(function (x) { return x !== k; }), OFF)
+      .then(function () { toast('API key dihapus'); admMsg(''); closeConfirm(); })
+      .catch(function (e) { closeConfirm(); admMsg(dbErr(e)); })
+      .then(function () { $('ytCfOk').textContent = 'Ya, hapus'; });
   }
 
   /* ---------- Inisialisasi ---------- */
@@ -445,14 +599,19 @@
         e.target.closest('#ytDescToggle').textContent = open ? 'Tampilkan lebih sedikit' : 'Tampilkan selengkapnya';
       }
     });
-    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('ytPlayer').classList.contains('open')) closePlayer(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('ytAdmConfirm').classList.contains('open')) { closeConfirm(); return; } if (e.key === 'Escape' && $('ytAdmin').classList.contains('open')) { closeAdmin(); return; } if (e.key === 'Escape' && $('ytPlayer').classList.contains('open')) closePlayer(); });
 
     /* muat pertama kali saat tab dibuka */
     $('ytAdminBtn').innerHTML = I.key; $('ytAdmIco').innerHTML = I.key; setReveal(false);
     $('ytAdminBtn').addEventListener('click', openAdmin);
-    $('ytAdmCancel').addEventListener('click', closeAdmin);
+    $('ytAdmX').innerHTML = I.close; $('ytAdmX').addEventListener('click', closeAdmin);
+    $('ytCfNo').addEventListener('click', closeConfirm);
+    $('ytCfOk').addEventListener('click', doDelete);
+    $('ytAdmConfirm').addEventListener('click', function (e) { if (e.target === $('ytAdmConfirm')) closeConfirm(); });
+    $('ytTabKeys').addEventListener('click', function () { setTab('keys'); });
+    $('ytTabAdd').addEventListener('click', function () { setTab('add'); });
     $('ytAdmSave').addEventListener('click', saveKey);
-    $('ytAdmReset').addEventListener('click', resetKey);
+    $('ytKeyList').addEventListener('click', function (e) { var w = e.target.closest('.yt-sw'); if (w) { toggleKey(+w.dataset.i); return; } var d = e.target.closest('.yt-key-del'); if (d) askDelete(+d.dataset.i); });
     $('ytKeyInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') saveKey(); });
     $('ytKeyEye').addEventListener('click', function () { setReveal(!isRevealed()); $('ytKeyInput').focus(); });
     $('ytAdmin').addEventListener('click', function (e) { if (e.target === $('ytAdmin')) closeAdmin(); });

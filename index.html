@@ -23,12 +23,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 
-<link rel="stylesheet" href="css/base.css?v=1.7.8">
+<link rel="stylesheet" href="css/base.css?v=1.7.15">
 
-<link rel="stylesheet" href="css/update.css?v=1.7.8">
-<link rel="stylesheet" href="css/chat-video.css?v=1.7.8">
-<link rel="stylesheet" href="css/youtube.css?v=1.7.8">
-<link rel="stylesheet" href="css/auth.css?v=1.7.8">
+<link rel="stylesheet" href="css/update.css?v=1.7.15">
+<link rel="stylesheet" href="css/chat-video.css?v=1.7.15">
+<link rel="stylesheet" href="css/youtube.css?v=1.7.15">
+<link rel="stylesheet" href="css/auth.css?v=1.7.15">
 </head>
 
 <body>
@@ -1739,15 +1739,15 @@
 
 
 
-<script src="js/chat-video.js?v=1.7.8"></script>
-<script type="module" src="js/app.js?v=1.7.8"></script>
+<script src="js/chat-video.js?v=1.7.15"></script>
+<script type="module" src="js/app.js?v=1.7.15"></script>
 
-<script src="js/keyboard.js?v=1.7.8"></script>
-<script src="js/avatar.js?v=1.7.8"></script>
+<script src="js/keyboard.js?v=1.7.15"></script>
+<script src="js/avatar.js?v=1.7.15"></script>
 
 
 
-<script src="js/updater.js?v=1.7.8"></script>
+<script src="js/updater.js?v=1.7.15"></script>
 <div id="ytPlayer" role="dialog" aria-modal="true" aria-label="Pemutar video">
   <div class="yt-sheet">
     <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
@@ -1761,34 +1761,63 @@
     <div class="yt-adm-head">
       <div class="yt-state-ico" id="ytAdmIco"></div>
       <div class="yt-adm-title"><h3 id="ytAdmTitle">API key YouTube</h3><p>Pengaturan khusus admin</p></div>
+      <button type="button" class="yt-adm-x" id="ytAdmX" aria-label="Tutup"></button>
     </div>
 
-    <div class="yt-adm-status">
-      <div class="yt-adm-status-top">
-        <span class="yt-dot" id="ytStatusDot"></span><span id="ytStatusText">Belum diatur</span>
-        <button type="button" class="yt-adm-del" id="ytAdmReset">Hapus kunci</button>
+    <div class="yt-adm-tabs" role="tablist">
+      <button type="button" class="yt-adm-tab" id="ytTabKeys" role="tab" aria-selected="true" aria-controls="ytPaneKeys">API key <span class="cnt" id="ytTabCnt">0</span></button>
+      <button type="button" class="yt-adm-tab" id="ytTabAdd" role="tab" aria-selected="false" aria-controls="ytPaneAdd">Tambahkan</button>
+    </div>
+
+    <div class="yt-adm-body">
+      <div class="yt-adm-pane on" id="ytPaneKeys" role="tabpanel">
+        <div class="yt-adm-stats">
+          <div class="yt-stat"><b id="ytStTotal">0</b><span>Total</span></div>
+          <div class="yt-stat ok"><b id="ytStOn">0</b><span>Aktif</span></div>
+          <div class="yt-stat warn"><b id="ytStLimit">0</b><span>Limit</span></div>
+        </div>
+        <div class="yt-adm-sec"><h4>Daftar kunci</h4><small>Dipakai dari atas ke bawah</small></div>
+        <div class="yt-key-list" id="ytKeyList"></div>
+        <div class="yt-adm-meta" id="ytAdmMeta"></div>
       </div>
-      <div class="yt-adm-masked" id="ytKeyMasked"></div>
-      <div class="yt-adm-meta" id="ytAdmMeta"></div>
+
+      <div class="yt-adm-pane" id="ytPaneAdd" role="tabpanel">
+        <label class="yt-adm-label" for="ytKeyInput">API key baru <span id="ytAdmCount" style="float:right;letter-spacing:0;text-transform:none;font-weight:600;color:var(--muted,#667781)"></span></label>
+        <div class="yt-adm-field">
+          <input type="text" id="ytKeyInput" class="yt-secret" placeholder="Tempel API key di sini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" name="yt-key-field">
+          <button type="button" class="yt-icon-btn" id="ytKeyEye" aria-label="Tampilkan kunci"></button>
+        </div>
+        <div class="yt-adm-note">
+          <div><i>1</i><span>Kunci diuji ke YouTube dulu dan hanya disimpan jika valid.</span></div>
+          <div><i>2</i><span>Jika kuota satu kunci habis, aplikasi otomatis memakai kunci berikutnya.</span></div>
+          <div><i>3</i><span>Gunakan kunci dari proyek Google Cloud berbeda agar kuotanya terpisah.</span></div>
+        </div>
+      </div>
     </div>
 
-    <label class="yt-adm-label" for="ytKeyInput">API key baru</label>
-    <div class="yt-adm-field">
-      <input type="text" id="ytKeyInput" class="yt-secret" placeholder="Tempel API key di sini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" name="yt-key-field">
-      <button type="button" class="yt-icon-btn" id="ytKeyEye" aria-label="Tampilkan kunci"></button>
-    </div>
-    <div class="yt-adm-hint">Kunci diuji ke YouTube terlebih dahulu dan hanya disimpan jika valid. Perubahan langsung berlaku untuk semua pengguna.</div>
     <div class="yt-adm-msg" id="ytAdmMsg" role="status" aria-live="polite"></div>
 
-    <div class="yt-adm-actions">
-      <button type="button" class="yt-btn" id="ytAdmCancel">Batal</button>
-      <button type="button" class="yt-btn primary" id="ytAdmSave">Simpan</button>
+    <div class="yt-adm-actions" id="ytAdmActions" hidden>
+      <button type="button" class="yt-btn primary" id="ytAdmSave">Tambah kunci</button>
+    </div>
+
+    <div class="yt-cf" id="ytAdmConfirm" role="alertdialog" aria-modal="true" aria-labelledby="ytCfTitle" aria-describedby="ytCfText">
+      <div class="yt-cf-sheet">
+        <div class="yt-cf-ico" id="ytCfIco"></div>
+        <h4 id="ytCfTitle">Yakin ingin menghapus?</h4>
+        <div class="yt-cf-key" id="ytCfKey"></div>
+        <p id="ytCfText">API key ini akan dihapus dari database dan tidak dipakai lagi oleh semua pengguna. Tindakan ini tidak dapat dibatalkan.</p>
+        <div class="yt-cf-actions">
+          <button type="button" class="yt-btn" id="ytCfNo">Batal</button>
+          <button type="button" class="yt-btn danger" id="ytCfOk">Ya, hapus</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<script src="js/youtube-config.js?v=1.7.8"></script>
-<script src="js/youtube.js?v=1.7.8"></script>
+<script src="js/youtube-config.js?v=1.7.15"></script>
+<script src="js/youtube.js?v=1.7.15"></script>
 </body>
 
 </html>
