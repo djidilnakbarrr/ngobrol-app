@@ -1,7 +1,7 @@
 {
-  "version": "1.7.21",
+  "version": "1.7.22",
   "released": "2026-10-18",
   "notes": [
-    "Panel API key: bila kunci utama dinonaktifkan atau dihapus, kunci aktif berikutnya otomatis jadi utama"
+    "Panel API key: kunci yang pertama dipakai otomatis jadi utama, dan saat kunci utama limit atau nonaktif kunci sehat berikutnya otomatis jadi utama"
   ]
 }

@@ -112,14 +112,34 @@
     var ok = on.filter(function (k) { return !exhLoad()[k]; });
     return (ok[0] || on[0] || '');
   }
-  /* Kunci utama yang ditampilkan: pilihan admin bila masih aktif; bila sudah nonaktif, kunci aktif pertama menggantikannya */
+  /* Kunci utama = pilihan admin selama masih aktif dan belum limit. Bila kosong, nonaktif, atau limit, kunci yang sedang
+     dipakai otomatis menggantikannya (kunci aktif pertama di daftar bila tidak ada yang bisa dipakai). */
   function mainKey() {
-    if (!PRIMARY) return '';
-    return OFF.indexOf(PRIMARY) === -1 ? PRIMARY : pickPrimary(KEYS, OFF, PRIMARY);
+    var pOn = !!PRIMARY && OFF.indexOf(PRIMARY) === -1;
+    if (pOn && keyState(PRIMARY) !== 'limit') return PRIMARY;
+    var cur = allOff() ? '' : currentKey();
+    if (cur) return cur;
+    return pOn ? PRIMARY : pickPrimary(KEYS, OFF, PRIMARY);
+  }
+  /* Admin: simpan kunci utama otomatis ke database bila kunci utama kosong, nonaktif, atau limit dan ada kunci sehat
+     yang menggantikannya. Hanya satu kolom ("primary") yang ditulis, jadi pengaturan lain tidak tertimpa. */
+  var autoSig = '';
+  function autoMain() {
+    try {
+      var b = window.__ngobrolFB;
+      if (!b || !admin.is || locked || !KEYS.length) return;
+      var want = mainKey();
+      if (!want || want === PRIMARY || KEYS.indexOf(want) === -1 || OFF.indexOf(want) !== -1 || keyState(want) !== 'ok') return;
+      if (PRIMARY && OFF.indexOf(PRIMARY) === -1 && keyState(PRIMARY) !== 'limit') return;
+      var sig = want + '|' + KEYS.length + '|' + OFF.length;
+      if (autoSig === sig) return;
+      autoSig = sig;
+      b.set(b.ref(b.db, 'config/youtube/primary'), want).catch(function () { /* tanpa izin atau offline: tampilan tetap benar, simpan dicoba lagi saat keadaan berubah */ });
+    } catch (e) { /* diabaikan */ }
   }
   function allOff() { return KEYS.length > 0 && KEYS.every(function (k) { return OFF.indexOf(k) !== -1; }); }
   function usableKeys() { return KEYS.filter(function (k) { return keyState(k) === 'ok'; }); }
-  function keysChanged() { try { if (admin.is && $('ytAdmin').classList.contains('open')) renderKeys(); } catch (e) { /* panel belum siap */ } }
+  function keysChanged() { try { if (admin.is && $('ytAdmin').classList.contains('open')) renderKeys(); } catch (e) { /* panel belum siap */ } autoMain(); }
   /* Golongkan galat API: quota (habis hari ini), rate (terlalu cepat), keybad (kunci bermasalah), other (bukan urusan kunci) */
   function classify(status, reason, msg) {
     msg = String(msg || '');
@@ -490,12 +510,14 @@
           if (changed) { tmpBad = {}; if (!first) actSave(''); }   /* pengaturan diubah admin: mulai ulang pilihan kunci */
           if (admin.is && $('ytAdmin').classList.contains('open')) renderKeys();
           if (first) done(); else if (changed && state.ready) load(true);
+          autoMain();
         }, done);
         b.onValue(b.ref(b.db, 'users/' + id + '/role'), function (snap) {
           var r = snap.val();
           /* akun lama tanpa peran diberi "user". Peran "admin" hanya bisa diberikan manual di konsol Firebase */
           if (r === null || r === undefined) b.set(b.ref(b.db, 'users/' + id + '/role'), 'user').catch(function () {});
           admin.is = r === 'admin';
+          autoMain();
           $('ytAdminBtn').hidden = !admin.is;
           if (!admin.is) closeAdmin();
           if (state.ready && !hasKey()) load(true);
@@ -639,7 +661,7 @@
           throw e;
         }
       });
-    }).then(function () { return writeKeys(KEYS.concat([k]), OFF); }).then(function () {
+    }).then(function () { return writeKeys(KEYS.concat([k]), OFF, mainKey() ? undefined : k); }).then(function () {
       if (quotaHit) markExhausted(k);
       $('ytKeyInput').value = '';
       setTab('keys'); admMsg(quotaHit ? 'Kunci ditambahkan, tetapi kuota hari ini sudah habis. Akan dipakai lagi saat kuota pulih.' : 'Kunci berhasil ditambahkan.', true);
@@ -651,11 +673,12 @@
     var k = KEYS[i]; if (k == null) return;
     var off = OFF.indexOf(k) === -1 ? OFF.concat([k]) : OFF.filter(function (x) { return x !== k; });
     var turnOff = off.indexOf(k) !== -1, np = PRIMARY, promoted = false;
-    if (turnOff && k === PRIMARY) { np = pickPrimary(KEYS, off, k); promoted = !!np; }   /* kunci utama dinonaktifkan: kunci aktif berikutnya otomatis jadi utama */
+    if (turnOff && k === PRIMARY) { np = pickPrimary(KEYS, off, k); promoted = !!np; }
+    else if (!turnOff && !mainKey()) { np = k; promoted = true; }   /* belum ada kunci utama: kunci yang pertama diaktifkan jadi utama */   /* kunci utama dinonaktifkan: kunci aktif berikutnya otomatis jadi utama */
     busy(true); admMsg('');
     writeKeys(KEYS, off, np).then(function () {
       var ni = promoted ? KEYS.indexOf(np) : -1;
-      admMsg(!turnOff ? 'Kunci ' + (i + 1) + ' diaktifkan.' : 'Kunci ' + (i + 1) + ' dinonaktifkan.' + (ni >= 0 ? ' Kunci ' + (ni + 1) + ' jadi utama.' : ''), true); })
+      admMsg('Kunci ' + (i + 1) + (turnOff ? ' dinonaktifkan.' : ' diaktifkan.') + (ni >= 0 ? ' Kunci ' + (ni + 1) + ' jadi utama.' : ''), true); })
       .catch(function (e) { admMsg(dbErr(e)); })
       .then(function () { busy(false); });
   }
