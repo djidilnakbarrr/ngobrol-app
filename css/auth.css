@@ -209,11 +209,10 @@
 #loginScreen .login-box .app-credit { margin-top: 24px; padding: 0; border: 0; color: #8a99a1; }
 #loginScreen .login-box .app-credit-text strong { color: #0b8a79; }
 
-/* Bilah kredit permanen: tampil terus di semua tab utama dan di layar chat */
+/* Bilah kredit permanen: tampil di semua tab utama (tidak di layar obrolan/grup) */
 .app-credit-bar { flex: 0 0 auto; height: 24px; background: #fff; border-top: 1px solid var(--line, #e9eef0); color: #8a99a1; pointer-events: none; }
 .app-credit-bar .app-credit-text { font-size: 11px; }
 .app-credit-bar .app-credit-text strong { color: #075e54; }
-.app-credit-bar.app-credit-chat { background: rgba(255,255,255,.92); border-top: none; border-bottom: 1px solid var(--line, #e9eef0); }
 
 /* Tab Daftar: kredit di kartu disembunyikan (tetap tampil di layar Masuk) */
 #loginScreen.mode-register .login-box .app-credit { display: none; }

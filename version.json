@@ -1,7 +1,7 @@
 {
-  "version": "1.7.74",
+  "version": "1.7.75",
   "released": "2026-10-19",
   "notes": [
-    "Perubahan: teks kredit \"by : iD1L\" disembunyikan di tab Daftar"
+    "Perubahan: teks kredit \"by : iD1L\" dihapus dari layar obrolan (pribadi dan grup)"
   ]
 }
