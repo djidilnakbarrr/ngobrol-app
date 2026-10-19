@@ -1771,19 +1771,49 @@ async function readSession() {
 
 (async function bootSession() {
 
-  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  // Jangan biarkan layar kosong jika pemulihan sesi browser/IndexedDB lambat.
+  let bootFinished = false;
+  const showLoginFallback = () => {
+    if (bootFinished) return;
+    const appEl = $('app'), loginEl = $('loginScreen');
+    if (appEl && getComputedStyle(appEl).display === 'none' && loginEl && getComputedStyle(loginEl).display === 'none') {
+      loginEl.style.display = 'flex';
+      try { setLoginMode('login'); } catch (e) {}
+    }
+  };
+  const bootWatchdog = setTimeout(showLoginFallback, 5000);
 
-  const sess = await readSession();
+  try {
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
 
-  if (sess) { myName = sess.name; myId = sess.id; myPwv = sess.pwv || ''; myEp = (sess.ep === undefined ? null : sess.ep); saveSession(); enterApp(); }
+    // IndexedDB menjadi sumber terakhir; batasi waktu tunggunya saat startup.
+    const sess = await Promise.race([
+      readSession(),
+      new Promise(resolve => setTimeout(() => resolve(null), 3500))
+    ]);
 
-  else {
-    $('loginScreen').style.display = 'flex';
-    setLoginMode('login');
-    try { const f = sessionStorage.getItem('chat_flash'); if (f) {
-      sessionStorage.removeItem('chat_flash');
-      if (!/dikeluarkan dari perangkat ini/i.test(f)) loginAlert(f, 'info');
-    } } catch (e) {}
+    if (sess) {
+      myName = sess.name; myId = sess.id; myPwv = sess.pwv || '';
+      myEp = (sess.ep === undefined ? null : sess.ep);
+      saveSession();
+      enterApp();
+    } else {
+      $('loginScreen').style.display = 'flex';
+      setLoginMode('login');
+      try { const f = sessionStorage.getItem('chat_flash'); if (f) {
+        sessionStorage.removeItem('chat_flash');
+        if (!/dikeluarkan dari perangkat ini/i.test(f)) loginAlert(f, 'info');
+      } } catch (e) {}
+    }
+  } catch (err) {
+    console.error('Gagal memulihkan sesi saat startup:', err);
+    // Selalu tampilkan halaman yang bisa dilihat pengguna, bukan layar kosong.
+    const loginEl = $('loginScreen');
+    if (loginEl) loginEl.style.display = 'flex';
+    try { setLoginMode('login'); } catch (e) {}
+  } finally {
+    bootFinished = true;
+    clearTimeout(bootWatchdog);
   }
 
 })();
