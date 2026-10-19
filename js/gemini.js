@@ -13,8 +13,7 @@
   ];
   var DEFAULT_MODEL = MODELS[0].id;
   var SYSTEM = 'Kamu adalah Gemini, asisten AI di dalam aplikasi obrolan Ngobrol. Jawab dengan bahasa yang dipakai pengguna (default Bahasa Indonesia), ramah, jelas, dan ringkas. Gunakan daftar atau blok kode hanya bila membantu. Pengguna bisa melampirkan foto dan file; isi file teks, ZIP, dan dokumen diberikan sebagai teks. Bila ada lampiran, jawab berdasarkan isinya.';
-  var MAX_KEEP = 60;      /* jumlah pesan yang disimpan di perangkat */
-  var MAX_SEND = 24;      /* jumlah pesan terakhir yang dikirim sebagai konteks */
+    var MAX_SEND = 24;      /* jumlah pesan terakhir yang dikirim sebagai konteks */
 
   var I = {
     info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
@@ -24,6 +23,9 @@
     compose: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H6.5A2.5 2.5 0 004 6.5v11A2.5 2.5 0 006.5 20h11a2.5 2.5 0 002.5-2.5V13"/><path d="M18.4 3.6a1.9 1.9 0 112.7 2.7L12 15.4 8.2 16.2l.8-3.8z"/></svg>',
     spark: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="gmG{n}" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#4285f4"/><stop offset=".55" stop-color="#9b72cb"/><stop offset="1" stop-color="#d96570"/></linearGradient></defs><path fill="url(#gmG{n})" d="M12 1.5c.6 5.6 1.9 7.9 4 9.5 1.6 1.2 3.7 1.8 6.5 2.5-2.8.7-4.9 1.3-6.5 2.5-2.1 1.6-3.4 3.9-4 9.5-.6-5.6-1.9-7.9-4-9.5C6.4 14.3 4.3 13.7 1.5 13c2.8-.7 4.9-1.3 6.5-2.5 2.1-1.6 3.4-3.9 4-9z"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+    dots: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>',
+    dl: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3M8 7l4-4 4 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2M16 7l3 3M14 9l2 2"/></svg>',
     photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>',
@@ -220,19 +222,174 @@
 
   /* ---------- Penyimpanan riwayat (banyak obrolan, per akun, di perangkat) ---------- */
   var chats = [], curId = '', showAll = false, ctxId = '', srchQ = '', runTok = 0, dlgAct = null, pressT = 0, pressX = 0, pressY = 0, longFired = false, ctxAt = 0;
-  var HIST_SHOW = 7, MAX_CHATS = 40;
+  /* ---------- Penyimpanan IndexedDB: foto asli dan salinan cadangan riwayat (kuota jauh lebih besar dari localStorage) ---------- */
+  var idbP = null;
+  function idbOpen() {
+    if (idbP) return idbP;
+    idbP = new Promise(function (res) {
+      try {
+        if (!window.indexedDB) { res(null); return; }
+        var rq = indexedDB.open('ngobrolGeminiDB', 1);
+        rq.onupgradeneeded = function () { var d = rq.result; if (!d.objectStoreNames.contains('img')) d.createObjectStore('img'); if (!d.objectStoreNames.contains('chats')) d.createObjectStore('chats'); };
+        rq.onsuccess = function () { res(rq.result); };
+        rq.onerror = function () { res(null); };
+        rq.onblocked = function () { res(null); };
+      } catch (e) { res(null); }
+    });
+    return idbP;
+  }
+  function idbDo(store, mode, fn) {
+    return idbOpen().then(function (db) {
+      if (!db) return null;
+      return new Promise(function (res) {
+        var done = false, t = setTimeout(function () { if (!done) { done = true; res(null); } }, 4000);
+        function fin(v) { if (!done) { done = true; clearTimeout(t); res(v); } }
+        try {
+          var tx = db.transaction(store, mode), rq = fn(tx.objectStore(store));
+          tx.oncomplete = function () { fin(rq && rq.result !== undefined ? rq.result : true); };
+          tx.onerror = tx.onabort = function () { fin(null); };
+        } catch (e) { fin(null); }
+      });
+    });
+  }
+  function idbPut(store, key, val) { return idbDo(store, 'readwrite', function (o) { return o.put(val, key); }); }
+  function idbGet(store, key) { return idbDo(store, 'readonly', function (o) { return o.get(key); }).then(function (v) { return v === true ? null : v; }); }
+  function idbDel(store, key) { return idbDo(store, 'readwrite', function (o) { return o.delete(key); }); }
+  function idbClear(store) { return idbDo(store, 'readwrite', function (o) { return o.clear(); }); }
+  function chatImgIds(list) {
+    var ids = [];
+    (list || []).forEach(function (c) { (c.msgs || []).forEach(function (m) { (m.files || []).forEach(function (f) { if (f && f.iid) ids.push(f.iid); }); }); });
+    return ids;
+  }
+  function backupKeep(k, v) { return (k === '_parts' || k === 'full') ? undefined : v; }
+  function backupChats() {
+    var key = storeKey(), raw = '';
+    try { raw = JSON.stringify(chats, backupKeep); } catch (e) { return; }
+    idbPut('chats', key, raw);
+  }
+  /* Bila localStorage kehilangan sebagian obrolan, pulihkan dari salinan cadangan IndexedDB */
+  function restoreBackup() {
+    var key = storeKey();
+    idbGet('chats', key).then(function (raw) {
+      if (!raw || key !== storeKey()) return;
+      var arr = parseChats(raw, '');
+      var have = {}; chats.forEach(function (c) { have[c.id] = 1; });
+      var miss = arr.filter(function (c) { return c && c.id && !have[c.id] && !deletedIds[c.id]; });
+      var bk = {}, filled = false; arr.forEach(function (c) { if (c && c.id) bk[c.id] = c; });
+      chats.forEach(function (c) {
+        var b = bk[c.id]; if (!b || !b.msgs) return;
+        (c.msgs || []).forEach(function (m, i) {
+          var bm = b.msgs[i]; if (!m.files || !bm || !bm.files) return;
+          m.files.forEach(function (f, j) {
+            var bf = bm.files[j];
+            if (f && bf && f.name === bf.name && !f.thumb && bf.thumb) { f.thumb = bf.thumb; if (bf.view && !f.view) f.view = bf.view; filled = true; }
+            if (f && bf && !f.iid && bf.iid) { f.iid = bf.iid; filled = true; }
+          });
+        });
+      });
+      if (!miss.length) { if (filled) { renderDrawer(); if (msgs.length) render(); } return; }
+      chats = mergeChats(chats, miss);
+      chats.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+      persist(); renderDrawer();
+    });
+  }
+
+  var HIST_SHOW = 7, deletedIds = {};   /* deletedIds: obrolan yang dihapus pengguna pada sesi ini, supaya tidak ikut digabung kembali */
   function uid() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-  function storeKey() { return 'ngobrolGeminiChats_' + (myId || 'tamu'); }
-  function oldKey() { return 'ngobrolGemini_' + (myId || 'tamu'); }
+  /* ID akun diambil dari jembatan aplikasi; bila belum siap, dari sesi tersimpan di perangkat, agar kunci penyimpanan tidak pernah salah */
+  function curUid() {
+    var id = '';
+    try { id = (window.__ngobrolFB && window.__ngobrolFB.getMyId && window.__ngobrolFB.getMyId()) || ''; } catch (e) { id = ''; }
+    id = id || myId || '';
+    if (!id) { try { id = localStorage.getItem('chat_myId') || ''; } catch (e) { id = ''; } }
+    return String(id || '');
+  }
+  var TAMU_KEY = 'ngobrolGeminiChats_tamu';
+  function storeKey() { return 'ngobrolGeminiChats_' + (curUid() || 'tamu'); }
+  function oldKey() { return 'ngobrolGemini_' + (curUid() || 'tamu'); }
+  /* Foto tidak pernah ditampilkan dengan nama file (mis. 162996.jpg): cukup "Foto" */
+  function fileTitle(f) { return f && f.kind === 'image' ? 'Foto' : String((f && f.name) || ''); }
+  /* Obrolan yang pesan pertamanya hanya foto (tanpa teks): judulnya dibuat otomatis dari isi foto, bukan "Foto" */
+  function isPhotoOnly(list) {
+    for (var i = 0; i < (list || []).length; i++) {
+      var m = list[i];
+      if (m && m.role === 'user' && (m.text || (m.files && m.files.length))) {
+        return !String(m.text || '').trim() && !!(m.files && m.files.length) && m.files.every(function (f) { return f && f.kind === 'image'; });
+      }
+    }
+    return false;
+  }
+  function chatTitle(c) {
+    var list = (c && c.msgs) || [];
+    if (isPhotoOnly(list)) return (c && c.ai) ? String(c.ai) : 'Obrolan foto';
+    var t = titleOf(list);
+    return t === 'Obrolan baru' && c && c.title ? String(c.title).replace(/\.(jpe?g|png|webp|gif|heic|heif)$/i, '') || 'Obrolan foto' : t;
+  }
+  function cleanAiTitle(t) {
+    t = String(t || '').split(/\r?\n/)[0].replace(/[*_`#>"\u201c\u201d\u2018\u2019]/g, '').replace(/^\s*(judul|title)\s*[:\-]\s*/i, '').replace(/[.!?:;,\s]+$/g, '').replace(/\s+/g, ' ').trim();
+    if (t.length > 40) t = t.slice(0, 40).replace(/\s+\S*$/, '').trim();
+    return t.length >= 3 ? t : '';
+  }
+  var titleBusy = {}, titleFail = {};
+  /* Minta Gemini membuat judul pendek dari jawaban atas foto. Gagal = diam-diam, judul sementara tetap dipakai dan dicoba lagi nanti. */
+  function autoTitle(cid) {
+    var c = null; chats.forEach(function (x) { if (x.id === cid) c = x; });
+    if (!c || c.ai || titleBusy[cid] || !isPhotoOnly(c.msgs) || !gmOn()) return;
+    if (titleFail[cid] && Date.now() - titleFail[cid] < 60000) return;
+    var reply = ''; (c.msgs || []).some(function (m) { if (m.role === 'model' && !m.err && m.text) { reply = String(m.text); return true; } return false; });
+    if (!reply) return;
+    var key = tryOrder()[0]; if (!key) return;
+    titleBusy[cid] = 1;
+    var body = {
+      contents: [{ role: 'user', parts: [{ text: 'Buat judul obrolan yang sangat singkat (2 sampai 5 kata, bahasa Indonesia, tanpa tanda kutip, tanpa titik) yang menggambarkan isi foto yang dibahas pada jawaban di bawah ini. Tulis judulnya saja.\n\nJawaban:\n' + reply.replace(/\s+/g, ' ').slice(0, 1500) }] }],
+      generationConfig: { temperature: 0.3, maxOutputTokens: 256 }
+    };
+    callGemini(key, body, undefined).then(function (j) {
+      var t = cleanAiTitle(extractText(j));
+      if (!t) throw new Error('kosong');
+      var cc = null; chats.forEach(function (x) { if (x.id === cid) cc = x; });
+      if (!cc || deletedIds[cid]) return;
+      cc.ai = t; persist(); renderDrawer();
+    }).catch(function () { titleFail[cid] = Date.now(); }).then(function () { delete titleBusy[cid]; });
+  }
+  /* Obrolan foto lama yang masih bernama "Obrolan foto": lengkapi judulnya satu per satu saat laci dibuka */
+  function backfillTitles() {
+    if (!gmOn()) return;
+    var n = 0;
+    chats.forEach(function (c) { if (n < 3 && !c.ai && isPhotoOnly(c.msgs) && !titleBusy[c.id] && !(titleFail[c.id] && Date.now() - titleFail[c.id] < 60000)) { n++; setTimeout(function () { autoTitle(c.id); }, n * 700); } });
+  }
   function titleOf(list) {
     for (var i = 0; i < list.length; i++) {
-      if (list[i].role === 'user') { var t = String(list[i].text || (list[i].files && list[i].files[0] && list[i].files[0].name) || '').replace(/\s+/g, ' ').trim(); if (!t) continue; return t.length > 48 ? t.slice(0, 48).trim() + '\u2026' : t; }
+      if (list[i].role === 'user') { var t = String(list[i].text || (list[i].files && list[i].files[0] && fileTitle(list[i].files[0])) || '').replace(/\s+/g, ' ').trim(); if (!t) continue; return t.length > 48 ? t.slice(0, 48).trim() + '\u2026' : t; }
     }
     return 'Obrolan baru';
   }
+  function parseChats(raw, key) {
+    try {
+      var v = JSON.parse(raw || 'null');
+      if (Array.isArray(v)) return v.filter(function (c) { return c && c.id && Array.isArray(c.msgs) && c.msgs.length; });
+      if (v == null) return [];
+    } catch (e) { /* data rusak: salinannya diamankan di bawah */ }
+    if (key && raw) { try { localStorage.setItem(key + '_rusak', raw); } catch (e2) { /* abaikan */ } }
+    return [];
+  }
+  function readStored() { try { return parseChats(localStorage.getItem(storeKey()), storeKey()); } catch (e) { return []; } }
+  /* Gabungkan dua daftar obrolan: daftar pertama menang bila ID sama; obrolan yang dihapus pengguna tidak dimasukkan lagi */
+  function mergeChats(base, extra) {
+    var seen = {}, out = [];
+    (base || []).forEach(function (c) { if (c && c.id && !deletedIds[c.id] && !seen[c.id]) { seen[c.id] = 1; out.push(c); } });
+    (extra || []).forEach(function (c) { if (c && c.id && !deletedIds[c.id] && !seen[c.id]) { seen[c.id] = 1; out.push(c); } });
+    return out;
+  }
   function loadHist() {
-    chats = [];
-    try { var v = JSON.parse(localStorage.getItem(storeKey()) || 'null'); if (Array.isArray(v)) chats = v.filter(function (c) { return c && c.id && Array.isArray(c.msgs) && c.msgs.length; }); } catch (e) { chats = []; }
+    var mem = chats, migrated = false;
+    chats = mergeChats(readStored(), mem);          /* yang ada di memori tapi belum tersimpan tidak ikut hilang */
+    if (curUid()) {
+      try {                                          /* pindahkan obrolan yang tersimpan saat ID belum terbaca */
+        var tm = parseChats(localStorage.getItem(TAMU_KEY), '');
+        if (tm.length) { chats = mergeChats(chats, tm); migrated = true; }
+      } catch (e) { /* abaikan */ }
+    }
     if (!chats.length) {
       try {
         var o = JSON.parse(localStorage.getItem(oldKey()) || '[]');
@@ -243,19 +400,47 @@
     chats.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     /* Selalu mulai dari obrolan baru; obrolan lama hanya terbuka bila dipilih dari riwayat. */
     curId = uid(); msgs = [];
+    if (migrated && persist()) { try { localStorage.removeItem(TAMU_KEY); } catch (e) { /* abaikan */ } }
+    restoreBackup();
   }
+  /* Pratinjau besar foto ikut disimpan agar bisa dilihat lagi setelah aplikasi dibuka ulang, dibatasi supaya penyimpanan tidak penuh */
+  var VIEW_BUDGET = 1500000;
+  function viewFilter(allow) {
+    return function (k, v) {
+      if (k === '_parts' || k === 'full') return undefined;
+      if ((k === 'view' || k === 'thumb') && this && this.iid && this.mini) return undefined;
+      if (k === 'view') return (allow && allow.has(this)) ? v : undefined;
+      return v;
+    };
+  }
+  function bareFilter(k, v) { return (k === '_parts' || k === 'full' || k === 'view' || k === 'thumb') ? undefined : v; }
+  /* Menulis riwayat TANPA menimpa obrolan lain yang sudah tersimpan: selalu digabung dulu dengan isi penyimpanan.
+     Bila penyimpanan penuh, pratinjau besar dibuang dulu, lalu gambar kecil; teks obrolan tidak pernah dibuang. Mengembalikan true bila tersimpan. */
   function persist() {
-    try { localStorage.setItem(storeKey(), JSON.stringify(chats, function (k, v) { return k === '_parts' ? undefined : v; })); } catch (e) { /* penyimpanan penuh: abaikan */ }
+    var key = storeKey(), list = [], allow = new Set(), used = 0, saved = false;
+    try { chats = mergeChats(chats, readStored()); chats.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); }); } catch (e) { /* abaikan */ }
+    try {
+      chats.forEach(function (c) { (c.msgs || []).forEach(function (m) { (m.files || []).forEach(function (f) { if (f && typeof f.view === 'string' && f.view) list.push({ f: f, ts: m.ts || 0 }); }); }); });
+      list.sort(function (a, b) { return b.ts - a.ts; });
+      list.forEach(function (it) { if (used + it.f.view.length <= VIEW_BUDGET) { used += it.f.view.length; allow.add(it.f); } });
+    } catch (e) { allow = new Set(); }
+    [viewFilter(allow), viewFilter(null), bareFilter].some(function (flt) {
+      try { localStorage.setItem(key, JSON.stringify(chats, flt)); saved = true; } catch (e) { /* penuh: coba bentuk yang lebih kecil */ }
+      return saved;
+    });
+    backupChats();
+    return saved;
   }
   function saveHist() {
-    var clean = msgs.filter(function (m) { return !m.err; }).slice(-MAX_KEEP), idx = -1;
+    if (!curId) curId = uid();
+    var clean = msgs.filter(function (m) { return !m.err; }), idx = -1;   /* tanpa batas: pesan hanya terhapus lewat tombol hapus */
     chats.forEach(function (c, i) { if (c.id === curId) idx = i; });
     if (!clean.length) { if (idx !== -1) chats.splice(idx, 1); }
     else {
       var c = { id: curId, title: titleOf(clean), ts: clean[clean.length - 1].ts || Date.now(), msgs: clean };
+      if (idx !== -1 && chats[idx].ai) c.ai = chats[idx].ai;
       if (idx === -1) chats.unshift(c); else chats[idx] = c;
       chats.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-      chats = chats.slice(0, MAX_CHATS);
     }
     persist();
     renderDrawer();
@@ -265,10 +450,10 @@
   function renderDrawer() {
     var hist = $('gmHist'); if (!hist) return;
     var q = srchQ.trim().toLowerCase();
-    var list = chats.filter(function (c) { return !q || String(c.title).toLowerCase().indexOf(q) !== -1; });
+    var list = chats.filter(function (c) { return !q || chatTitle(c).toLowerCase().indexOf(q) !== -1; });
     var shown = (showAll || q) ? list : list.slice(0, HIST_SHOW);
     var h = shown.map(function (c) {
-      return '<div class="gm-hi' + (c.id === curId ? ' on' : '') + (ctxId === c.id ? ' press' : '') + '" data-id="' + c.id + '"><button type="button" class="gm-hi-t" data-h="open" data-id="' + c.id + '"><span>' + esc(c.title) + '</span></button></div>';
+      return '<div class="gm-hi' + (c.id === curId ? ' on' : '') + (ctxId === c.id ? ' press' : '') + '" data-id="' + c.id + '"><button type="button" class="gm-hi-t" data-h="open" data-id="' + c.id + '"><span>' + esc(chatTitle(c)) + '</span></button></div>';
     }).join('');
     if (!list.length) h = '<div class="gm-hempty">' + (q ? 'Tidak ada obrolan yang cocok.' : 'Belum ada riwayat obrolan.') + '</div>';
     if (!q && list.length > HIST_SHOW) h += '<button type="button" class="gm-more" data-h="more">' + (showAll ? 'Ringkas' : 'Lihat semua\u2026') + '</button>';
@@ -278,7 +463,7 @@
     $('gmClearAll').hidden = !chats.length;
     $('gmKeyBtn').hidden = !admin.is;
   }
-  function openDrawer() { renderDrawer(); $('gmPanel').classList.add('drawer-open'); $('gmDrawer').setAttribute('aria-hidden', 'false'); }
+  function openDrawer() { renderDrawer(); backfillTitles(); $('gmPanel').classList.add('drawer-open'); $('gmDrawer').setAttribute('aria-hidden', 'false'); }
   function closeDrawer() { if ($('gmCtxBg')) { hideCtx(); hideDlg(); } $('gmPanel').classList.remove('drawer-open'); $('gmDrawer').setAttribute('aria-hidden', 'true'); }
   function toggleSearch() {
     var w = $('gmSrchWrap'), on = w.hidden;
@@ -336,7 +521,7 @@
     msgs.forEach(function (m, i) { if (m.role !== 'user') last = i; });
     msgs.forEach(function (m, i) {
       if (m.role === 'user') {
-        h += '<div class="gm-msg me">' + attHtml(m.files) + (m.text ? '<div class="gm-ub">' + esc(m.text) + '</div>' : '') + '<span class="gm-time">' + fmtTime(m.ts) + '</span></div>';
+        h += '<div class="gm-msg me">' + attHtml(m.files, i) + (m.text ? '<div class="gm-ub">' + esc(m.text) + '</div>' : '') + '<span class="gm-time">' + fmtTime(m.ts) + '</span></div>';
       } else if (m.err) {
         h += '<div class="gm-msg">' + aiHead(m.ts) + '<div class="gm-ai-body err">' + I.alert + '<span>' + esc(m.text) + '</span></div><div class="gm-acts"><button type="button" class="gm-act" data-gm="retry">' + I.retry + 'Coba lagi</button></div></div>';
       } else {
@@ -346,6 +531,7 @@
     });
     if (busy) h += '<div class="gm-msg" id="gmTyping">' + aiHead() + '<div class="gm-ai-body"><span class="gm-typing"><i></i><i></i><i></i></span></div></div>';
     b.innerHTML = h;
+    upgradeInline();
   }
 
   function modelName() { for (var i = 0; i < MODELS.length; i++) if (MODELS[i].id === MODEL) return 'Gemini ' + MODELS[i].name; return 'Gemini'; }
@@ -539,7 +725,7 @@
     var tok = ++runTok;
     ctrl = typeof AbortController !== 'undefined' ? new AbortController() : { signal: undefined, abort: function () {} };
     setBusy(true); render(); scrollEnd(true);
-    ask().then(function (t) { if (tok !== runTok) return; msgs.push({ role: 'model', text: t, ts: Date.now() }); saveHist(); },
+    ask().then(function (t) { if (tok !== runTok) return; var cid = curId; msgs.push({ role: 'model', text: t, ts: Date.now() }); saveHist(); autoTitle(cid); },
       function (e) { if (tok !== runTok) return; var t = errText(e); if (t) msgs.push({ role: 'model', text: t, err: true, ts: Date.now() }); })
       .then(function () { if (tok !== runTok) return; ctrl = null; setBusy(false); render(); scrollEnd(true); });
   }
@@ -552,7 +738,12 @@
     if (!text && !ready.length) return;
     var m = { role: 'user', text: text, ts: Date.now() };
     if (ready.length) {
-      m.files = ready.map(function (x) { return { name: x.name, size: x.size, kind: x.kind, label: x.label, thumb: x.thumb || '' }; });
+      m.files = ready.map(function (x) {
+        var iid = x.full ? 'i' + uid() : '';
+        var fo = { name: x.name, size: x.size, kind: x.kind, label: x.label, thumb: x.thumb || '', view: x.view || '', full: x.full || '', mini: x.mini || '', ar: x.ar || 0, iid: iid };
+        if (iid) idbPut('img', iid, x.full).then(function (ok) { if (!ok) { fo.iid = ''; delete inlCache[iid]; persist(); } });   /* gagal menyimpan foto asli: thumbnail tetap disimpan di riwayat */
+        return fo;
+      });
       m._parts = ready.reduce(function (a, x) { return a.concat(x.parts); }, []);
     }
     msgs.push(m); saveHist();
@@ -585,15 +776,20 @@
     curId = c.id; msgs = c.msgs.slice(); pending = []; renderTray(); closeDrawer(); setBusy(false); render(); scrollEnd(false);
   }
   function delChat(id) {
+    deletedIds[id] = 1;
+    var goneImgs = chatImgIds(chats.filter(function (c) { return c.id === id; }));
     chats = chats.filter(function (c) { return c.id !== id; });
     persist();
+    goneImgs.forEach(function (k) { idbDel('img', k); });
     if (id === curId) { stopRun(); curId = uid(); msgs = []; setBusy(false); render(); } else renderDrawer();
     toast('Obrolan dihapus');
   }
   function clearAll() {
     stopRun();
+    var gone = readStored(); chats.forEach(function (c) { deletedIds[c.id] = 1; }); gone.forEach(function (c) { deletedIds[c.id] = 1; });
     chats = []; msgs = []; curId = uid();
-    try { localStorage.removeItem(storeKey()); localStorage.removeItem(oldKey()); } catch (e) { /* abaikan */ }
+    idbDel('chats', storeKey()); idbClear('img');
+    try { localStorage.removeItem(storeKey()); localStorage.removeItem(oldKey()); localStorage.removeItem(TAMU_KEY); } catch (e) { /* abaikan */ }
     setBusy(false); render(); closeDrawer(); toast('Semua obrolan dihapus');
   }
 
@@ -679,8 +875,11 @@
   function imageFile(file) {
     var ext = extOf(file.name), type = (file.type || '').toLowerCase();
     return loadImg(file).then(function (im) {
-      var big = scaled(im, 1600, 0.85), th = scaled(im, 160, 0.7);
-      return { kind: 'image', label: 'Foto', thumb: th, parts: [{ inlineData: { mimeType: 'image/jpeg', data: big.split(',')[1] } }] };
+      var big = scaled(im, 1600, 0.85), th = scaled(im, 720, 0.8), vw = th;
+      try { vw = scaled(im, 1100, 0.78); } catch (e) { vw = th; }
+      var mini = ''; try { mini = scaled(im, 96, 0.6); } catch (e) { mini = ''; }
+      var iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height, ar = (iw && ih) ? Math.round(iw / ih * 10000) / 10000 : 0;
+      return { kind: 'image', label: 'Foto', thumb: th, view: vw, full: big, mini: mini, ar: ar, parts: [{ inlineData: { mimeType: 'image/jpeg', data: big.split(',')[1] } }] };
     }, function () {
       /* browser tidak bisa membuka gambarnya (mis. HEIC): kirim apa adanya bila Gemini mendukung dan ukurannya wajar */
       var mime = (ext === 'heic' || type === 'image/heic') ? 'image/heic' : (ext === 'heif' || type === 'image/heif') ? 'image/heif' : '';
@@ -913,15 +1112,21 @@
   var KIND_LABEL = { image: 'Foto', zip: 'ZIP', pdf: 'PDF', audio: 'Audio', video: 'Video', text: 'Teks', doc: 'Dokumen' };
   function safeThumb(t) { return /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(String(t || '')) ? t : ''; }
 
+  function safePv(u) { return /^blob:/.test(String(u || '')) ? u : ''; }
   function renderTray() {
     var t = $('gmTray'); if (!t) return;
     if (!pending.length) { t.hidden = true; t.innerHTML = ''; return; }
     t.hidden = false;
     t.innerHTML = pending.map(function (x) {
-      var th = safeThumb(x.thumb);
-      return '<div class="gm-pc' + (x.loading ? ' load' : '') + (th ? ' img' : '') + '">' +
-        (th ? '<img alt="' + esc(x.name) + '" src="' + th + '">' : '<span class="gm-fi">' + iconFor(x.kind) + '</span><span class="gm-fn"><b>' + esc(x.name) + '</b><small>' + (x.loading ? 'Memproses…' : esc((x.label || KIND_LABEL[x.kind] || 'File') + ' • ' + fmtSize(x.size))) + '</small></span>') +
-        '<button type="button" class="gm-px" data-rm="' + x.id + '" aria-label="Hapus lampiran ' + esc(x.name) + '">' + I.close + '</button></div>';
+      var th = safeThumb(x.thumb), isImg = x.kind === 'image';
+      var src = th || (x.loading ? safePv(x.pv) : '');
+      var inner;
+      if (src) inner = '<img alt="Foto" src="' + src + '"' + (x.loading ? '' : ' data-gmv="p:' + x.id + '"') + '>';
+      else if (isImg) inner = '<span class="gm-ph">' + I.photo + '</span>';          /* foto yang pratinjaunya belum/tidak bisa tampil: ikon foto, tanpa nama file */
+      else inner = '<span class="gm-fi">' + iconFor(x.kind) + '</span><span class="gm-fn"><b>' + esc(fileTitle(x)) + '</b><small>' + (x.loading ? 'Memproses…' : esc((x.label || KIND_LABEL[x.kind] || 'File') + ' • ' + fmtSize(x.size))) + '</small></span>';
+      var spin = (x.loading && isImg) ? '<span class="gm-sp" role="status" aria-label="Memproses foto"></span>' : '';
+      return '<div class="gm-pc' + (x.loading ? ' load' : '') + (isImg ? ' img' : '') + '" data-id="' + x.id + '">' + inner + spin +
+        '<button type="button" class="gm-px" data-rm="' + x.id + '" aria-label="' + (isImg ? 'Hapus foto' : 'Hapus lampiran ' + esc(fileTitle(x))) + '">' + I.close + '</button></div>';
     }).join('');
     t.scrollLeft = t.scrollWidth;
   }
@@ -936,28 +1141,256 @@
     if (files.length > room) { toast('Hanya ' + room + ' lampiran pertama yang ditambahkan.', true); files = files.slice(0, room); }
     files.forEach(function (f) {
       var it = { id: uid(), name: f.name || 'file', size: f.size || 0, kind: 'file', label: '', thumb: '', parts: [], loading: true };
+      /* Foto langsung tampil sebagai gambar kecil dengan putaran loading, tanpa nama file */
+      if (/^image\//i.test(f.type || '') || IMG_EXT[extOf(f.name)]) {
+        it.kind = 'image';
+        try { it.pv = URL.createObjectURL(f); } catch (e) { it.pv = ''; }
+      }
       pending.push(it);
       Promise.resolve().then(function () { return processFile(f); }).then(function (r) {
         var used = 0; pending.forEach(function (x) { if (x !== it && !x.loading) used += partsSize(x.parts); });
         var add = partsSize(r.parts), txt = r.parts.length && r.parts[0].text != null;
         if (!txt && used + add > LIM.inline) throw { message: 'Total lampiran terlalu besar. Kirim sebagian dulu.' };
         if (txt) { var tu = 0; pending.forEach(function (x) { if (x !== it && !x.loading && x.parts[0] && x.parts[0].text != null) tu += x.parts[0].text.length; }); if (tu + add > LIM.textTotal) throw { message: 'Total teks lampiran terlalu panjang. Kirim sebagian dulu.' }; }
-        it.parts = r.parts; it.kind = r.kind; it.label = r.label; it.thumb = r.thumb || ''; it.loading = false;
+        it.parts = r.parts; it.kind = r.kind; it.label = r.label; it.thumb = r.thumb || ''; it.view = r.view || ''; it.full = r.full || ''; it.mini = r.mini || ''; it.ar = r.ar || 0; it.loading = false;
       }).catch(function (e) {
         pending = pending.filter(function (x) { return x !== it; });
         toast((e && e.message) || 'File tidak bisa dibaca.', true);
-      }).then(function () { renderTray(); updSend(); });
+      }).then(function () { if (it.pv) { var u = it.pv; it.pv = ''; renderTray(); try { URL.revokeObjectURL(u); } catch (e) { /* abaikan */ } } else renderTray(); updSend(); });
     });
     renderTray(); updSend();
   }
 
-  function attHtml(files) {
+  /* Pratinjau di dalam obrolan memakai foto asli (dari memori atau IndexedDB) agar tajam, thumbnail hanya sementara */
+  var inlCache = {};
+  function dataToBlobUrl(d) {
+    var m = /^data:(image\/jpeg);base64,(.+)$/.exec(String(d || '')); if (!m) return '';
+    try { var bin = atob(m[2]), n = bin.length, u = new Uint8Array(n), i; for (i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return URL.createObjectURL(new Blob([u], { type: m[1] })); } catch (e) { return ''; }
+  }
+  var PH_GIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+  function phBox(ar) {
+    ar = +ar > 0.05 && +ar < 20 ? +ar : 0.75;
+    var mw = Math.min(240, Math.round((window.innerWidth || 360) * 0.64)), h = Math.min(340, mw / ar), w = h * ar;
+    return [Math.round(w), Math.round(h)];
+  }
+  function inlineSrc(f) {
+    if (f && f.iid && inlCache[f.iid]) return inlCache[f.iid];
+    return safeThumb(f && f.thumb);
+  }
+  function upgradeInline() {
+    msgs.forEach(function (m, mi) {
+      (m.files || []).forEach(function (f, fi) {
+        if (!f || !f.iid || inlCache[f.iid]) return;
+        function apply(d) {
+          var u = safeImg(d) ? dataToBlobUrl(d) : ''; if (!u) return;
+          inlCache[f.iid] = u;
+          if (msgs[mi] !== m) return;
+          var el = document.querySelector('#gmBody img[data-gmv="m:' + mi + ':' + fi + '"]'); if (el) { el.src = u; el.classList.remove('ph'); el.style.width = ''; el.style.height = ''; }
+        }
+        if (safeImg(f.full)) apply(f.full); else idbGet('img', f.iid).then(apply);
+      });
+    });
+  }
+
+  function attHtml(files, mi) {
     if (!files || !files.length) return '';
-    return '<div class="gm-atts">' + files.map(function (f) {
-      var th = safeThumb(f.thumb);
-      if (th) return '<div class="gm-att img"><img alt="' + esc(f.name) + '" src="' + th + '"></div>';
-      return '<div class="gm-att file"><span class="gm-fi">' + iconFor(f.kind) + '</span><span class="gm-fn"><b>' + esc(f.name) + '</b><small>' + esc((f.label || KIND_LABEL[f.kind] || 'File') + ' • ' + fmtSize(f.size)) + '</small></span></div>';
+    return '<div class="gm-atts">' + files.map(function (f, fi) {
+      var th = inlineSrc(f);
+      if (th) return '<div class="gm-att img"><img alt="Foto" src="' + th + '" data-gmv="m:' + mi + ':' + fi + '"></div>';
+      if (f.kind === 'image' && f.iid) {
+        var mn = safeThumb(f.mini), box = phBox(f.ar);
+        return '<div class="gm-att img"><img class="ph" alt="Foto" src="' + (mn || PH_GIF) + '" style="width:' + box[0] + 'px;height:' + box[1] + 'px" data-gmv="m:' + mi + ':' + fi + '"></div>';
+      }
+      return '<div class="gm-att file"><span class="gm-fi">' + iconFor(f.kind) + '</span><span class="gm-fn"><b>' + esc(fileTitle(f)) + '</b><small>' + esc((f.label || KIND_LABEL[f.kind] || 'File') + ' • ' + fmtSize(f.size)) + '</small></span></div>';
     }).join('') + '</div>';
+  }
+
+  /* ---------- Penampil gambar layar penuh (zoom cubit, geser, ketuk dua kali) ---------- */
+  var iv = null, ivS = { s: 1, x: 0, y: 0 }, ivPtr = {}, ivPinch = null, ivStart = { x: 0, y: 0 }, ivMoved = false, ivLastTap = 0, ivLastX = 0, ivLastY = 0;
+  function safeImg(t) { t = String(t || ''); return t.indexOf('data:image/jpeg;base64,') === 0 ? t : ''; }
+  function ivApply() {
+    var im = $('gmIvImg'); if (im) im.style.transform = 'translate(' + ivS.x + 'px,' + ivS.y + 'px) scale(' + ivS.s + ')';
+    if (iv) {
+      var z = ivS.s > 1.01;                              /* saat diperbesar, tombol disembunyikan otomatis */
+      iv.classList.toggle('zoomed', z);
+      if (z) { var mn = $('gmIvMenu'); if (mn && !mn.hidden) ivMenu(false); }
+    }
+  }
+  function ivClamp() {
+    var st = $('gmIvStage'), im = $('gmIvImg'); if (!st || !im) return;
+    if (ivS.s <= 1) { ivS.s = 1; ivS.x = 0; ivS.y = 0; return; }
+    var ar = (im.naturalWidth && im.naturalHeight) ? im.naturalWidth / im.naturalHeight : 1, rw = Math.min(im.clientWidth || st.clientWidth, (im.clientHeight || st.clientHeight) * ar), rh = rw / ar;
+    var mx = Math.max(0, (rw * ivS.s - st.clientWidth) / 2), my = Math.max(0, (rh * ivS.s - st.clientHeight) / 2);
+    ivS.x = Math.min(mx, Math.max(-mx, ivS.x)); ivS.y = Math.min(my, Math.max(-my, ivS.y));
+  }
+  function ivZoomAt(cx, cy, ns) {
+    var st = $('gmIvStage'); if (!st) return;
+    ns = Math.min(6, Math.max(1, ns));
+    var r = st.getBoundingClientRect(), px = cx - (r.left + r.width / 2), py = cy - (r.top + r.height / 2), k = ns / ivS.s;
+    ivS.x = px - (px - ivS.x) * k; ivS.y = py - (py - ivS.y) * k; ivS.s = ns;
+    ivClamp(); ivApply();
+  }
+  function ivPts() { return Object.keys(ivPtr).map(function (k) { return ivPtr[k]; }); }
+  function ivDist() { var p = ivPts(); return p.length < 2 ? 0 : Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); }
+  function ivCenter() { var p = ivPts(); return p.length < 2 ? { x: 0, y: 0 } : { x: (p[0].x + p[1].x) / 2, y: (p[0].y + p[1].y) / 2 }; }
+  var ivCur = { src: '', name: '' };
+  function ivBlob() {
+    var m = /^data:(image\/jpeg);base64,(.+)$/.exec(ivCur.src || ''); if (!m) return null;
+    try { var bin = atob(m[2]), n = bin.length, u = new Uint8Array(n), i; for (i = 0; i < n; i++) u[i] = bin.charCodeAt(i); return new Blob([u], { type: m[1] }); } catch (e) { return null; }
+  }
+  function ivFileName() {
+    var n = String(ivCur.file || ivCur.name || 'gambar').replace(/[\\\/:*?"<>|]+/g, '_').replace(/\.[A-Za-z0-9]{1,5}$/, '') || 'gambar';
+    return n + '.jpg';
+  }
+  function ivMenu(show) {
+    var mn = $('gmIvMenu'), bt = $('gmIvMore'); if (!mn || !bt) return;
+    if (show) {
+      var im = $('gmIvImg'), b = ivBlob(), kb = b ? Math.max(1, Math.round(b.size / 1024)) : 0;
+      $('gmIvInfo').textContent = (ivCur.name || 'Gambar') + (im && im.naturalWidth ? ' \u2022 ' + im.naturalWidth + ' \u00d7 ' + im.naturalHeight : '') + (kb ? ' \u2022 ' + (kb >= 1024 ? (kb / 1024).toFixed(1) + ' MB' : kb + ' KB') : '');
+      var can = false; try { can = !!(b && navigator.share && navigator.canShare && navigator.canShare({ files: [new File([b], ivFileName(), { type: 'image/jpeg' })] })); } catch (e) { can = false; }
+      $('gmIvShare').hidden = !can;
+    }
+    mn.hidden = !show; bt.setAttribute('aria-expanded', show ? 'true' : 'false');
+  }
+  function ivDownload() {
+    var b = ivBlob(); if (!b) return;
+    try {
+      var u = URL.createObjectURL(b), a = document.createElement('a');
+      a.href = u; a.download = ivFileName(); a.rel = 'noopener'; a.style.display = 'none';
+      document.body.appendChild(a); a.click();
+      setTimeout(function () { try { a.remove(); URL.revokeObjectURL(u); } catch (e) { /* abaikan */ } }, 4000);
+    } catch (e) { /* abaikan */ }
+  }
+  function ivShare() {
+    var b = ivBlob(); if (!b) return;
+    try { navigator.share({ files: [new File([b], ivFileName(), { type: 'image/jpeg' })] }).catch(function () { /* dibatalkan */ }); } catch (e) { /* abaikan */ }
+  }
+  var ivHoldT = 0, ivHeld = false;
+  function ivHoldClear() { if (ivHoldT) { clearTimeout(ivHoldT); ivHoldT = 0; } }
+  function ivHoldEnd() { ivHoldClear(); ivHeld = false; if (iv) iv.classList.remove('hold'); }
+  function ivHoldStart() {
+    ivHoldClear();
+    ivHoldT = setTimeout(function () {
+      ivHoldT = 0;
+      if (!iv || !iv.classList.contains('open') || Object.keys(ivPtr).length !== 1 || ivMoved) return;
+      ivHeld = true; ivMenu(false); iv.classList.add('hold');
+    }, 350);
+  }
+  var ivFs = false;
+  function ivEnterFs() {
+    try {
+      var el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (rq && !(document.fullscreenElement || document.webkitFullscreenElement)) { var r = rq.call(el); ivFs = true; if (r && r.catch) r.catch(function () { ivFs = false; }); }
+    } catch (e) { ivFs = false; }
+  }
+  function ivExitFs() {
+    ivFs = false;
+    try {
+      if (document.fullscreenElement || document.webkitFullscreenElement) { var r = (document.exitFullscreen || document.webkitExitFullscreen).call(document); if (r && r.catch) r.catch(function () { /* abaikan */ }); }
+    } catch (e) { /* abaikan */ }
+  }
+  function ivOnFs() {
+    if (ivFs && iv && iv.classList.contains('open') && !(document.fullscreenElement || document.webkitFullscreenElement)) ivClose();   /* keluar layar penuh lewat tombol kembali = tutup penampil */
+  }
+  document.addEventListener('fullscreenchange', ivOnFs);
+  document.addEventListener('webkitfullscreenchange', ivOnFs);
+  function ivClose() {
+    if (!iv) return;
+    ivHoldEnd();
+    ivMenu(false);
+    ivExitFs();
+    iv.classList.remove('open');
+    var im = $('gmIvImg'); if (im) { im.onerror = null; im.removeAttribute('src'); }
+    ivS = { s: 1, x: 0, y: 0 }; ivPtr = {}; ivPinch = null; ivApply();
+  }
+  function ivBuild() {
+    if (iv) return iv;
+    iv = document.createElement('div');
+    iv.id = 'gmImgView'; iv.setAttribute('role', 'dialog'); iv.setAttribute('aria-modal', 'true'); iv.setAttribute('aria-label', 'Lihat gambar');
+    iv.innerHTML = '<div class="gm-iv-stage" id="gmIvStage"><img id="gmIvImg" alt="" draggable="false"></div>' +
+      '<div class="gm-iv-bar"><button type="button" class="gm-iv-btn" id="gmIvX" aria-label="Tutup gambar">' + I.close + '</button>' +
+      '<div class="gm-iv-right"><button type="button" class="gm-iv-btn" id="gmIvMore" aria-label="Opsi gambar" aria-haspopup="true" aria-expanded="false">' + I.dots + '</button>' +
+      '<button type="button" class="gm-iv-btn" id="gmIvDl" aria-label="Unduh gambar">' + I.dl + '</button></div></div>' +
+      '<div class="gm-iv-menu" id="gmIvMenu" hidden><div class="gm-iv-info" id="gmIvInfo"></div><button type="button" class="gm-iv-mi" id="gmIvShare">' + I.share + '<span>Bagikan</span></button></div>';
+    document.body.appendChild(iv);
+    var st = $('gmIvStage');
+    $('gmIvX').addEventListener('click', ivClose);
+    $('gmIvMore').addEventListener('click', function (e) { e.stopPropagation(); ivMenu(!$('gmIvMenu').hidden ? false : true); });
+    $('gmIvDl').addEventListener('click', function (e) { e.stopPropagation(); ivDownload(); });
+    $('gmIvShare').addEventListener('click', function (e) { e.stopPropagation(); ivMenu(false); ivShare(); });
+    iv.addEventListener('pointerdown', function (e) { if ($('gmIvMenu').hidden) return; if (!e.target.closest('#gmIvMenu') && !e.target.closest('#gmIvMore')) ivMenu(false); });
+    st.addEventListener('pointerdown', function (e) {
+      ivPtr[e.pointerId] = { x: e.clientX, y: e.clientY };
+      try { st.setPointerCapture(e.pointerId); } catch (x) { /* abaikan */ }
+      if (Object.keys(ivPtr).length === 1) { ivMoved = false; ivStart = { x: e.clientX, y: e.clientY }; ivHoldStart(); }
+      if (Object.keys(ivPtr).length === 2) { ivPinch = { d: ivDist() || 1, s: ivS.s }; ivMoved = true; ivHoldEnd(); }
+    });
+    st.addEventListener('pointermove', function (e) {
+      var p = ivPtr[e.pointerId]; if (!p) return;
+      var dx = e.clientX - p.x, dy = e.clientY - p.y;
+      p.x = e.clientX; p.y = e.clientY;
+      if (Object.keys(ivPtr).length >= 2 && ivPinch) { var c = ivCenter(); ivZoomAt(c.x, c.y, ivPinch.s * ivDist() / ivPinch.d); ivMoved = true; return; }
+      if (Math.abs(e.clientX - ivStart.x) + Math.abs(e.clientY - ivStart.y) > 8) { ivMoved = true; ivHoldEnd(); }
+      if (ivS.s > 1) { ivS.x += dx; ivS.y += dy; ivClamp(); ivApply(); }
+    });
+    function up(e, cancel) {
+      var had = ivPtr[e.pointerId]; delete ivPtr[e.pointerId];
+      var n = Object.keys(ivPtr).length;
+      if (n < 2) ivPinch = null;
+      var wasHeld = ivHeld; ivHoldEnd();
+      if (!had || cancel || n > 0 || ivMoved || wasHeld) return;
+      var ir = $('gmIvImg').getBoundingClientRect();              /* pointer capture membuat target selalu stage, jadi cek lewat koordinat */
+      if (e.clientX < ir.left || e.clientX > ir.right || e.clientY < ir.top || e.clientY > ir.bottom) { ivClose(); return; }  /* ketuk area gelap di luar gambar = tutup */
+      var now = Date.now();
+      if (now - ivLastTap < 320 && Math.abs(e.clientX - ivLastX) < 32 && Math.abs(e.clientY - ivLastY) < 32) {
+        ivLastTap = 0;
+        if (ivS.s > 1) { ivS.s = 1; ivS.x = 0; ivS.y = 0; ivApply(); } else ivZoomAt(e.clientX, e.clientY, 2.5);
+      } else { ivLastTap = now; ivLastX = e.clientX; ivLastY = e.clientY; }
+    }
+    st.addEventListener('pointerup', function (e) { up(e, false); });
+    st.addEventListener('pointercancel', function (e) { up(e, true); });
+    st.addEventListener('wheel', function (e) { e.preventDefault(); ivZoomAt(e.clientX, e.clientY, ivS.s * (e.deltaY < 0 ? 1.18 : 1 / 1.18)); }, { passive: false });
+    st.addEventListener('dblclick', function (e) { e.preventDefault(); });
+    st.addEventListener('contextmenu', function (e) { e.preventDefault(); e.stopPropagation(); return false; });
+    /* Cegah getar dan bunyi bawaan Android saat tekan lama: sentuhan di area foto tidak diteruskan ke perilaku bawaan browser */
+    ['touchstart', 'touchmove', 'touchend'].forEach(function (t) { st.addEventListener(t, function (e) { if (e.cancelable) e.preventDefault(); }, { passive: false }); });
+    ['selectstart', 'dragstart', 'gesturestart'].forEach(function (t) { st.addEventListener(t, function (e) { e.preventDefault(); }); });
+    return iv;
+  }
+  function ivOpen(src, name, file) {
+    src = safeImg(src);
+    if (!src) { toast('Gambar tidak bisa dibuka.', true); return; }
+    ivBuild();
+    var im = $('gmIvImg');
+    ivS = { s: 1, x: 0, y: 0 }; ivPtr = {}; ivPinch = null; ivLastTap = 0; ivApply();
+    im.onerror = function () { ivClose(); toast('Gambar tidak bisa dibuka.', true); };
+    ivHoldEnd(); ivCur = { src: src, name: name || '', file: file || name || '' }; ivMenu(false);
+    im.alt = name || ''; im.src = src;
+    iv.classList.add('open');
+    ivEnterFs();
+  }
+  /* Buka foto asli (resolusi penuh) dari memori atau IndexedDB; thumbnail hanya cadangan terakhir */
+  function openImgOf(f) {
+    if (!f) return;
+    var fb = safeImg(f.view) || safeImg(f.thumb) || safeImg(f.mini), full = safeImg(f.full);
+    if (full) { ivOpen(full, 'Foto', f.name); return; }
+    if (!f.iid) { ivOpen(fb, 'Foto', f.name); return; }
+    idbGet('img', f.iid).then(function (d) { ivOpen(safeImg(d) || fb, 'Foto', f.name); });
+  }
+  function bindViewer() {
+    var body = $('gmBody'), tray = $('gmTray');
+    if (body) body.addEventListener('click', function (e) {
+      var im = e.target && e.target.closest ? e.target.closest('img[data-gmv]') : null; if (!im) return;
+      var k = String(im.getAttribute('data-gmv') || '').split(':'), m = msgs[+k[1]], f = m && m.files && m.files[+k[2]];
+      if (!f) return;
+      openImgOf(f);
+    });
+    if (tray) tray.addEventListener('click', function (e) {
+      var im = e.target && e.target.closest ? e.target.closest('img[data-gmv]') : null; if (!im) return;
+      var id = String(im.getAttribute('data-gmv') || '').slice(2), x = null;
+      pending.forEach(function (it) { if (it.id === id) x = it; });
+      if (x) openImgOf(x);
+    });
   }
 
   /* ---------- Menu plus ---------- */
@@ -1082,6 +1515,7 @@
     attachConfig();
   }
   function startSync() {
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) { /* abaikan */ }
     waitBridge().then(function (b) {
       myId = b.getMyId();
       if (gmOn()) attachConfig(); else lockdown();
@@ -1449,6 +1883,7 @@
     $('gmCfNo').addEventListener('click', closeConfirm);
     $('gmCfOk').addEventListener('click', doDelete);
 
+    bindViewer();
     $('gmSend').addEventListener('click', function () {
       if (busy) { if (ctrl) ctrl.abort(); return; }
       if ($('gmInput').value.trim() || pending.length) send($('gmInput').value); else $('gmInput').focus();
@@ -1470,7 +1905,8 @@
     });
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      if (!$('gmPop').hidden) closePop();
+      if (iv && iv.classList.contains('open')) ivClose();
+      else if (!$('gmPop').hidden) closePop();
       else if (!$('gmDlg').hidden) hideDlg();
       else if (!$('gmCtxBg').hidden) hideCtx();
       else if ($('gmAdConfirm').classList.contains('open')) closeConfirm();

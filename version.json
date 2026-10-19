@@ -1,8 +1,8 @@
 {
-  "version": "1.7.57",
+  "version": "1.7.69",
   "released": "2026-10-19",
   "notes": [
-    "Perbaikan: teks bantuan API key YouTube dirapikan; tautan Google Cloud tetap langsung membuka YouTube Data API v3 (tombol Enable)",
-    "Perbaikan: menu lampiran Gemini kini hanya Foto, Kamera, dan File"
+    "Perbaikan: foto yang dilampirkan tampil sebagai gambar kecil dengan animasi loading berputar, tanpa nama file",
+    "Perbaikan: obrolan yang hanya berisi foto otomatis diberi judul sesuai isi foto, bukan lagi \"Foto\""
   ]
 }

@@ -6857,6 +6857,8 @@ $('clearGroupBtn').addEventListener('click', async () => {
   };
   /* Menutup satu layer teratas. Mengembalikan true kalau ada yang ditutup. */
   function closeTopLayer() {
+    const gmV = $('gmImgView');
+    if (gmV && gmV.classList.contains('open')) { const x = $('gmIvX'); if (x) x.click(); else gmV.classList.remove('open'); return true; }
     const gmD = $('gmDlg');
     if (gmD && !gmD.hidden) { const n = $('gmDlgNo'); if (n) n.click(); else gmD.hidden = true; return true; }
     const gmC = $('gmCtxBg');
