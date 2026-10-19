@@ -1,7 +1,7 @@
 {
-  "version": "1.7.76",
+  "version": "1.7.78",
   "released": "2026-10-19",
   "notes": [
-    "Perbaikan: mencegah tombol Kembali di halaman utama menutup PWA Android secara tidak sengaja"
+    "Tambahan: sakelar lisensi jarak jauh (js/license-gate.js) yang dikendalikan lewat Firebase, independen dari pemeriksaan hash LICENSE.md yang sudah ada"
   ]
 }
