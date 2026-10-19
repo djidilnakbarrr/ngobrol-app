@@ -3287,3 +3287,29 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
 
   /* tombol tambah kontak di tab Kontak: daftar diberi ruang bawah supaya kontak terakhir tidak tertutup tombol */
   #contactList { padding-bottom: 92px; }
+
+
+/* Tombol kirim foto: ikon gambar SVG dengan ukuran dan interaksi konsisten */
+.input-bar .attach-btn {
+  width: 46px; height: 46px; min-width: 46px; flex: 0 0 46px;
+  padding: 0; border: 1px solid rgba(84, 101, 111, .08);
+  border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+  color: #52636b; background: #f5f8f8;
+  box-shadow: 0 2px 7px rgba(20, 45, 50, .07);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.input-bar .attach-btn svg {
+  display: block; width: 23px; height: 23px; flex: 0 0 auto;
+  stroke: currentColor; transition: transform .18s ease;
+}
+.input-bar .attach-btn:hover {
+  color: #087f70; background: #eaf6f3; border-color: rgba(8, 127, 112, .18);
+}
+.input-bar .attach-btn:active { transform: scale(.94); }
+.input-bar .attach-btn:active svg { transform: scale(.94); }
+.input-bar .attach-btn:focus-visible {
+  outline: 3px solid rgba(8, 127, 112, .28); outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .input-bar .attach-btn, .input-bar .attach-btn svg { transition: none; }
+}
