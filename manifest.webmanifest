@@ -1,7 +1,7 @@
 {
   "name": "Chat App",
   "short_name": "Chat App",
-  "description": "Aplikasi obrolan yang cepat, ringkas, dan rapi.",
+  "description": "Aplikasi obrolan yang cepat, ringkas, dan rapi. Pemilik / Developer: iD1L.",
   "lang": "id",
   "start_url": "./",
   "scope": "./",
