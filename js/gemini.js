@@ -192,15 +192,32 @@
       t = t.replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?!\*)/g, '$1<i>$2</i>');
       return t;
     }
-    var out = [], list = null;
+    var out = [], list = null, nextNumber = 1, hasNumbered = false;
     function close() { if (list) { out.push('</' + list + '>'); list = null; } }
-    src.split('\n').forEach(function (l) {
+    src.split(/\r?\n/).forEach(function (l) {
       var m;
       if (/^\u0000\d+\u0000$/.test(l.trim())) { close(); out.push(l.trim()); return; }
-      if ((m = l.match(/^\s*[-*•]\s+(.*)/))) { if (list !== 'ul') { close(); out.push('<ul>'); list = 'ul'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
-      if ((m = l.match(/^\s*\d+[.)]\s+(.*)/))) { if (list !== 'ol') { close(); out.push('<ol>'); list = 'ol'; } out.push('<li>' + inline(m[1]) + '</li>'); return; }
+      if ((m = l.match(/^\s*[-*•]\s+(.*)/))) {
+        if (list !== 'ul') { close(); out.push('<ul>'); list = 'ul'; }
+        out.push('<li>' + inline(m[1]) + '</li>'); return;
+      }
+      if ((m = l.match(/^\s*(\d+)[.)]\s+(.*)/))) {
+        // A numbered list may be interrupted by paragraphs or bullet points.
+        // Preserve the numbering across those interruptions, including when
+        // the model mistakenly starts a later fragment at 1 again.
+        var supplied = parseInt(m[1], 10);
+        if (!hasNumbered) { nextNumber = supplied > 0 ? supplied : 1; hasNumbered = true; }
+        if (list !== 'ol') { close(); out.push('<ol start="' + nextNumber + '">'); list = 'ol'; }
+        out.push('<li>' + inline(m[2]) + '</li>');
+        nextNumber++;
+        return;
+      }
       close();
-      if ((m = l.match(/^#{1,6}\s+(.*)/))) { out.push('<h4>' + inline(m[1]) + '</h4>'); return; }
+      if ((m = l.match(/^#{1,6}\s+(.*)/))) {
+        out.push('<h4>' + inline(m[1]) + '</h4>');
+        nextNumber = 1; hasNumbered = false;
+        return;
+      }
       if (!l.trim()) return;
       out.push('<p>' + inline(l) + '</p>');
     });
