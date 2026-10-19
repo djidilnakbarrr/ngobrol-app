@@ -210,11 +210,13 @@
     return out.join('').replace(/\u0000(\d+)\u0000/g, function (_, i) { return blocks[+i] || ''; });
   }
 
+  /* Pop-up notifikasi dihapus: fungsi dibiarkan kosong agar pemanggil lama tetap aman. */
+  function toast() {}
   function copyText(t) {
-    function done() { }
+    function done() { toast('Disalin'); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
     function fallback() {
-      try { var a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); done(); } catch (e) { }
+      try { var a = document.createElement('textarea'); a.value = t; a.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); done(); } catch (e) { toast('Gagal menyalin'); }
     }
   }
 
@@ -731,7 +733,7 @@
   function send(text) {
     text = String(text || '').trim();
     if (busy || !gmOn() || !activeKeys().length) return;
-    if (pendingLoading()) { return; }
+    if (pendingLoading()) { toast('Tunggu sebentar, lampiran sedang diproses.'); return; }
     var ready = pendingReady();
     if (!text && !ready.length) return;
     var m = { role: 'user', text: text, ts: Date.now() };
@@ -780,6 +782,7 @@
     persist();
     goneImgs.forEach(function (k) { idbDel('img', k); });
     if (id === curId) { stopRun(); curId = uid(); msgs = []; setBusy(false); render(); } else renderDrawer();
+    toast('Obrolan dihapus');
   }
   function clearAll() {
     stopRun();
@@ -787,7 +790,7 @@
     chats = []; msgs = []; curId = uid();
     idbDel('chats', storeKey()); idbClear('img');
     try { localStorage.removeItem(storeKey()); localStorage.removeItem(oldKey()); localStorage.removeItem(TAMU_KEY); } catch (e) { /* abaikan */ }
-    setBusy(false); render(); closeDrawer();
+    setBusy(false); render(); closeDrawer(); toast('Semua obrolan dihapus');
   }
 
   /* ---------- Menu tekan lama dan dialog konfirmasi ---------- */
@@ -1132,10 +1135,10 @@
   function addFiles(list) {
     var files = Array.prototype.slice.call(list || []);
     if (!files.length) return;
-    if (!canAttach()) { return; }
+    if (!canAttach()) { toast('Gemini belum aktif, lampiran tidak bisa ditambahkan.', true); return; }
     var room = MAX_FILES - pending.length;
-    if (room <= 0) { return; }
-    if (files.length > room) { files = files.slice(0, room); }
+    if (room <= 0) { toast('Maksimal ' + MAX_FILES + ' lampiran per pesan.', true); return; }
+    if (files.length > room) { toast('Hanya ' + room + ' lampiran pertama yang ditambahkan.', true); files = files.slice(0, room); }
     files.forEach(function (f) {
       var it = { id: uid(), name: f.name || 'file', size: f.size || 0, kind: 'file', label: '', thumb: '', parts: [], loading: true };
       /* Foto langsung tampil sebagai gambar kecil dengan putaran loading, tanpa nama file */
@@ -1152,6 +1155,7 @@
         it.parts = r.parts; it.kind = r.kind; it.label = r.label; it.thumb = r.thumb || ''; it.view = r.view || ''; it.full = r.full || ''; it.mini = r.mini || ''; it.ar = r.ar || 0; it.loading = false;
       }).catch(function (e) {
         pending = pending.filter(function (x) { return x !== it; });
+        toast((e && e.message) || 'File tidak bisa dibaca.', true);
       }).then(function () { if (it.pv) { var u = it.pv; it.pv = ''; renderTray(); try { URL.revokeObjectURL(u); } catch (e) { /* abaikan */ } } else renderTray(); updSend(); });
     });
     renderTray(); updSend();
@@ -1355,11 +1359,11 @@
   }
   function ivOpen(src, name, file) {
     src = safeImg(src);
-    if (!src) { return; }
+    if (!src) { toast('Gambar tidak bisa dibuka.', true); return; }
     ivBuild();
     var im = $('gmIvImg');
     ivS = { s: 1, x: 0, y: 0 }; ivPtr = {}; ivPinch = null; ivLastTap = 0; ivApply();
-    im.onerror = function () { ivClose(); };
+    im.onerror = function () { ivClose(); toast('Gambar tidak bisa dibuka.', true); };
     ivHoldEnd(); ivCur = { src: src, name: name || '', file: file || name || '' }; ivMenu(false);
     im.alt = name || ''; im.src = src;
     iv.classList.add('open');
@@ -1842,7 +1846,7 @@
     $('gmPlus').addEventListener('click', function (e) { e.stopPropagation(); togglePop(); });
     [['gmPopPhoto', 'gmFilePhoto'], ['gmPopCam', 'gmFileCam'], ['gmPopFile', 'gmFileAny']].forEach(function (pr) {
       var inp = $(pr[1]);
-      $(pr[0]).addEventListener('click', function (e) { e.stopPropagation(); closePop(); if (!canAttach()) { return; } inp.value = ''; inp.click(); });
+      $(pr[0]).addEventListener('click', function (e) { e.stopPropagation(); closePop(); if (!canAttach()) { toast('Gemini belum aktif, lampiran tidak bisa ditambahkan.', true); return; } inp.value = ''; inp.click(); });
       inp.addEventListener('change', function () { var fl = Array.prototype.slice.call(inp.files || []); inp.value = ''; addFiles(fl); });
     });
     $('gmTray').addEventListener('click', function (e) {

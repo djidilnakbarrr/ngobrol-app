@@ -1,7 +1,7 @@
 {
-  "version": "1.7.81",
+  "version": "1.7.76",
   "released": "2026-10-19",
   "notes": [
-    "Penampil foto menutup seluruh layar HP (sampai area poni atas) dan terkunci: tidak bergeser ke atas, bawah, atau samping"
+    "Baru: foto di obrolan kini terbuka layar penuh dan bisa di-zoom (cubit dua jari, ketuk dua kali, geser)"
   ]
 }

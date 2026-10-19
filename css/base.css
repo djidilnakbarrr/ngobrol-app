@@ -1421,6 +1421,12 @@
   .vo-ico { width: 34px; height: 34px; border-radius: 50%; border: 2px dashed currentColor; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; flex-shrink: 0; }
   .vo-txt b { display: block; font-size: 14px; }
   .vo-txt span { display: block; font-size: 12px; opacity: .8; margin-top: 1px; }
+  #voViewer { display: none; position: fixed; inset: 0; background: #000; z-index: 260; flex-direction: column; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #voViewer .vo-top { display: flex; align-items: center; justify-content: space-between; padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; color: #fff; font-size: 14px; }
+  #voViewer .vo-top button { background: rgba(255,255,255,.16); color: #fff; border: 0; border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 600; font-family: inherit; }
+  #voViewer .vo-stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
+  #voViewer img { max-width: 100%; max-height: 100%; pointer-events: none; -webkit-touch-callout: none; }
+  #voViewer .vo-note { color: rgba(255,255,255,.7); font-size: 12px; text-align: center; padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px)); }
   #voChooser { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 250; align-items: flex-end; justify-content: center; }
   #voChooser.show { display: flex; }
   #voChooser .vo-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
@@ -1432,42 +1438,71 @@
   #imgViewer {
     display: none; position: fixed; inset: 0; width: 100%; height: 100%; background: #000;
     z-index: 200; align-items: center; justify-content: center; overflow: hidden;
-    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   }
-  html.iv-open, html.iv-open body { overflow: hidden !important; overscroll-behavior: none; }
-  #imgViewer { touch-action: none; overscroll-behavior: none; }
   #imgViewer .iv-stage {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     touch-action: none; overflow: hidden; cursor: zoom-in;
-    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   }
   #imgViewer.zoomed .iv-stage { cursor: grab; }
   #imgViewer .iv-stage img {
-    display: block; flex: 0 0 auto; max-width: none; max-height: none; width: 100%; height: 100%; object-fit: contain;
+    display: block; max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;
     transform-origin: 50% 50%; will-change: transform; pointer-events: none;
-    -webkit-user-drag: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+    -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none;
   }
   #imgViewer .iv-close {
     position: absolute; z-index: 2; top: calc(12px + env(safe-area-inset-top, 0px)); left: 14px;
     width: 44px; height: 44px; padding: 0; border: 0; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
     background: rgba(58, 58, 60, .92); color: #fff; cursor: pointer; -webkit-tap-highlight-color: transparent;
-    transition: opacity .16s ease;
   }
-  /* Tombol X otomatis hilang saat foto di-zoom atau ditekan lama */
-  #imgViewer.zoomed .iv-close, #imgViewer.hold .iv-close { opacity: 0; pointer-events: none; visibility: hidden; transition: opacity .1s ease, visibility 0s linear .1s; }
   #imgViewer .iv-close:active { background: rgba(96, 96, 99, .95); }
   #imgViewer .iv-close:focus { outline: none; }
   #imgViewer .iv-close svg { width: 22px; height: 22px; }
-  /* Catatan foto sekali lihat */
-  #imgViewer .iv-note { display: none; position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 28px 16px calc(14px + env(safe-area-inset-bottom, 0px)); text-align: center; color: rgba(255,255,255,.88); font-size: 12.5px; font-weight: 500; background: linear-gradient(to top, rgba(0,0,0,.55), rgba(0,0,0,0)); text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; transition: opacity .16s ease; }
-  #imgViewer.once .iv-note { display: block; }
-  #imgViewer.once.zoomed .iv-note, #imgViewer.once.hold .iv-note { opacity: 0; }
 
 
 
+  #toast {
 
+    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
 
+    background: #fff; color: #075e54;
+
+    padding: 12px 20px 12px 14px; border-radius: 14px;
+
+    border: 1.5px solid #075e54;
+
+    font-size: 14px; font-weight: 500; z-index: 500;
+
+    display: none; align-items: center; gap: 10px;
+
+    box-shadow: 0 8px 24px rgba(7,94,84,0.22);
+
+    max-width: 88%; text-align: left;
+
+    opacity: 0;
+
+    transition: opacity 0.25s, transform 0.25s;
+
+    line-height: 1.4;
+
+  }
+
+  #toast::before {
+
+    content: ''; flex-shrink: 0; width: 20px; height: 20px;
+
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23075e54' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E") center/contain no-repeat;
+
+  }
+
+  #toast.show {
+
+    display: flex; opacity: 1;
+
+    transform: translateX(-50%) translateY(0);
+
+  }
 
 
 
@@ -1719,6 +1754,7 @@
 
     .msg { max-width: 82%; }
 
+    #toast { bottom: 76px; }
 
   }
 
@@ -2744,7 +2780,9 @@
 
   /* ---------- notifikasi ---------- */
 
+  #toast { background: #fff; color: #075e54; border: 1.5px solid #0b8a79; border-radius: 12px; padding: 9px 16px 9px 12px; font-size: 13px; font-weight: 600; line-height: 1.4; gap: 9px; max-width: min(86%, 340px); width: max-content; z-index: 5000; box-shadow: 0 0 0 4px rgba(11,138,121,.14), 0 10px 26px rgba(5,74,66,.16); }
 
+  #toast::before { background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b8a79' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' y1='16' x2='12' y2='12'/%3E%3Cline x1='12' y1='8' x2='12.01' y2='8'/%3E%3C/svg%3E") center / contain no-repeat; width: 18px; height: 18px; }
 
 
 
@@ -3101,6 +3139,7 @@
   .modal-hint { line-height: 1.6; }
   .modal-actions button, .confirm-actions button { font-weight: 650; letter-spacing: .1px; }
   .chat-menu-option { font-weight: 550; }
+  #toast { font-weight: 550; line-height: 1.45; text-wrap: balance; }
 
   /* ---------- lembar notifikasi: tombol selalu terlihat, isi dapat digulir ---------- */
   .ns-sheet { display: flex; flex-direction: column; overflow: hidden; padding: 10px 20px 0; max-height: min(92vh, 740px); max-height: min(92dvh, 740px); }
@@ -3205,6 +3244,9 @@
   #archMore button { width: 100%; border: none; background: transparent; text-align: left; padding: 12px 14px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--ink); cursor: pointer; }
   #archMore button:hover { background: #f4f8f8; }
   #archMore button:active { background: #e9f1f0; }
+  #toast:has(.toast-act) { white-space: nowrap; }
+  #toast .toast-act { margin-left: 8px; border: none; background: transparent; color: #0b8a79; font-weight: 800; font-size: 13.5px; letter-spacing: .4px; text-transform: uppercase; cursor: pointer; padding: 4px 6px; border-radius: 8px; }
+  #toast .toast-act:active { background: rgba(11,138,121,.12); }
   @media (max-width: 360px) { .archive-row { padding-left: 14px; padding-right: 14px; } }
   @media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
 
@@ -3266,9 +3308,17 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
 }
 
 
+/* ==========================================================================
+   Notifikasi (toast) selalu di dasar layar
+   Menimpa posisi lama (90px / 76px) supaya tidak melayang di tengah dan
+   menutupi isi halaman. Berlaku untuk semua layar, termasuk tes notifikasi.
+   ========================================================================== */
+#toast {
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 2147483647 !important;   /* selalu paling atas, di atas semua panel, modal, dan Gemini */
+  pointer-events: none;
+}
+#toast .toast-act { pointer-events: auto; }
 
   /* tombol tambah kontak di tab Kontak: daftar diberi ruang bawah supaya kontak terakhir tidak tertutup tombol */
   #contactList { padding-bottom: 92px; }
-
-
-@media (prefers-reduced-motion: reduce) {}

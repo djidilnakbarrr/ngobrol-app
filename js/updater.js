@@ -2,7 +2,7 @@
    Naikkan versi dengan:  node rilis.js 1.2.0 "catatan 1" "catatan 2"   (mengubah APP_VERSION di bawah + version.json) */
 (function () {
   'use strict';
-  const APP_VERSION = '1.7.81';
+  const APP_VERSION = '1.7.76';
   const CHECK_URL = 'version.json';
   const $ = id => document.getElementById(id);
   const ss = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
@@ -138,13 +138,19 @@
   }
   window.checkAppUpdate = check;
 
-  /* ---------- catat versi setelah berhasil diperbarui (tanpa banner) ---------- */
+  /* ---------- banner setelah berhasil diperbarui ---------- */
   function announceUpdated() {
     const seen = ls.get('app_ver_seen');
     ls.set('app_ver_seen', APP_VERSION);
     if (ls.get('app_just_updated') || (seen && seen !== APP_VERSION)) {
       try { localStorage.removeItem('app_just_updated'); } catch (e) {}
       try { sessionStorage.removeItem('upd_target'); } catch (e) {}
+      const d = document.createElement('div');
+      d.id = 'updDone';
+      d.innerHTML = IC_OK + '<span>Aplikasi diperbarui ke versi ' + esc(APP_VERSION) + '</span>';
+      document.body.appendChild(d);
+      setTimeout(() => d.classList.add('show'), 700);
+      setTimeout(() => { d.classList.remove('show'); setTimeout(() => d.remove(), 600); }, 4200);
     }
   }
 
