@@ -48,7 +48,6 @@
 .login-box .hint { margin-top: 0; margin-bottom: 16px; }
 .login-box #loginBtn { margin-top: 4px; }
 #loginHint, #loginIdWrap .hint, #loginPw2Wrap .hint { font-size: 12px; }
-.login-box .login-foot { margin-top: 16px; font-size: 12px; color: #667781; line-height: 1.5; }
 
 /* Peringatan inline */
 .auth-alert {
@@ -137,15 +136,6 @@
   box-shadow: 0 14px 26px -8px rgba(7,94,84,.65);
 }
 
-/* Catatan kaki dengan ikon gembok */
-#loginScreen .login-box .login-foot {
-  position: relative; margin-top: 20px; padding: 16px 6px 0 6px; font-size: 12.5px; line-height: 1.55; color: #6b7c84;
-  border-top: 0;
-}
-#loginScreen .login-box .login-foot::before {
-  content: ""; display: block; width: 18px; height: 18px; margin: 0 auto 6px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230b8a79' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z'/%3E%3Cpolyline points='9 12 11 14 15 10'/%3E%3C/svg%3E") center / contain no-repeat;
-}
 @media (max-width: 380px) {
   #loginScreen .login-box { padding: 30px 20px 22px; border-radius: 26px; }
 }
@@ -181,8 +171,7 @@
 .uname-status.wait { color: #7a8b93; }
 #loginScreen.mode-register .subtitle,
 #loginScreen.mode-register #loginHint,
-#loginScreen.mode-register #loginPw2Wrap .hint,
-#loginScreen.mode-register .login-foot { display: none !important; }
+#loginScreen.mode-register #loginPw2Wrap .hint { display: none !important; }
 #loginScreen.mode-register .login-box { padding: 26px 24px 22px; max-height: calc(100dvh - 24px); overflow-y: auto; }
 #loginScreen.mode-register .login-box > svg.login-logo { width: 56px; height: 56px; padding: 14px; border-radius: 18px; }
 #loginScreen.mode-register .login-brand { margin-top: 10px; }
@@ -208,3 +197,23 @@
 
 /* Peringatan umum di bawah tombol */
 #loginScreen #loginAlert { margin: 14px 0 0; }
+
+/* ===== Kredit pembuat: "by : iD1L" ===== */
+.app-credit { display: flex; align-items: center; justify-content: center; gap: 10px; user-select: none; -webkit-user-select: none; }
+.app-credit-line { flex: 0 1 36px; height: 1px; background: linear-gradient(90deg, transparent, currentColor); opacity: .45; }
+.app-credit-line:last-child { background: linear-gradient(270deg, transparent, currentColor); }
+.app-credit-text { font-size: 12px; font-weight: 500; letter-spacing: .06em; white-space: nowrap; }
+.app-credit-text strong { font-weight: 800; letter-spacing: .08em; }
+
+/* Layar Masuk / Daftar */
+#loginScreen .login-box .app-credit { margin-top: 24px; padding: 0; border: 0; color: #8a99a1; }
+#loginScreen .login-box .app-credit-text strong { color: #0b8a79; }
+
+/* Bilah kredit permanen: tampil terus di semua tab utama dan di layar chat */
+.app-credit-bar { flex: 0 0 auto; height: 24px; background: #fff; border-top: 1px solid var(--line, #e9eef0); color: #8a99a1; pointer-events: none; }
+.app-credit-bar .app-credit-text { font-size: 11px; }
+.app-credit-bar .app-credit-text strong { color: #075e54; }
+.app-credit-bar.app-credit-chat { background: rgba(255,255,255,.92); border-top: none; border-bottom: 1px solid var(--line, #e9eef0); }
+
+/* Tab Daftar: kredit di kartu disembunyikan (tetap tampil di layar Masuk) */
+#loginScreen.mode-register .login-box .app-credit { display: none; }

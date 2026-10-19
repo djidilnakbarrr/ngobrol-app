@@ -1,8 +1,7 @@
 {
-  "version": "1.7.69",
+  "version": "1.7.74",
   "released": "2026-10-19",
   "notes": [
-    "Perbaikan: foto yang dilampirkan tampil sebagai gambar kecil dengan animasi loading berputar, tanpa nama file",
-    "Perbaikan: obrolan yang hanya berisi foto otomatis diberi judul sesuai isi foto, bukan lagi \"Foto\""
+    "Perubahan: teks kredit \"by : iD1L\" disembunyikan di tab Daftar"
   ]
 }

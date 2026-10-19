@@ -1123,9 +1123,6 @@ function setLoginMode(mode, keepAlert) {
     ? 'Lengkapi data berikut untuk membuat akun. ID akun dibuat otomatis dan akun dilindungi password 6 angka.'
     : (mig ? 'Buat password 6 angka untuk akun Anda. Setelah itu, password wajib digunakan setiap kali masuk.'
            : 'Silakan masukkan username dan password Anda untuk masuk.');
-  $('loginFoot').textContent = reg
-    ? 'Dengan mendaftar, Anda bertanggung jawab menjaga kerahasiaan password akun.'
-    : 'Akun dilindungi password 6 angka. Tanpa password yang benar, akun tidak dapat dibuka.';
   ['loginPwInput', 'loginPw2Input', 'loginIdInput'].forEach(i => { $(i).value = ''; });
   document.querySelectorAll('#loginScreen .pw-eye.shown').forEach(b => b.click());
   $('loginPwInput').setAttribute('autocomplete', reg ? 'new-password' : 'off');
