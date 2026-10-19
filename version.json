@@ -1,10 +1,7 @@
 {
-  "version": "1.7.80",
+  "version": "1.7.76",
   "released": "2026-10-19",
   "notes": [
-    "Sinkronisasi versi aplikasi dan cache aset",
-    "Pembaruan hanya dinyatakan berhasil setelah file versi baru tersedia",
-    "Sakelar lisensi Firebase tetap tersedia; perlu aturan database produksi",
-    "Panel admin lisensi dipindahkan ke Setelan > Lainnya"
+    "Perbaikan: mencegah tombol Kembali di halaman utama menutup PWA Android secara tidak sengaja"
   ]
 }

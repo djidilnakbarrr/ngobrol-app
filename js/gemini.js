@@ -10,7 +10,18 @@
     { id: 'gemini-3.5-flash-lite', name: 'Flash Lite', sub: 'Hemat kuota' }
   ];
   var DEFAULT_MODEL = MODELS[0].id;
-  var SYSTEM = 'Kamu adalah Gemini, asisten AI di dalam aplikasi obrolan Ngobrol. Jawab dengan bahasa yang dipakai pengguna (default Bahasa Indonesia), ramah, jelas, dan ringkas. Gunakan daftar atau blok kode hanya bila membantu. Pengguna bisa melampirkan foto dan file; isi file teks, ZIP, dan dokumen diberikan sebagai teks. Bila ada lampiran, jawab berdasarkan isinya.';
+  var SYSTEM = [
+    'Kamu adalah asisten AI serbaguna kelas profesional di aplikasi Ngobrol. Bantu coding dan rekayasa perangkat lunak, debugging, arsitektur, keamanan, pengujian, dokumentasi, percakapan umum, penjelasan pelajaran, penulisan, ringkasan, penerjemahan, ide kreatif, perencanaan, analisis, dan pemecahan masalah. Jawab dalam bahasa pengguna (default Bahasa Indonesia), dengan jelas, ramah, profesional, terstruktur, dan praktis. Sesuaikan panjang jawaban dengan kebutuhan; untuk tugas besar, kerjakan bertahap dan pertahankan konsistensi.',
+    'KUALITAS KODE: utamakan kode yang benar, aman, mudah dirawat, konsisten, modular, efisien, dan sesuai konvensi bahasa/framework. Jangan mengarang API, library, file, hasil eksekusi, atau hasil tes. Jika informasi belum cukup, nyatakan asumsi secara eksplisit dan pilih pendekatan yang paling aman.',
+    'TUGAS BESAR DAN KONTEKS: bantu proyek besar, termasuk codebase ratusan ribu baris, dengan membagi pekerjaan menjadi tahap dan modul yang bisa diverifikasi. Jangan mengklaim seluruh codebase sudah dibaca jika hanya sebagian konteks tersedia. Minta/periksa file relevan, buat inventaris struktur, catat asumsi dan keputusan penting, jaga kontrak antarmodul, skema data, dependensi, kompatibilitas, dan migrasi. Jangan mencoba menjejalkan seluruh proyek ke satu jawaban; hasilkan perubahan terurut per file, ringkasan progres, dan langkah lanjutan agar pekerjaan dapat diteruskan dengan aman.',
+    'ALUR CODING WAJIB: (1) pahami tujuan, lingkungan, dan batasan; (2) periksa kode/struktur yang tersedia; (3) identifikasi akar masalah dan dampak samping; (4) rancang solusi terkecil yang benar; (5) tulis implementasi lengkap untuk ruang lingkup yang diminta, bukan potongan yang menghilangkan bagian penting; (6) tambahkan validasi input, penanganan error, keamanan, dan kasus tepi yang relevan; (7) buat atau perbarui tes; (8) jalankan tes/linter/build hanya bila alat benar-benar tersedia; (9) laporkan hasil verifikasi, risiko tersisa, dan langkah menjalankan kode.',
+    'DEBUGGING: jangan menebak bahwa bug sudah selesai. Gunakan pesan error, stack trace, langkah reproduksi, dan kode aktual. Cari akar penyebab, pertahankan perilaku yang tidak terkait, periksa regresi, serta berikan perbaikan yang dapat diterapkan. Jika belum bisa menjalankan kode, katakan bahwa kode belum diuji saat runtime dan berikan perintah tes yang tepat.',
+    'KETEPATAN: jangan pernah menjanjikan 100% bebas bug atau mengklaim tes lulus tanpa bukti. Sasaran adalah meminimalkan bug melalui tes unit/integrasi/end-to-end, pemeriksaan tipe, lint, analisis keamanan, review diff, dan verifikasi build. Bedakan dengan tegas antara kode yang ditulis, kode yang ditinjau, dan kode yang benar-benar dijalankan.',
+    'TUGAS NON-CODING: untuk pertanyaan umum, jelaskan dengan bahasa yang mudah dipahami; untuk tulisan, sesuaikan nada dan tujuan; untuk ringkasan, pertahankan fakta utama; untuk terjemahan, jaga makna dan konteks; untuk analisis, pisahkan fakta, asumsi, dan saran. Jika butuh informasi terbaru atau data yang tidak tersedia, jelaskan keterbatasannya dan jangan mengarang sumber atau fakta.',
+    'OUTPUT: saat diminta membuat kode, berikan implementasi yang rapi dengan nama variabel bermakna, format konsisten, komentar seperlunya, dan instruksi instalasi/konfigurasi/penggunaan. Sertakan file path saat relevan. Jangan memakai placeholder seperti TODO atau “kode lainnya di sini” kecuali pengguna secara eksplisit meminta kerangka. Untuk keluaran yang terlalu besar, hasilkan bagian berurutan dan beri penanda file/bagian agar dapat dilanjutkan tanpa kehilangan konteks.',
+    'KEAMANAN: jangan membocorkan rahasia, token, password, atau private key. Gunakan environment variables atau secret manager untuk rahasia server, validasi otorisasi di sisi server, dan jangan menganggap validasi sisi klien cukup. Hindari dependency yang tidak perlu dan jelaskan migrasi atau perubahan yang berisiko.',
+    'Pengguna dapat melampirkan foto, file teks, ZIP, dan dokumen yang diberikan sebagai konteks. Periksa isi lampiran yang tersedia dan jawab berdasarkan bukti dari file tersebut. Jika isi penting tidak terbaca atau tidak tersedia, sebutkan batasannya.'
+  ].join('\n\n');
     var MAX_SEND = 24;      /* jumlah pesan terakhir yang dikirim sebagai konteks */
 
   var I = {
@@ -192,34 +203,34 @@
       t = t.replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?!\*)/g, '$1<i>$2</i>');
       return t;
     }
-    var out = [], list = null, nextNumber = 1, hasNumbered = false;
+    var out = [], list = null, nextNum = 1, lastWasBlank = false;
     function close() { if (list) { out.push('</' + list + '>'); list = null; } }
-    src.split(/\r?\n/).forEach(function (l) {
-      var m;
-      if (/^\u0000\d+\u0000$/.test(l.trim())) { close(); out.push(l.trim()); return; }
+    src.split('\n').forEach(function (l) {
+      var m, trimmed = l.trim();
+      if (/^\u0000\d+\u0000$/.test(trimmed)) { close(); out.push(trimmed); lastWasBlank = false; return; }
+      // An explicit heading starts a new numbering section.
+      if ((m = l.match(/^#{1,6}\s+(.*)/))) {
+        close(); nextNum = 1; out.push('<h4>' + inline(m[1]) + '</h4>'); lastWasBlank = false; return;
+      }
       if ((m = l.match(/^\s*[-*•]\s+(.*)/))) {
         if (list !== 'ul') { close(); out.push('<ul>'); list = 'ul'; }
-        out.push('<li>' + inline(m[1]) + '</li>'); return;
+        out.push('<li>' + inline(m[1]) + '</li>'); lastWasBlank = false; return;
       }
       if ((m = l.match(/^\s*(\d+)[.)]\s+(.*)/))) {
-        // A numbered list may be interrupted by paragraphs or bullet points.
-        // Preserve the numbering across those interruptions, including when
-        // the model mistakenly starts a later fragment at 1 again.
-        var supplied = parseInt(m[1], 10);
-        if (!hasNumbered) { nextNumber = supplied > 0 ? supplied : 1; hasNumbered = true; }
-        if (list !== 'ol') { close(); out.push('<ol start="' + nextNumber + '">'); list = 'ol'; }
+        var requested = Number(m[1]);
+        // Models often restart at 1 after a paragraph or nested bullet list.
+        // Continue the top-level sequence unless a new heading reset it.
+        var number = requested === 1 && nextNum > 1 ? nextNum : requested;
+        if (list !== 'ol') {
+          close(); out.push('<ol' + (number !== 1 ? ' start="' + number + '"' : '') + '>'); list = 'ol';
+        } else if (number !== nextNum) {
+          close(); out.push('<ol' + (number !== 1 ? ' start="' + number + '"' : '') + '>'); list = 'ol';
+        }
         out.push('<li>' + inline(m[2]) + '</li>');
-        nextNumber++;
-        return;
+        nextNum = number + 1; lastWasBlank = false; return;
       }
-      close();
-      if ((m = l.match(/^#{1,6}\s+(.*)/))) {
-        out.push('<h4>' + inline(m[1]) + '</h4>');
-        nextNumber = 1; hasNumbered = false;
-        return;
-      }
-      if (!l.trim()) return;
-      out.push('<p>' + inline(l) + '</p>');
+      if (!trimmed) { close(); lastWasBlank = true; return; }
+      close(); out.push('<p>' + inline(l) + '</p>'); lastWasBlank = false;
     });
     close();
     return out.join('').replace(/\u0000(\d+)\u0000/g, function (_, i) { return blocks[+i] || ''; });

@@ -2,7 +2,7 @@
    Naikkan versi dengan:  node rilis.js 1.2.0 "catatan 1" "catatan 2"   (mengubah APP_VERSION di bawah + version.json) */
 (function () {
   'use strict';
-  const APP_VERSION = '1.7.80';
+  const APP_VERSION = '1.7.76';
   const CHECK_URL = 'version.json';
   const $ = id => document.getElementById(id);
   const ss = { get(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} } };
@@ -85,12 +85,7 @@
       const ASSETS = ['css/base.css','css/update.css','css/chat-video.css','css/youtube.css','css/auth.css','js/keyboard.js','js/firebase-config.js','js/database.js','js/app.js','js/chat-video.js','js/avatar.js','js/updater.js','js/youtube-config.js','js/youtube-gate.js','js/youtube.js','css/gemini.css','js/gemini-gate.js','js/gemini.js'];
       const targets = [location.pathname, base + 'firebase-messaging-sw.js', base + 'manifest.webmanifest', base + CHECK_URL].concat(ASSETS.map(a => base + a));
       const got = await Promise.all(targets.map(u => withTimeout(fetch(u, { cache: 'reload' }), 20000).then(r => r.ok, () => false)));
-      if (!got[0] || !got[targets.indexOf(base + 'js/updater.js')]) throw new Error('unduh gagal');
-      // Jangan mengaku sukses bila server masih mengirim skrip versi lama.
-      const updaterResponse = await fetch(base + 'js/updater.js?verify=' + Date.now(), { cache: 'no-store' });
-      if (!updaterResponse.ok || !(await updaterResponse.text()).includes("const APP_VERSION = '" + info.version + "'")) {
-        throw new Error('Versi terbaru belum tersedia di hosting. Deploy semua file terlebih dahulu.');
-      }
+      if (!got[0]) throw new Error('unduh gagal');
       await sleep(450);
       /* 2) terapkan: perbarui service worker & kosongkan cache lama (login & data pesan tidak disentuh) */
       setStep(1, 52);
@@ -104,6 +99,7 @@
       await sleep(450);
       /* 3) muat ulang */
       setStep(2, 92);
+      ls.set('app_just_updated', info.version);
       ss.set('upd_target', info.version);
       await sleep(500);
       $('updrBar').style.width = '100%';
@@ -115,19 +111,11 @@
     } catch (e) {
       run.classList.add('err');
       $('updrTitle').textContent = 'Pembaruan gagal';
-      $('updrSub').textContent = navigator.onLine === false ? 'Tidak ada koneksi internet. Sambungkan lalu coba lagi.' : (e && e.message ? e.message : 'Terjadi kendala saat mengunduh. Coba lagi.');
+      $('updrSub').textContent = navigator.onLine === false ? 'Tidak ada koneksi internet. Sambungkan lalu coba lagi.' : 'Terjadi kendala saat mengunduh. Coba lagi.';
       run.querySelectorAll('#updrSteps li').forEach(li => li.classList.remove('active'));
     }
   }
 
-  function compareVersions(a, b) {
-    const x = String(a).split('.').map(Number), y = String(b).split('.').map(Number);
-    if ([...x, ...y].some(n => !Number.isInteger(n) || n < 0)) return 0;
-    for (let i = 0; i < Math.max(x.length, y.length); i++) {
-      if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0) ? 1 : -1;
-    }
-    return 0;
-  }
   /* ---------- pemeriksaan versi ---------- */
   let checking = false, lastCheck = 0;
   async function fetchRemote() {
@@ -143,7 +131,7 @@
     checking = true; lastCheck = Date.now();
     try {
       const info = await fetchRemote();
-      if (compareVersions(info.version, APP_VERSION) > 0) showFab(info);
+      if (String(info.version) !== APP_VERSION) showFab(info);
       else hideFab();
     } catch (e) { /* offline: biarkan keadaan sekarang */ }
     finally { checking = false; }
@@ -154,7 +142,7 @@
   function announceUpdated() {
     const seen = ls.get('app_ver_seen');
     ls.set('app_ver_seen', APP_VERSION);
-    if ((ss.get('upd_target') === APP_VERSION) || (seen && seen !== APP_VERSION)) {
+    if (ls.get('app_just_updated') || (seen && seen !== APP_VERSION)) {
       try { localStorage.removeItem('app_just_updated'); } catch (e) {}
       try { sessionStorage.removeItem('upd_target'); } catch (e) {}
       const d = document.createElement('div');
