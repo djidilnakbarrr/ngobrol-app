@@ -672,6 +672,21 @@
     return t;
   }
 
+  /* Lanjutkan jawaban yang terhenti karena batas token. Batasi jumlah sambungan
+     agar tidak berulang tanpa akhir atau menghabiskan kuota tanpa kendali. */
+  function completeLongAnswer(key, body, signal, model, response, depth) {
+    var candidate = response && response.candidates && response.candidates[0];
+    var text = extractText(response);
+    if (!candidate || candidate.finishReason !== 'MAX_TOKENS') return Promise.resolve(text);
+    if (depth >= 3) return Promise.resolve(text + '\n\n[Jawaban mencapai batas panjang maksimum. Ketik “lanjutkan dari bagian terakhir” untuk meneruskan.]');
+    var nextBody = JSON.parse(JSON.stringify(body));
+    nextBody.contents.push({ role: 'model', parts: (candidate.content && candidate.content.parts) || [{ text: text }] });
+    nextBody.contents.push({ role: 'user', parts: [{ text: 'Lanjutkan jawaban tepat dari bagian terakhir yang sudah ditulis. Jangan mengulang bagian sebelumnya. Pertahankan format dan konsistensi. Jika sedang menulis kode, lanjutkan kode yang belum selesai dan tutup semua blok/sintaks yang diperlukan.' }] });
+    return callGemini(key, nextBody, signal, model).then(function (next) {
+      return completeLongAnswer(key, nextBody, signal, model, next, depth + 1).then(function (tail) { return text + '\n' + tail; });
+    });
+  }
+
   function wait(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
   /* Pakai satu kunci saja. Hanya bila kunci itu limit harian atau ditolak, pindah ke kunci berikutnya dan menetap di sana.
      Kunci siaga yang lain tidak disentuh. Batas per menit bukan kuota habis: coba lagi kunci YANG SAMA setelah jeda singkat. */
@@ -696,12 +711,13 @@
         if (e && e.kind === 'model') return resolveModel(k, ctrl.signal).then(function (m) { return callGemini(k, body, ctrl.signal, m); });
         throw e;
       }).then(function (j) {
-        var t = extractText(j);
+        return completeLongAnswer(k, body, ctrl.signal, OVR[MODEL] || MODEL, j, 0).then(function (t) {
         var moved = actLoad() !== k;
         if (moved) actSave(k);
         var wasBad = !!tmpBad[k]; delete tmpBad[k];
         if (moved || wasBad) keysChanged();
         return t;
+        });
       }, function (e) {
         if (!e || !e.kind || e.kind === 'error' || e.kind === 'model' || e.kind === 'blocked' || e.kind === 'off') throw e;   /* jaringan atau galat non-kunci: jangan ganti kunci */
         if (e.kind === 'rate' || e.kind === 'rate?') {
