@@ -7,6 +7,8 @@
   'use strict';
   var EXPECTED_LICENSE_SHA256 = 'b456893f852e07881490b5f54db97853377b17d4996b70dc5b3e9e51e41fce1f';
   var locked = false;
+  var lockReason = null;
+  var previousOverflow = null;
 
   var MESSAGES = {
     'license-missing': {
@@ -66,6 +68,7 @@
   function showLicenseError(reason) {
     if (locked) return;
     locked = true;
+    lockReason = reason;
     var info = MESSAGES[reason] || MESSAGES['verification-failed'];
     function el(tag, cls, text) {
       var node = document.createElement(tag);
@@ -74,6 +77,7 @@
       return node;
     }
     function render() {
+      if (!locked || lockReason !== reason) return;
       if (!document.body) { document.addEventListener('DOMContentLoaded', render, { once: true }); return; }
       if (document.getElementById('id1l-license-lock')) return;
       var style = document.createElement('style');
@@ -114,9 +118,26 @@
       [icon, eyebrow, title, pill, text, steps, foot].forEach(function (n) { card.appendChild(n); });
       lock.appendChild(card);
       document.body.appendChild(lock);
+      previousOverflow = [document.documentElement.style.overflow, document.body.style.overflow];
       document.documentElement.style.overflow = 'hidden'; document.body.style.overflow = 'hidden';
     }
     render();
+  }
+
+  function unlockRemote() {
+    if (!locked || lockReason !== 'license-remote-disabled') return false;
+    locked = false;
+    lockReason = null;
+    var overlay = document.getElementById('id1l-license-lock');
+    if (overlay) overlay.remove();
+    var style = document.getElementById('id1l-license-lock-style');
+    if (style) style.remove();
+    if (previousOverflow) {
+      document.documentElement.style.overflow = previousOverflow[0];
+      if (document.body) document.body.style.overflow = previousOverflow[1];
+      previousOverflow = null;
+    }
+    return true;
   }
 
   async function verifyLicense() {
@@ -145,4 +166,5 @@
   /* Diekspos agar js/license-gate.js (sakelar jarak jauh via Firebase) bisa
      memakai layar kunci yang sama tanpa menduplikasi markup/CSS. */
   window.__id1lLock = showLicenseError;
+  window.__id1lUnlockRemote = unlockRemote;
 })();

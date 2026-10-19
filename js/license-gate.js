@@ -70,7 +70,13 @@
     known = true;
     var enabled = !(v && v.enabled === false);
     writeCache(enabled);
-    if (!enabled) lockNow('license-remote-disabled');
+    if (!enabled) {
+      lockNow('license-remote-disabled');
+    } else if (locked) {
+      if (typeof window.__id1lUnlockRemote === 'function' && window.__id1lUnlockRemote()) {
+        locked = false;
+      }
+    }
   }
 
   function attach(b) {
