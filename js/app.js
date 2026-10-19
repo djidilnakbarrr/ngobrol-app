@@ -6843,9 +6843,11 @@ $('clearGroupBtn').addEventListener('click', async () => {
     try { closed = closeTopLayer(); } catch (e) { console.warn('Back:', e); }
     if (closed) { arm(); return; }
     const now = Date.now();
-    if (now - lastRootBack < 2000) { lastRootBack = 0; history.back(); return; }
+    // PWA Android: jangan panggil history.back() pada halaman dasar.
+    // Itu dapat menutup jendela standalone dan mengembalikan pengguna ke layar utama.
+    // Back di halaman dasar tetap ditangani aplikasi, sehingga keluar hanya lewat tombol Keluar.
     lastRootBack = now;
-    showToast('Tekan sekali lagi untuk keluar');
+    showToast('Anda berada di halaman utama. Gunakan tombol Keluar jika ingin keluar dari akun.');
     arm();
   });
   arm();

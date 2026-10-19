@@ -1,7 +1,7 @@
 {
-  "version": "1.7.75",
+  "version": "1.7.76",
   "released": "2026-10-19",
   "notes": [
-    "Perubahan: teks kredit \"by : iD1L\" dihapus dari layar obrolan (pribadi dan grup)"
+    "Perbaikan: mencegah tombol Kembali di halaman utama menutup PWA Android secara tidak sengaja"
   ]
 }

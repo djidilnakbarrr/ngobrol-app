@@ -168,7 +168,7 @@ Tombol Gemini ada di tab Chat, tepat di atas tombol tambah kontak. API key **tid
 1. Salin isi `database/database.rules.youtube.json` ke Rules database Firebase (sudah memuat aturan `config/gemini`) lalu Publish.
 2. Login sebagai akun admin (`users/<id>/role` = `admin`, diatur manual di konsol Firebase).
 3. Buka Gemini > ikon kunci di kanan atas > tempel API key dari https://aistudio.google.com/apikey > **Uji & simpan kunci**.
-4. Untuk mengganti kunci: tambah kunci baru, tekan centang untuk menjadikannya utama, lalu hapus kunci lama. Model (Flash, Flash Lite, Pro) juga bisa diganti di panel yang sama.
+4. Untuk mengganti kunci: tambah kunci baru, tekan centang untuk menjadikannya utama, lalu hapus kunci lama. Model AI yang tersedia hanya Flash Lite dan dapat diatur di panel yang sama.
 5. Bila kunci utama kehabisan kuota atau ditolak, aplikasi otomatis memakai kunci cadangan.
 
 File baru: `css/gemini.css` dan `js/gemini.js`. Upload bersama `index.html`, `version.json`, dan `js/updater.js`.

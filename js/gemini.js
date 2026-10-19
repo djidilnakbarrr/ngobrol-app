@@ -7,9 +7,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/';
   var MODELS = [
-    { id: 'gemini-flash-latest', name: 'Flash', sub: 'Cepat' },
-    { id: 'gemini-flash-lite-latest', name: 'Flash Lite', sub: 'Hemat kuota' },
-    { id: 'gemini-pro-latest', name: 'Pro', sub: 'Paling pintar' }
+    { id: 'gemini-3.5-flash-lite', name: 'Flash Lite', sub: 'Hemat kuota' }
   ];
   var DEFAULT_MODEL = MODELS[0].id;
   var SYSTEM = 'Kamu adalah Gemini, asisten AI di dalam aplikasi obrolan Ngobrol. Jawab dengan bahasa yang dipakai pengguna (default Bahasa Indonesia), ramah, jelas, dan ringkas. Gunakan daftar atau blok kode hanya bila membantu. Pengguna bisa melampirkan foto dan file; isi file teks, ZIP, dan dokumen diberikan sebagai teks. Bila ada lampiran, jawab berdasarkan isinya.';
@@ -613,10 +611,11 @@
       });
     });
   }
-  function tierOf(id) { return /pro/.test(id) ? 'pro' : /lite/.test(id) ? 'lite' : 'flash'; }
+  /* Model dikunci ke keluarga Flash Lite; tidak pernah fallback ke Pro atau Flash biasa. */
+  function tierOf(id) { return /flash-lite/.test(String(id || '')) ? 'lite' : 'unsupported'; }
   function pickModel(ids, tier) {
     var bad = /image|tts|live|audio|embed|robot|computer|native|imagen|veo|lyria|omni|banana|gemma|learnlm|aqa|exp|thinking|customtools|vision/;
-    var c = ids.filter(function (id) { return /^gemini-/.test(id) && !bad.test(id) && tierOf(id) === tier && (tier === 'pro' ? /pro/.test(id) : /flash/.test(id)); });
+    var c = ids.filter(function (id) { return /^gemini-/.test(id) && !bad.test(id) && tier === 'lite' && /flash-lite/.test(id); });
     function ver(id) { var m = id.match(/^gemini-(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : 0; }
     c.sort(function (a, b) {
       var pa = /preview/.test(a) ? 1 : 0, pb = /preview/.test(b) ? 1 : 0, la = /latest/.test(a) ? 1 : 0, lb = /latest/.test(b) ? 1 : 0;
@@ -1456,11 +1455,9 @@
     var list = parseKeys(v), off = [];
     if (v.keysOff && typeof v.keysOff === 'object') Object.keys(v.keysOff).forEach(function (i) { if (list.indexOf(v.keysOff[i]) !== -1) off.push(v.keysOff[i]); });
     var prim = typeof v.primary === 'string' && list.indexOf(v.primary.trim()) !== -1 ? v.primary.trim() : '';
-    var model = typeof v.model === 'string' && v.model ? v.model : DEFAULT_MODEL;
-    /* Gemini 2.5 sudah dimatikan Google (16 Okt 2026): pakai alias terbaru */
-    if (/^gemini-2\.(5|0)-pro/.test(model)) model = 'gemini-pro-latest';
-    else if (/^gemini-2\.(5|0)-flash-lite/.test(model)) model = 'gemini-flash-lite-latest';
-    else if (/^gemini-2\.(5|0)/.test(model)) model = 'gemini-flash-latest';
+    /* Model dikunci ke Gemini Flash Lite. Abaikan pilihan model lama yang tersimpan
+       agar konfigurasi Pro/Flash terdahulu tidak dapat mengubah model aktif. */
+    var model = DEFAULT_MODEL;
     var changed = list.join('|') !== KEYS.join('|') || off.join('|') !== OFF.join('|') || prim !== PRIMARY;
     if (changed) { tmpBad = {}; if (loaded) actSave(''); }   /* pengaturan diubah admin: mulai ulang pilihan kunci */
     if (model !== MODEL) { OVR = {}; tmpBad = {}; if (loaded) actSave(''); }
@@ -1631,7 +1628,7 @@
   }
 
   function renderAdmin() {
-    $('gmModels').innerHTML = MODELS.map(function (m) { return '<button type="button" data-m="' + m.id + '" class="' + (m.id === MODEL ? 'on' : '') + '">' + m.name + '<small>' + m.sub + '</small></button>'; }).join('');
+    var modelBox = $('gmModels'); if (modelBox) modelBox.innerHTML = ''; /* Model dikunci otomatis ke Gemini Flash Lite; pemilih tidak ditampilkan. */
     var n = KEYS.length, on = activeKeys().length;
     var lim = KEYS.filter(function (k) { return keyState(k) === 'limit'; }).length;
     $('gmStTotal').textContent = n; $('gmStOn').textContent = on; $('gmStLimit').textContent = lim;
@@ -1875,10 +1872,7 @@
       var w = e.target.closest('.yt-sw'); if (w) { toggleKey(+w.dataset.i); return; }
       var d = e.target.closest('.yt-key-del'); if (d) askDelete(+d.dataset.i);
     });
-    $('gmModels').addEventListener('click', function (e) {
-      var b = e.target.closest('[data-m]'); if (!b || b.dataset.m === MODEL) return;
-      act(function () { return saveConfig(cfg({ model: b.dataset.m })); }, 'Model diganti.');
-    });
+    /* Tidak ada event pemilihan model: Gemini Flash Lite selalu digunakan. */
     $('gmAdConfirm').addEventListener('click', function (e) { if (e.target === $('gmAdConfirm')) closeConfirm(); });
     $('gmCfNo').addEventListener('click', closeConfirm);
     $('gmCfOk').addEventListener('click', doDelete);
