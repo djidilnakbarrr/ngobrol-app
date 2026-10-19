@@ -2631,9 +2631,9 @@
 
   /* ---------- tombol + ---------- */
 
-  .fab { width: 58px; height: 58px; border-radius: 20px; background: var(--brand-grad); right: 20px; bottom: 22px; box-shadow: 0 10px 24px rgba(7,94,84,.4), inset 0 1px 0 rgba(255,255,255,.22); }
+  .fab { width: 52px; height: 52px; border-radius: 18px; background: var(--brand-grad); right: 18px; bottom: 20px; box-shadow: 0 10px 24px rgba(7,94,84,.4), inset 0 1px 0 rgba(255,255,255,.22); }
 
-  .fab svg { width: 26px; height: 26px; }
+  .fab svg { width: 24px; height: 24px; }
 
 
 
@@ -3292,3 +3292,16 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
   -webkit-text-fill-color: currentColor;
   -webkit-appearance: none; appearance: none;
 }
+
+
+/* ==========================================================================
+   Notifikasi (toast) selalu di dasar layar
+   Menimpa posisi lama (90px / 76px) supaya tidak melayang di tengah dan
+   menutupi isi halaman. Berlaku untuk semua layar, termasuk tes notifikasi.
+   ========================================================================== */
+#toast {
+  bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+  z-index: 5000;
+  pointer-events: none;
+}
+#toast .toast-act { pointer-events: auto; }

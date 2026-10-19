@@ -1,7 +1,7 @@
 {
-  "version": "1.7.25",
+  "version": "1.7.45",
   "released": "2026-10-18",
   "notes": [
-    "Saat YouTube dinonaktifkan, tab YouTube tetap ada untuk semua pengguna dan admin, tetapi hanya menampilkan tulisan YouTube dinonaktifkan tanpa video"
+    "Semua notifikasi (termasuk pengaturan YouTube dan Gemini) tampil konsisten di dasar layar"
   ]
 }

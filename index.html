@@ -23,13 +23,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 
-<link rel="stylesheet" href="css/base.css?v=1.7.25">
+<link rel="stylesheet" href="css/base.css?v=1.7.45">
 
-<link rel="stylesheet" href="css/update.css?v=1.7.25">
-<link rel="stylesheet" href="css/chat-video.css?v=1.7.25">
-<link rel="stylesheet" href="css/youtube.css?v=1.7.25">
-<link rel="stylesheet" href="css/auth.css?v=1.7.25">
-<script src="js/youtube-gate.js?v=1.7.25"></script>
+<link rel="stylesheet" href="css/update.css?v=1.7.45">
+<link rel="stylesheet" href="css/chat-video.css?v=1.7.45">
+<link rel="stylesheet" href="css/youtube.css?v=1.7.45">
+<link rel="stylesheet" href="css/gemini.css?v=1.7.45">
+<link rel="stylesheet" href="css/auth.css?v=1.7.45">
+<script src="js/youtube-gate.js?v=1.7.45"></script>
+<script src="js/gemini-gate.js?v=1.7.45"></script>
 </head>
 
 <body>
@@ -129,6 +131,8 @@
         </div>
 
         <div class="chat-list" id="chatList"></div>
+
+        <button class="gm-fab" id="gmFab" type="button" title="Tanya Gemini" aria-label="Buka Gemini AI"></button>
 
         <button class="fab" id="newChatFab" title="Tambah kontak">
 
@@ -408,6 +412,30 @@
               <div class="settings-body">
                 <h4>Kelola API key</h4>
                 <p>Daftar kunci, kunci utama, dan penambahan kunci</p>
+              </div>
+            </div>
+</div>
+</div>
+<div class="gm-admin-only" id="setGmAdmin">
+<div class="set-title">Admin Gemini</div>
+<div class="settings-group">
+            <div class="settings-item" id="setGmRow">
+              <div class="settings-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c.6 4.6 4.4 8.4 9 9-4.6.6-8.4 4.4-9 9-.6-4.6-4.4-8.4-9-9 4.6-.6 8.4-4.4 9-9z"/></svg>
+              </div>
+              <div class="settings-body">
+                <h4 id="setGmTitle">Layanan Gemini</h4>
+                <p id="setGmState">Aktif untuk semua pengguna</p>
+              </div>
+              <button type="button" class="yt-sw" id="setGmSw" role="switch" aria-checked="true" aria-labelledby="setGmTitle"></button>
+            </div>
+            <div class="settings-item" id="setGmKeys">
+              <div class="settings-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2"/><path d="M17 6l3 3"/><path d="M14 9l2 2"/></svg>
+              </div>
+              <div class="settings-body">
+                <h4>Kelola API key Gemini</h4>
+                <p>Model, daftar kunci, dan penambahan kunci</p>
               </div>
             </div>
 </div>
@@ -1764,15 +1792,15 @@
 
 
 
-<script src="js/chat-video.js?v=1.7.25"></script>
-<script type="module" src="js/app.js?v=1.7.25"></script>
+<script src="js/chat-video.js?v=1.7.45"></script>
+<script type="module" src="js/app.js?v=1.7.45"></script>
 
-<script src="js/keyboard.js?v=1.7.25"></script>
-<script src="js/avatar.js?v=1.7.25"></script>
+<script src="js/keyboard.js?v=1.7.45"></script>
+<script src="js/avatar.js?v=1.7.45"></script>
 
 
 
-<script src="js/updater.js?v=1.7.25"></script>
+<script src="js/updater.js?v=1.7.45"></script>
 <div id="ytPlayer" role="dialog" aria-modal="true" aria-label="Pemutar video">
   <div class="yt-sheet">
     <div class="yt-sheet-bar"><span>Pemutar video</span><button type="button" class="yt-icon-btn" id="ytClose" aria-label="Tutup"></button></div>
@@ -1780,6 +1808,108 @@
     <div class="yt-detail" id="ytDetail"></div>
   </div>
 </div>
+
+<div id="gmPanel" role="dialog" aria-modal="true" aria-label="Gemini AI">
+  <div class="gm-wrap">
+    <div class="gm-head">
+      <button type="button" class="gm-rbtn gm-offback" id="gmOffBack" aria-label="Kembali"></button>
+      <button type="button" class="gm-rbtn" id="gmMenu" aria-label="Buka menu"></button>
+      <button type="button" class="gm-pill" id="gmPill" aria-label="Model Gemini"><span class="gm-pill-ic" id="gmPillIc"></span><span class="gm-pill-t" id="gmPillT">Gemini</span></button>
+      <span class="gm-sp"></span>
+      <button type="button" class="gm-rbtn" id="gmNew" title="Obrolan baru" aria-label="Obrolan baru"></button>
+    </div>
+    <div class="gm-stage">
+      <div class="gm-body" id="gmBody" aria-live="polite"></div>
+      <button type="button" class="gm-down" id="gmDown" aria-label="Ke pesan terbaru"></button>
+    </div>
+    <div class="gm-foot">
+      <div class="gm-compose">
+        <div class="gm-pop" id="gmPop" hidden>
+          <button type="button" id="gmPopNew"><span>Obrolan baru</span></button>
+          <button type="button" id="gmPopCopy"><span>Salin seluruh obrolan</span></button>
+        </div>
+        <div class="gm-box">
+          <button type="button" class="gm-cbtn" id="gmPlus" aria-label="Menu tambahan"></button>
+          <textarea id="gmInput" rows="1" placeholder="Tanya Gemini" autocomplete="off" autocorrect="off" spellcheck="false" aria-autocomplete="none" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" data-lpignore="true" data-1p-ignore="true" enterkeyhint="send"></textarea>
+          <button type="button" class="gm-send" id="gmSend" aria-label="Kirim" hidden disabled></button>
+        </div>
+        <div class="gm-note">Gemini bisa keliru. Periksa kembali info penting.</div>
+      </div>
+    </div>
+
+    <div class="gm-scrim" id="gmScrim"></div>
+    <aside class="gm-drawer" id="gmDrawer" aria-hidden="true" aria-label="Menu dan riwayat">
+      <div class="gm-dhead">
+        <b class="gm-dtitle">Gemini</b>
+        <button type="button" class="gm-rbtn" id="gmSrchBtn" aria-label="Cari obrolan"></button>
+      </div>
+      <div class="gm-srch" id="gmSrchWrap" hidden><input type="text" id="gmSrchIn" placeholder="Cari obrolan" autocomplete="off" aria-label="Cari obrolan"></div>
+      <nav class="gm-nav">
+        <button type="button" class="gm-ni" id="gmBack"><span>Ke Ngobrol</span></button>
+        <button type="button" class="gm-ni" id="gmKeyBtn" hidden><span>API key</span></button>
+        <button type="button" class="gm-ni" id="gmClearAll" hidden><span>Hapus semua</span></button>
+      </nav>
+      <div class="gm-div"></div>
+      <div class="gm-hist" id="gmHist"></div>
+      <div class="gm-dfoot">
+        <button type="button" class="gm-newbtn" id="gmNew2"><span>Obrolan</span></button>
+        <span class="gm-me" aria-hidden="true"><i id="gmAvatar">G</i></span>
+      </div>
+    </aside>
+
+    <div class="gm-ctxbg" id="gmCtxBg" hidden>
+      <div class="gm-ctx" id="gmCtx" role="menu">
+        <button type="button" class="gm-ctx-i danger" id="gmCtxDel" role="menuitem"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg><span>Hapus</span></button>
+      </div>
+    </div>
+    <div class="gm-dlgbg" id="gmDlg" hidden>
+      <div class="gm-dlg" role="alertdialog" aria-labelledby="gmDlgT" aria-describedby="gmDlgD">
+        <h3 id="gmDlgT">Hapus obrolan</h3>
+        <p id="gmDlgD">Yakin ingin menghapus obrolan ini? Tindakan ini tidak dapat dibatalkan.</p>
+        <div class="gm-dlg-b"><button type="button" id="gmDlgNo">Batal</button><button type="button" class="danger" id="gmDlgYes">Hapus</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="gmAdmin" role="dialog" aria-modal="true" aria-labelledby="gmAdTitle">
+  <div class="gm-card" id="gmAdCard">
+    <div class="gm-ah">
+      <div class="gm-orb" id="gmAdLogo"></div>
+      <div class="gm-ah-t"><h3 id="gmAdTitle">API key Gemini</h3><p>Pengaturan khusus admin</p></div>
+      <button type="button" class="gm-x" id="gmAdX" aria-label="Tutup"></button>
+    </div>
+    <div class="gm-as">
+      <div class="gm-svc" id="gmSvc">
+        <div class="gm-svc-ico" id="gmSvcIco" aria-hidden="true"></div>
+        <div class="gm-svc-txt"><b id="gmSvcTitle">Layanan Gemini</b><span id="gmSvcState">Aktif untuk semua pengguna</span></div>
+        <button type="button" class="yt-sw" id="gmSvcSw" role="switch" aria-checked="true" aria-labelledby="gmSvcTitle"></button>
+      </div>
+      <div class="gm-offnote" id="gmOffNote">Layanan Gemini sedang nonaktif. Daftar kunci disembunyikan dan tidak dapat diubah. Aktifkan layanan untuk mengelola kunci.</div>
+      <div id="gmKeySecs">
+      <div class="gm-stats" id="gmStats"></div>
+
+      <div class="gm-sec"><h4>Model</h4></div>
+      <div class="gm-seg" id="gmModels"></div>
+
+      <div class="gm-sec"><h4>Daftar kunci</h4><small id="gmKeyCnt"></small></div>
+      <div class="gm-keys" id="gmKeyList"></div>
+
+      <div class="gm-sec"><h4>Tambah kunci baru</h4></div>
+      <div class="gm-panel">
+        <div class="gm-field">
+          <input type="text" id="gmKeyInput" class="gm-secret" placeholder="Tempel API key Gemini" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" aria-label="API key Gemini baru">
+          <button type="button" class="gm-eye" id="gmEye" aria-label="Tampilkan kunci"></button>
+        </div>
+        <div class="gm-help">Buat kunci di <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Kunci diuji lebih dulu dan hanya disimpan jika valid. Bila kunci utama kehabisan kuota, kunci cadangan dipakai otomatis.</div>
+        <button type="button" class="gm-btn primary gm-add" id="gmAddBtn">Uji dan simpan kunci</button>
+      </div>
+      <div class="gm-meta2" id="gmMeta"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="gm-toast" id="gmToast" role="status"></div>
 
 <div id="ytAdmin" role="dialog" aria-modal="true" aria-labelledby="ytAdmTitle">
   <div class="yt-adm-card" id="ytAdmCard">
@@ -1850,8 +1980,9 @@
   </div>
 </div>
 
-<script src="js/youtube-config.js?v=1.7.25"></script>
-<script src="js/youtube.js?v=1.7.25"></script>
+<script src="js/youtube-config.js?v=1.7.45"></script>
+<script src="js/youtube.js?v=1.7.45"></script>
+<script src="js/gemini.js?v=1.7.45"></script>
 </body>
 
 </html>

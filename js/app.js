@@ -2610,13 +2610,7 @@ function renderChatList() {
 
         <p>Mulai percakapan pertama Anda dengan menambahkan kontak melalui tombol <b>+</b> di sudut kanan bawah.</p>
 
-        <button class="btn-primary" id="emptyAddContactBtn">Tambah Kontak</button>
-
       </div>`;
-
-    const btn = $('emptyAddContactBtn');
-
-    if (btn) btn.addEventListener('click', openAddContactModal);
 
     return;
 
@@ -2973,15 +2967,9 @@ function renderContactList() {
 
         <h3>Belum Ada Kontak</h3>
 
-        <p>Tambahkan kontak menggunakan ID numeriknya</p>
-
-        <button class="btn-primary" id="emptyAddContactBtn2">Tambah Kontak</button>
+        <p>Tambahkan kontak melalui tombol <b>+</b> di sudut kanan bawah pada tab Chat.</p>
 
       </div>`;
-
-    const btn = $('emptyAddContactBtn2');
-
-    if (btn) btn.addEventListener('click', openAddContactModal);
 
     return;
 
@@ -6876,6 +6864,20 @@ $('clearGroupBtn').addEventListener('click', async () => {
   };
   /* Menutup satu layer teratas. Mengembalikan true kalau ada yang ditutup. */
   function closeTopLayer() {
+    const gmD = $('gmDlg');
+    if (gmD && !gmD.hidden) { const n = $('gmDlgNo'); if (n) n.click(); else gmD.hidden = true; return true; }
+    const gmC = $('gmCtxBg');
+    if (gmC && !gmC.hidden) { gmC.click(); return true; }
+    const gmA = $('gmAdmin');
+    if (gmA && gmA.classList.contains('open')) { const x = $('gmAdX'); if (x) x.click(); else gmA.classList.remove('open'); return true; }
+    const gmP = $('gmPanel');
+    if (gmP && gmP.classList.contains('open')) {
+      const pop = $('gmPop');
+      if (pop && !pop.hidden) { pop.hidden = true; return true; }
+      if (gmP.classList.contains('drawer-open')) { const sc = $('gmScrim'); if (sc) sc.click(); else gmP.classList.remove('drawer-open'); return true; }
+      const bk = $('gmBack'); if (bk) bk.click(); else gmP.classList.remove('open');
+      return true;
+    }
     if (shown('voViewer')) { closeViewOnce(); return true; }
     if (shown('imgViewer')) { $('imgViewer').style.display = 'none'; return true; }
     const yAdm = $('ytAdmin');

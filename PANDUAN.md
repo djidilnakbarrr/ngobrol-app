@@ -4,7 +4,7 @@
 Unggah seluruh isi folder dengan struktur apa adanya (jangan diratakan):
 - `index.html`, `firebase-messaging-sw.js`, `manifest.webmanifest`, `version.json`, ikon `*.png` (di root)
 - `css/` (tampilan): `base.css`, `update.css`, `chat-video.css`, `youtube.css`
-- `js/` (logika): `app.js`, `database.js`, `firebase-config.js`, `youtube.js`, `youtube-config.js`, `youtube-gate.js`, `chat-video.js`, `avatar.js`, `updater.js`
+- `js/` (logika): `app.js`, `database.js`, `firebase-config.js`, `youtube.js`, `youtube-config.js`, `youtube-gate.js`, `gemini.js`, `gemini-gate.js`, `chat-video.js`, `avatar.js`, `updater.js`
 - `database/` (aturan database): `database.rules.youtube.json`
 
 `index.html` dan `firebase-messaging-sw.js` harus tetap satu folder (root).
@@ -163,3 +163,23 @@ Saat mendaftar, ID 4 huruf dipesan secara atomik di `ids/<ID>` (tidak pernah dih
 - Perubahan berlaku langsung di semua perangkat yang sedang terbuka. Status terakhir disimpan di perangkat, jadi YouTube tetap terkunci sejak aplikasi dibuka, bahkan sebelum database menjawab.
 - Status disimpan di `config/youtubeSwitch` (`enabled`, `updatedBy`, `updatedByName`, `updatedAt`). **Wajib** tambahkan blok `youtubeSwitch` dari `database/database.rules.youtube.json` ke Rules Realtime Database (sejajar dengan `youtube` di dalam `config`), lalu Publish. Tanpa itu, penyimpanan ditolak dan panel menampilkan pesan "Ditolak oleh aturan database".
 - Batasan: aplikasi hanya dapat mengunci pemutaran di dalam aplikasi. Tautan YouTube yang dibuka pengguna di luar aplikasi (peramban lain, tautan singkat) tidak dapat dicegah oleh web.
+
+
+## Gemini AI
+Tombol Gemini ada di tab Chat, tepat di atas tombol tambah kontak. API key **tidak disimpan di file**; admin mengisinya langsung dari aplikasi.
+
+1. Salin isi `database/database.rules.youtube.json` ke Rules database Firebase (sudah memuat aturan `config/gemini`) lalu Publish.
+2. Login sebagai akun admin (`users/<id>/role` = `admin`, diatur manual di konsol Firebase).
+3. Buka Gemini > ikon kunci di kanan atas > tempel API key dari https://aistudio.google.com/apikey > **Uji & simpan kunci**.
+4. Untuk mengganti kunci: tambah kunci baru, tekan centang untuk menjadikannya utama, lalu hapus kunci lama. Model (Flash, Flash Lite, Pro) juga bisa diganti di panel yang sama.
+5. Bila kunci utama kehabisan kuota atau ditolak, aplikasi otomatis memakai kunci cadangan.
+
+File baru: `css/gemini.css` dan `js/gemini.js`. Upload bersama `index.html`, `version.json`, dan `js/updater.js`.
+
+## Menonaktifkan Gemini (admin)
+- Buka **Setelan > Admin Gemini** (hanya tampil untuk admin), lalu gunakan sakelar **Layanan Gemini**. Sakelar yang sama ada di bagian atas panel **Kelola API key Gemini**.
+- Saat dinonaktifkan: tombol Gemini tetap ada (tampil redup), tetapi bila diketuk hanya membuka layar "Gemini sedang dinonaktifkan" tanpa kolom ketik, menu, atau riwayat. Panel yang sedang terbuka langsung berganti ke layar itu, permintaan yang sedang berjalan dibatalkan dan jawabannya dibuang, dan tidak ada lagi permintaan ke Google dari aplikasi. Admin melihat tambahan tombol "Atur layanan Gemini" di layar itu. Admin juga tidak dapat memakai Gemini selama nonaktif; admin hanya dapat membuka pengaturan untuk mengaktifkannya kembali (daftar kunci disembunyikan sampai layanan aktif).
+- Perubahan berlaku langsung di semua perangkat yang sedang terbuka. Status terakhir disimpan di perangkat, jadi Gemini tetap terkunci sejak aplikasi dibuka, bahkan sebelum database menjawab. Di perangkat yang belum pernah tahu statusnya, Gemini tetap terkunci sampai database menjawab.
+- Status disimpan di `config/geminiSwitch` (`enabled`, `updatedBy`, `updatedByName`, `updatedAt`). **Wajib** tempel ulang seluruh isi `database/database.rules.youtube.json` ke Rules Realtime Database, lalu Publish. Tanpa itu, penyimpanan sakelar ditolak dan panel menampilkan pesan "Ditolak oleh aturan database".
+- Perlindungan di sisi server: aturan baru `config/gemini` hanya dapat dibaca selama sakelar aktif. Saat nonaktif, database menolak pembacaan API key dari siapa pun, sehingga perangkat yang memuat ulang aplikasi tidak bisa mendapatkan kunci. Sebaliknya, kunci yang sudah terlanjur dimuat di aplikasi yang masih terbuka sebelum dinonaktifkan tidak dapat ditarik kembali dari jarak jauh; aplikasi itu tetap dikunci oleh kode, tetapi pengguna yang memodifikasi kodenya sendiri masih bisa memakai kunci yang sudah ada di memorinya sampai halaman dimuat ulang.
+- Berkas baru: `js/gemini-gate.js`. Unggah bersama `index.html`, `css/gemini.css`, `js/gemini.js`, `js/updater.js`, dan `version.json`.

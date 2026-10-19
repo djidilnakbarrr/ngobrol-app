@@ -43,6 +43,52 @@
         "$other": {
           ".validate": false
         }
+      },
+      "geminiSwitch": {
+        ".read": true,
+        ".write": "newData.exists() && root.child('users').child(newData.child('updatedBy').val()).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['enabled', 'updatedBy', 'updatedAt'])",
+        "enabled": {
+          ".validate": "newData.isBoolean()"
+        },
+        "updatedBy": {
+          ".validate": "newData.isString() && newData.val().length < 100"
+        },
+        "updatedByName": {
+          ".validate": "newData.isString() && newData.val().length < 100"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      },
+      "gemini": {
+        ".read": "root.child('config').child('geminiSwitch').child('enabled').val() !== false",
+        ".write": "newData.exists() && root.child('users').child(newData.child('updatedBy').val()).child('role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['apiKey', 'updatedBy', 'updatedAt'])",
+        "apiKey": {
+          ".validate": "newData.isString() && newData.val().length < 200"
+        },
+        "apiKeys": {
+          ".validate": "newData.hasChildren() || !newData.exists()",
+          "$i": {
+            ".validate": "newData.isString() && newData.val().length < 200"
+          }
+        },
+        "keysOff": {
+          ".validate": "newData.hasChildren() || !newData.exists()",
+          "$i": {
+            ".validate": "newData.isString() && newData.val().length < 200"
+          }
+        },
+        "primary": {
+          ".validate": "newData.isString() && newData.val().length < 200"
+        },
+        "model": {
+          ".validate": "newData.isString() && newData.val().length < 60"
+        }
       }
     },
     "users": {
