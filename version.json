@@ -1,7 +1,7 @@
 {
-  "version": "1.7.75",
+  "version": "1.7.81",
   "released": "2026-10-19",
   "notes": [
-    "Perubahan: teks kredit \"by : iD1L\" dihapus dari layar obrolan (pribadi dan grup)"
+    "Penampil foto menutup seluruh layar HP (sampai area poni atas) dan terkunci: tidak bergeser ke atas, bawah, atau samping"
   ]
 }

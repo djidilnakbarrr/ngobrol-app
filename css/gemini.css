@@ -417,16 +417,6 @@
 .gm-down { width: 36px; height: 36px; }
 
 
-/* ==========================================================================
-   Notifikasi: gaya sama dengan toast aplikasi (putih, garis hijau, ikon info).
-   Merah = galat, hijau = berhasil.
-   ========================================================================== */
-.gm-toast { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2147483647; display: flex; align-items: center; justify-content: flex-start; gap: 9px; width: max-content; max-width: min(86%, 340px); padding: 9px 16px 9px 12px; border-radius: 12px; background: #fff; color: #075e54; border: 1.5px solid #0b8a79; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: left; box-shadow: 0 0 0 4px rgba(11, 138, 121, .14), 0 10px 26px rgba(5, 74, 66, .16); opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 20px); transition: opacity .25s, transform .25s, visibility 0s linear .25s; }
-.gm-toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
-.gm-toast svg { flex: 0 0 18px; width: 18px; height: 18px; color: #0b8a79; }
-.gm-toast span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
-.gm-toast.bad { color: #c0322c; border-color: #d63b34; box-shadow: 0 0 0 4px rgba(214, 59, 52, .14), 0 10px 26px rgba(8, 20, 26, .18); }
-.gm-toast.bad svg { color: #d63b34; }
 
 
 /* ==========================================================================

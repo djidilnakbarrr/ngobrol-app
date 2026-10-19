@@ -173,7 +173,6 @@
     for (var i = 0; i < u.length; i++) if (s >= u[i][0]) return Math.floor(s / u[i][0]) + ' ' + u[i][1] + ' lalu';
     return 'baru saja';
   }
-  function toast(m) { if (typeof window.showToast === 'function') window.showToast(m); }
 
   /* ---------- Akses API dengan cache ---------- */
   function cacheGet(k, ttl) {
@@ -418,7 +417,7 @@
       box = stateBox('error', I.alert, 'Gagal memuat video', esc(navigator.onLine ? (e && e.message) || 'Terjadi kesalahan.' : 'Tidak ada koneksi internet.'),
         '<button type="button" class="yt-btn primary" id="ytRetry">' + I.refresh + 'Coba lagi</button>');
     }
-    if (fresh) $('ytList').innerHTML = box; else toast('Gagal memuat: ' + ((e && e.message) || 'kesalahan'));
+    if (fresh) $('ytList').innerHTML = box;
   }
 
   function load(fresh) {
@@ -654,7 +653,7 @@
     return 'Pengaturan gagal disimpan. Periksa koneksi internet.';
   }
   function svcNotify(text, ok) {
-    if ($('ytAdmin').classList.contains('open')) admMsg(text, ok); else toast(text);
+    if ($('ytAdmin').classList.contains('open')) admMsg(text, ok);
   }
   function setService(on) {
     if (svcBusy || locked || !admin.is || !window.YTGate) return;
@@ -820,11 +819,11 @@
       if (e.target === $('ytPlayer')) { closePlayer(); return; }
       if (e.target.closest('#ytCopy')) {
         var u = url(); if (!u) return;
-        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('Tautan disalin'); }, function () { toast(u); });
+        (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { }, function () { });
       } else if (e.target.closest('#ytShare')) {
         var t = state.current || {};
         if (navigator.share) navigator.share({ title: t.title || 'Video YouTube', url: url() }).catch(function () {});
-        else if (navigator.clipboard) navigator.clipboard.writeText(url()).then(function () { toast('Tautan disalin'); });
+        else if (navigator.clipboard) navigator.clipboard.writeText(url()).then(function () { });
       } else if (e.target.closest('#ytDescToggle')) {
         var d = $('ytDesc'), open = d.classList.toggle('open');
         e.target.closest('#ytDescToggle').textContent = open ? 'Tampilkan lebih sedikit' : 'Tampilkan selengkapnya';

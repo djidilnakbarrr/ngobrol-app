@@ -338,7 +338,6 @@ async function showIncoming({ chat, key, title, body }) {
       try { const n = new Notification(title, { body, tag: key, icon: NOTIF_ICON }); shown = !!n; } catch (e2) {}
     }
   }
-  if (document.visibilityState === 'visible') showToast(title + ': ' + body);
   return shown;
 }
 const imgLabel = m => (m && m.viewOnce ? 'Foto sekali lihat' : 'Foto');
@@ -453,12 +452,11 @@ function updateNotifStatus() {
 }
 $('notifSettings').addEventListener('click', async () => {
   if (!('Notification' in window) || !('serviceWorker' in navigator) || nsEnv().inapp) { openNotifSheet(true); return; }
-  if (!window.isSecureContext) { showToast('Buka aplikasi lewat HTTPS atau localhost agar notifikasi aktif'); return; }
+  if (!window.isSecureContext) { return; }
   if (Notification.permission !== 'granted') { openNotifSheet(true); return; }
   await enablePush({ ask: false });
-  const shown = await showIncoming({ chat: '', key: 'test_' + Date.now(), title: (myName || 'Chat App'), body: 'Notifikasi aktif. Tes berhasil.' });
+  await showIncoming({ chat: '', key: 'test_' + Date.now(), title: (myName || 'Chat App'), body: 'Notifikasi aktif. Tes berhasil.' });
   updateNotifStatus();
-  if (!shown) showToast(lastNotifError || 'Notifikasi tidak bisa ditampilkan. Cek izin notifikasi browser');
 });
 function startNotifSystem() {
   try {
@@ -479,7 +477,6 @@ function startNotifSystem() {
           if (nsPerm() === 'granted') {
             enablePush({ ask: false });
             if ($('notifSheet').classList.contains('show')) { renderNotifSheet('done'); setTimeout(() => closeNotifSheet(false), 1800); }
-            showToast('Notifikasi aktif');
           } else if (nsPerm() === 'denied' && $('notifSheet').classList.contains('show') && $('notifSheet').dataset.state === 'ask') {
             renderNotifSheet('denied');
           }
@@ -603,8 +600,8 @@ function openNotifSheet(force) {
   const env = nsEnv();
   if (env.inapp) { renderNotifSheet('denied', 'inapp'); $('notifSheet').classList.add('show'); return; }
   if (env.needInstall && !('Notification' in window && Notification.permission === 'granted')) { renderNotifSheet('denied', 'install'); $('notifSheet').classList.add('show'); return; }
-  if (!('Notification' in window) || !('serviceWorker' in navigator)) { showToast('Browser ini belum mendukung notifikasi. Silakan gunakan Chrome atau Firefox.'); return; }
-  if (!window.isSecureContext) { showToast('Buka aplikasi lewat HTTPS atau localhost agar notifikasi aktif'); return; }
+  if (!('Notification' in window) || !('serviceWorker' in navigator)) { return; }
+  if (!window.isSecureContext) { return; }
   const p = Notification.permission;
   if (p === 'granted' && !force) return;
   renderNotifSheet(p === 'denied' ? 'denied' : (p === 'granted' ? 'done' : 'ask'));
@@ -621,7 +618,7 @@ async function onNsAllow() {
     /* pengguna bilang sudah mengaktifkan: cek lagi, kalau belum terbaca muat ulang halaman */
     if (Notification.permission === 'granted') { await enablePush({ ask: false }); renderNotifSheet('done'); updateNotifStatus(); setTimeout(() => closeNotifSheet(false), 1800); }
     else if (Notification.permission === 'default') { renderNotifSheet('ask'); }
-    else { showToast('Memuat ulang untuk membaca izin baru...'); setTimeout(() => location.reload(), 600); }
+    else { setTimeout(() => location.reload(), 600); }
     return;
   }
   if (st !== 'ask') { closeNotifSheet(false); return; }
@@ -640,15 +637,14 @@ async function onNsAllow() {
     renderNotifSheet('denied');
   } else {
     renderNotifSheet('ask');
-    showToast('Pilih "Izinkan" pada jendela izin yang muncul');
   }
   updateNotifStatus();
 }
 $('nsAllow').addEventListener('click', onNsAllow);
 $('nsLater').addEventListener('click', async () => {
   if ($('notifSheet').dataset.variant === 'inapp') {
-    try { await navigator.clipboard.writeText(location.href.split('#')[0]); showToast('Tautan disalin. Tempel di Chrome atau browser utama Anda.'); }
-    catch (e) { showToast('Salin tautan dari bilah alamat lalu buka di Chrome.'); }
+    try { await navigator.clipboard.writeText(location.href.split('#')[0]); }
+    catch (e) { }
     return;
   }
   closeNotifSheet(false);
@@ -705,7 +701,6 @@ $('delAccConfirmBtn').addEventListener('click', async () => {
   } catch (err) {
     console.error(err);
     accountDeleting = false; startCredWatch();
-    showToast('Gagal menghapus akun: ' + (err && err.message ? err.message : err));
     $('delAccConfirmBtn').disabled = false;
     $('delAccConfirmBtn').textContent = 'Hapus Akun';
     $('cancelDelAcc').disabled = false;
@@ -762,17 +757,12 @@ async function deleteMyAccount() {
   try { localStorage.clear(); } catch (e) {}
   try { await clearSession(); } catch (e) {}
   closeDeleteAccount();
-  showToast('Akun berhasil dihapus permanen');
   setTimeout(() => location.reload(), 1400);
 }
 
 
 
 
-/* Pop-up notifikasi dalam aplikasi sudah dihapus. Fungsi dibiarkan kosong agar semua pemanggil lama tetap aman. */
-function showToast(msg, action) {}
-
-window.showToast = showToast;
 /* ID akun baru: 4 huruf besar acak (tanpa I, L, O agar mudah dibaca dan dihafal). Akun lama tetap memakai ID angkanya. */
 const ID_LETTERS = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 function generateId() {
@@ -955,7 +945,7 @@ $('confirmMsg').addEventListener('click', async (e) => {
 
     setTimeout(() => { btn.classList.remove('done'); const sp = btn.querySelector('span'); if (sp) sp.textContent = 'Salin ID'; }, 2000);
 
-  } else { showToast('Gagal menyalin. Salin ID secara manual'); }
+  }
 
 });
 
@@ -1273,7 +1263,6 @@ async function enterWithAccount(id, fallbackName, ver) {
   myPwv = ver || '';
   try { myEp = Number((await get(ref(db, 'credentials/' + id + '/epoch'))).val()) || 0; } catch (e) { myEp = 0; }
   saveSession();
-  showToast('Selamat datang kembali, ' + myName);
   enterApp();
 }
 
@@ -1463,7 +1452,6 @@ $('confirmGatePw').addEventListener('click', async () => {
     const tr = await runTransaction(ref(db, 'credentials/' + myId), cur => cur === null ? cred : undefined);
     if (!tr.committed) { myPwv = prev; forceLogout('Akun ini sudah memiliki password. Silakan masuk menggunakan password tersebut.'); return; }
     closePwGate();
-    showToast('Password berhasil dibuat');
   } catch (err) {
     myPwv = prev; saveSession();
     setAlert('pgAlert', 'pgAlertText', 'Password belum tersimpan: ' + (err && err.message ? err.message : err));
@@ -1509,7 +1497,6 @@ $('confirmChangePw').addEventListener('click', async () => {
     try { await set(ref(db, 'credentials/' + myId), cred); }
     catch (e) { myPwv = prev; saveSession(); throw e; }
     closeChangePw();
-    showToast('Password berhasil diubah');
   } catch (err) {
     console.error(err);
     warn('Password belum tersimpan: ' + (err && err.message ? err.message : err));
@@ -1534,9 +1521,8 @@ $('copyMyIdBtn').addEventListener('click', async () => {
 
     await navigator.clipboard.writeText(myId);
 
-    showToast('ID berhasil disalin');
 
-  } catch (err) { showToast('ID: ' + myId); }
+  } catch (err) { }
 
 });
 
@@ -1565,7 +1551,6 @@ function enterApp() {
 
       console.error(err);
 
-      showToast('Gagal terhubung ke server: ' + err.message);
 
     });
 
@@ -1652,8 +1637,7 @@ $('logoutOthersSettings').addEventListener('click', async () => {
   if (!ok) return;
   try {
     await logoutOtherDevices();
-    showToast('Semua perangkat lain telah dikeluarkan');
-  } catch (err) { showToast('Gagal: ' + (err && err.message ? err.message : err)); }
+  } catch (err) { }
 });
 
 
@@ -1870,7 +1854,7 @@ $('photoInput').addEventListener('change', async (e) => {
 
   if (!file) return;
 
-  if (!file.type.startsWith('image/')) { showToast('Pilih berkas gambar'); return; }
+  if (!file.type.startsWith('image/')) { return; }
 
   try {
 
@@ -1885,9 +1869,8 @@ $('photoInput').addEventListener('change', async (e) => {
     renderAvatar($('settingsAvatar'), myName, dataUrl, myId);
 
 
-    showToast('Foto profil berhasil diperbarui');
 
-  } catch (err) { showToast('Gagal memperbarui foto: ' + err.message); }
+  } catch (err) { }
 
 });
 
@@ -1923,11 +1906,11 @@ $('confirmEditName').addEventListener('click', async () => {
 
   const newName = $('editNameInput').value.trim();
 
-  if (!newName) { showToast('Silakan masukkan nama'); return; }
+  if (!newName) { return; }
 
-  if (newName.length < 2) { showToast('Nama minimal terdiri dari 2 karakter'); return; }
+  if (newName.length < 2) { return; }
 
-  if (newName.length > 12) { showToast('Nama melebihi batas karakter'); return; }
+  if (newName.length > 12) { return; }
 
   if (newName === myName) { closeEditNameModal(); return; }
 
@@ -1941,7 +1924,6 @@ $('confirmEditName').addEventListener('click', async () => {
 
     if (oldKey !== newKey && !(await claimName(newName, myId))) {
 
-      showToast('Nama "' + newName + '" sudah digunakan. Silakan pilih nama lain');
 
       return;
 
@@ -1969,9 +1951,8 @@ $('confirmEditName').addEventListener('click', async () => {
 
     closeEditNameModal();
 
-    showToast('Nama berhasil diperbarui');
 
-  } catch (err) { showToast('Gagal menyimpan: ' + err.message); }
+  } catch (err) { }
 
   finally {
 
@@ -2001,13 +1982,13 @@ $('editUsernameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter
 $('confirmEditUsername').addEventListener('click', async () => {
   const nu = normUsername($('editUsernameInput').value);
   const err = usernameError(nu);
-  if (err) { showToast(err); return; }
+  if (err) { return; }
   if (nu === myUsername) { closeEditUsername(); return; }
   $('confirmEditUsername').disabled = true;
   $('confirmEditUsername').textContent = 'Menyimpan...';
   try {
     const oldU = myUsername;
-    if (!(await claimName(nu, myId))) { showToast('Username "@' + nu + '" sudah digunakan. Silakan pilih username lain'); return; }
+    if (!(await claimName(nu, myId))) { return; }
     try {
       await update(ref(db, 'users/' + myId), { username: nu });
     } catch (e) {
@@ -2019,8 +2000,7 @@ $('confirmEditUsername').addEventListener('click', async () => {
     myUsername = nu;
     renderMyUsername();
     closeEditUsername();
-    showToast('Username berhasil diperbarui');
-  } catch (e) { showToast('Gagal menyimpan: ' + e.message); }
+  } catch (e) { }
   finally {
     $('confirmEditUsername').disabled = false;
     $('confirmEditUsername').textContent = 'Simpan';
@@ -2069,7 +2049,6 @@ function loadContacts() {
 
       if (msgUnsub) { msgUnsub(); msgUnsub = null; }
 
-      showToast('Kontak ini telah menghapus percakapan');
 
     }
 
@@ -2353,7 +2332,6 @@ function loadGroups() {
 
         $('groupInfoModal').classList.remove('show');
 
-        showToast('Grup telah dibubarkan atau Anda bukan lagi anggota');
 
       } else {
 
@@ -2416,7 +2394,6 @@ function pruneArchived() {
 }
 function archiveWithUndo(id) {
   setArchived(id, true);
-  showToast('1 chat diarsipkan', { label: 'Urungkan', fn: () => setArchived(id, false) });
 }
 function openArchivedView() {
   $('archMore').classList.remove('show');
@@ -2461,17 +2438,16 @@ $('archivedView').addEventListener('click', (e) => { if (!e.target.closest('#arc
 $('archUnarchiveAll').addEventListener('click', async () => {
   $('archMore').classList.remove('show');
   const ids = Object.keys(archivedCache);
-  if (!ids.length) { showToast('Tidak ada chat diarsipkan'); return; }
+  if (!ids.length) { return; }
   const ok = await confirmDialog({ title: 'Keluarkan semua dari arsip?', message: ids.length + ' percakapan akan kembali ke daftar chat.', okText: 'Keluarkan', icon: 'trash', danger: false });
   if (!ok) return;
   setArchived(ids, false);
-  showToast(ids.length + ' chat dikeluarkan dari arsip');
 });
 $('menuArchive').addEventListener('click', () => {
   $('chatMenu').classList.remove('show');
   const id = currentMenuChatId;
   if (!id) return;
-  if (isArchived(id)) { setArchived(id, false); showToast('Chat dikeluarkan dari arsip'); }
+  if (isArchived(id)) { setArchived(id, false); }
   else archiveWithUndo(id);
 });
 $('menuGroupInfo').addEventListener('click', () => {
@@ -2882,8 +2858,6 @@ $('menuDeleteChat').addEventListener('click', async () => {
     if (msgUnsub) { msgUnsub(); msgUnsub = null; }
   }
   renderChatList();
-  if (purged) showToast('Percakapan dihapus permanen dari database');
-  else showToast('Gagal menghapus di server: ' + errMsg + '. Periksa Rules database.');
 });
 $('menuBlock').addEventListener('click', async () => {
 
@@ -2899,17 +2873,15 @@ $('menuBlock').addEventListener('click', async () => {
 
       await remove(ref(db, 'blocked/' + myId + '/' + currentMenuChatId));
 
-      showToast('Blokir kontak dibuka');
 
     } else {
 
       await set(ref(db, 'blocked/' + myId + '/' + currentMenuChatId), Date.now());
 
-      showToast('Kontak diblokir');
 
     }
 
-  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+  } catch (err) { }
 
 });
 
@@ -3096,22 +3068,21 @@ $('confirmAddContact').addEventListener('click', async () => {
   const alias = $('contactAliasInput').value.trim();
   const typedUser = normUsername($('contactUsernameInput').value);
   const typedId = canonId($('contactIdInput').value);
-  if (!alias) { showToast('Silakan masukkan nama kontak'); return; }
-  if (!typedUser && !typedId) { showToast('Isi username atau ID teman (salah satu)'); return; }
+  if (!alias) { return; }
+  if (!typedUser && !typedId) { return; }
   $('confirmAddContact').disabled = true;
   $('confirmAddContact').textContent = 'Menyimpan...';
   try {
     let id = typedId;
     if (typedUser) {
       const uid = await findUserIdByUsername(typedUser);
-      if (!uid) { showToast('Username "@' + typedUser + '" tidak ditemukan'); return; }
-      if (typedId && typedId !== uid) { showToast('Username dan ID tidak cocok. Kosongkan salah satunya'); return; }
+      if (!uid) { return; }
+      if (typedId && typedId !== uid) { return; }
       id = uid;
     }
-    if (id === myId) { showToast('Anda tidak dapat menambahkan diri sendiri'); return; }
+    if (id === myId) { return; }
     const snap = await get(ref(db, 'users/' + id));
     if (!snap.exists()) {
-      showToast('ID "' + dispId(id) + '" tidak ditemukan');
       return;
     }
     await set(ref(db, 'contacts/' + myId + '/' + id), alias);
@@ -3124,8 +3095,7 @@ $('confirmAddContact').addEventListener('click', async () => {
     renderContactList();
     renderChatList();
     closeAddContactModal();
-    showToast('Kontak "' + alias + '" ditambahkan');
-  } catch (err) { showToast('Gagal menyimpan: ' + err.message); }
+  } catch (err) { }
   finally {
     $('confirmAddContact').disabled = false;
     $('confirmAddContact').textContent = 'Tambah';
@@ -3185,7 +3155,7 @@ $('confirmEditContact').addEventListener('click', async () => {
 
   const alias = $('editContactInput').value.trim();
 
-  if (!alias) { showToast('Silakan masukkan nama kontak'); return; }
+  if (!alias) { return; }
 
   const target = editContactTarget;
 
@@ -3215,9 +3185,8 @@ $('confirmEditContact').addEventListener('click', async () => {
 
     closeEditContact();
 
-    showToast('Nama kontak berhasil diperbarui');
 
-  } catch (err) { showToast('Gagal menyimpan: ' + err.message); }
+  } catch (err) { }
 
   finally { $('confirmEditContact').disabled = false; }
 
@@ -3249,7 +3218,6 @@ async function deleteContactPermanently(idUser) {
   try {
     await update(ref(db), updates);
   } catch (err) {
-    showToast('Gagal menghapus: ' + err.message);
 
     return;
 
@@ -3291,7 +3259,6 @@ async function deleteContactPermanently(idUser) {
 
   renderChatList();
 
-  showToast('Kontak berhasil dihapus permanen');
 
 }
 
@@ -3475,17 +3442,17 @@ async function addMemberToDraft() {
 
   const id = await resolveUserId($('groupMemberIdInput').value.trim());
 
-  if (!id) { showToast('Silakan masukkan ID kontak'); return; }
+  if (!id) { return; }
 
-  if (id === myId) { showToast('ID Anda otomatis tercantum sebagai anggota grup'); return; }
+  if (id === myId) { return; }
 
-  if (newGroupMembers.includes(id)) { showToast('ID sudah ada dalam daftar'); return; }
+  if (newGroupMembers.includes(id)) { return; }
 
   $('groupMemberAddBtn').disabled = true;
 
   try {
 
-    if (!(await checkUserExists(id))) { showToast('ID "' + dispId(id) + '" tidak ditemukan'); return; }
+    if (!(await checkUserExists(id))) { return; }
 
     newGroupMembers.push(id);
 
@@ -3493,7 +3460,7 @@ async function addMemberToDraft() {
 
     renderGroupMemberChips();
 
-  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+  } catch (err) { }
 
   finally { $('groupMemberAddBtn').disabled = false; }
 
@@ -3509,7 +3476,7 @@ $('confirmGroupModal').addEventListener('click', async () => {
 
   const name = $('groupNameInput').value.trim();
 
-  if (!name) { showToast('Silakan masukkan nama grup'); return; }
+  if (!name) { return; }
 
   const gid = 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -3537,11 +3504,10 @@ $('confirmGroupModal').addEventListener('click', async () => {
 
     renderChatList();
 
-    showToast('Grup "' + name + '" dibuat');
 
     openChat(gid);
 
-  } catch (err) { showToast('Gagal membuat grup: ' + err.message); }
+  } catch (err) { }
 
   finally {
 
@@ -3696,27 +3662,26 @@ async function addMemberToGroup() {
 
   if (!g) return;
 
-  if (g.createdBy !== myId) { showToast('Hanya pembuat grup yang dapat menambah anggota'); return; }
+  if (g.createdBy !== myId) { return; }
 
   const id = await resolveUserId($('groupInfoIdInput').value.trim());
 
-  if (!id) { showToast('Silakan masukkan ID kontak'); return; }
+  if (!id) { return; }
 
-  if (g.members && g.members[id]) { showToast('Kontak sudah menjadi anggota grup'); return; }
+  if (g.members && g.members[id]) { return; }
 
   $('groupInfoAddBtn').disabled = true;
 
   try {
 
-    if (!(await checkUserExists(id))) { showToast('ID "' + dispId(id) + '" tidak ditemukan'); return; }
+    if (!(await checkUserExists(id))) { return; }
 
     await update(ref(db, 'groups/' + gid), { ['members/' + id]: true, ['joined/' + id]: Date.now() });
 
     $('groupInfoIdInput').value = '';
 
-    showToast('Anggota berhasil ditambahkan');
 
-  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+  } catch (err) { }
 
   finally { $('groupInfoAddBtn').disabled = false; }
 
@@ -3726,7 +3691,7 @@ async function setGroupAdmin(gid, id, makeAdmin) {
 
   const g = gid ? groupsCache[gid] : null;
 
-  if (!g || g.createdBy !== myId) { showToast('Hanya pembuat grup yang dapat mengatur admin'); return; }
+  if (!g || g.createdBy !== myId) { return; }
 
   if (!g.members || !g.members[id] || id === g.createdBy) return;
 
@@ -3734,9 +3699,8 @@ async function setGroupAdmin(gid, id, makeAdmin) {
 
     await update(ref(db, 'groups/' + gid + '/members'), { [id]: makeAdmin ? 'admin' : true });
 
-    showToast(makeAdmin ? displayName(id) + ' dijadikan admin' : 'Admin dihapus dari ' + displayName(id));
 
-  } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+  } catch (err) { }
 
 }
 
@@ -3775,7 +3739,7 @@ async function leaveGroup(gid) {
   updates['unread/' + myId + '/' + gid] = null;
   try {
     await update(ref(db), updates);
-  } catch (err) { showToast('Gagal keluar: ' + err.message); return; }
+  } catch (err) { return; }
 
   delete groupsCache[gid];
 
@@ -3789,7 +3753,6 @@ async function leaveGroup(gid) {
 
   renderChatList();
 
-  showToast('Anda telah keluar dari grup');
 
 }
 
@@ -3803,7 +3766,7 @@ async function disbandGroup(gid) {
 
   if (!g) return;
 
-  if (g.createdBy !== myId) { showToast('Hanya pembuat grup yang dapat membubarkan grup'); return; }
+  if (g.createdBy !== myId) { return; }
 
   const ok = await confirmDialog({ title: 'Bubarkan grup?', message: 'Grup "' + (g.name || 'grup') + '" dan seluruh pesannya akan dihapus untuk semua anggota. Tindakan ini tidak dapat dibatalkan.', okText: 'Bubarkan', icon: 'trash' });
 
@@ -3818,7 +3781,7 @@ async function disbandGroup(gid) {
   Object.keys(g.members || {}).forEach(u => { updates['unread/' + u + '/' + gid] = null; });
   try {
     await update(ref(db), updates);
-  } catch (err) { showToast('Gagal membubarkan: ' + err.message); return; }
+  } catch (err) { return; }
 
   delete groupsCache[gid];
 
@@ -3832,7 +3795,6 @@ async function disbandGroup(gid) {
 
   renderChatList();
 
-  showToast('Grup berhasil dibubarkan');
 
 }
 
@@ -3888,11 +3850,10 @@ $('blockedListBtn').addEventListener('click', () => {
 
           await remove(ref(db, 'blocked/' + myId + '/' + id));
 
-          showToast('Blokir kontak dibuka');
 
           $('blockedModal').classList.remove('show');
 
-        } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+        } catch (err) { }
 
       });
 
@@ -3928,7 +3889,7 @@ function openChat(idUser) {
 
   const isGroup = isGroupId(idUser);
 
-  if (isGroup && !groupsCache[idUser]) { showToast('Grup tidak ditemukan'); return; }
+  if (isGroup && !groupsCache[idUser]) { return; }
 
   currentChat = idUser;
 
@@ -4000,7 +3961,7 @@ function openChat(idUser) {
     renderMessages(visibleMsgs());
     markCurrentRead();
 
-  }, err => showToast('Gagal memuat pesan: ' + err.message));
+  }, err => {});
 
 }
 
@@ -5002,10 +4963,6 @@ $('actDeleteMe').addEventListener('click', async () => {
 
   if (group) { try { await fixGroupLast(target); } catch (e) {} }
 
-  if (failed) showToast(failed + ' pesan hanya terhapus di perangkat ini (sinkronisasi ke server gagal)');
-
-  else showToast(keys.length > 1 ? keys.length + ' pesan dihapus' : 'Pesan dihapus');
-
 });
 
 
@@ -5070,11 +5027,9 @@ $('actDeleteAll').addEventListener('click', async () => {
 
     }
 
-    showToast(keys.length > 1 ? keys.length + ' pesan dihapus permanen' : 'Pesan dihapus permanen');
 
   } catch (err) {
 
-    showToast('Gagal menghapus dari server: ' + err.message);
 
   }
 
@@ -5687,8 +5642,7 @@ function buildVNPlayer(m, isSent) {
       return;
 
     }
-
-    showToast('Pesan suara tidak dapat diputar'); setPlaying(false); stopLoop();
+ setPlaying(false); stopLoop();
 
   });
 
@@ -5708,7 +5662,7 @@ function buildVNPlayer(m, isSent) {
 
       const pr = audio.play();
 
-      if (pr && pr.catch) pr.catch(err => showToast('Tidak dapat memutar: ' + err.message));
+      if (pr && pr.catch) pr.catch(err => {});
 
     } else {
 
@@ -5834,17 +5788,182 @@ function buildVNPlayer(m, isSent) {
 
 
 
-window.viewImage = (src) => {
+/* ============= PENAMPIL FOTO LAYAR PENUH (cubit untuk zoom, geser, ketuk dua kali, tekan lama) ============= */
+/* Foto selalu memenuhi satu layar penuh: jika rasio foto mendekati rasio layar, foto diisi penuh (tanpa pita hitam);
+   jika jauh berbeda (mis. foto lanskap), foto ditampilkan utuh tanpa terpotong. */
+function fitCoverMode(nw, nh, W, H) {
+  if (!nw || !nh || !W || !H) return false;
+  const r = (nw / nh) / (W / H);
+  return r > 0.92 && r < 1.08;   /* hanya bila rasio nyaris sama: terpotong paling banyak sekitar 8% */
+}
+/* Selama penampil foto terbuka, izinkan konten menutup area poni/status bar (viewport-fit=cover) agar foto benar-benar menutup seluruh layar HP.
+   Setelah ditutup, meta viewport dikembalikan persis seperti semula sehingga bagian lain aplikasi tidak berubah. */
+let vpOrig = null;
+function setViewportCover(on) {
+  try {
+    const m = document.querySelector('meta[name="viewport"]'); if (!m) return;
+    if (on) {
+      if (vpOrig === null) vpOrig = m.getAttribute('content') || '';
+      if (!/viewport-fit\s*=\s*cover/.test(vpOrig)) m.setAttribute('content', vpOrig + ', viewport-fit=cover');
+    } else if (vpOrig !== null) { m.setAttribute('content', vpOrig); vpOrig = null; }
+  } catch (err) { /* abaikan */ }
+}
+function enterFullscreenSafe() {
+  try {
+    const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (rq && !(document.fullscreenElement || document.webkitFullscreenElement)) {
+      const r = rq.call(el);
+      if (r && r.catch) r.catch(() => {});
+      return true;
+    }
+  } catch (err) { /* abaikan */ }
+  return false;
+}
+function exitFullscreenSafe() {
+  try {
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const r = (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      if (r && r.catch) r.catch(() => {});
+    }
+  } catch (err) { /* abaikan */ }
+}
+(function setupImgViewer() {
+  const box = $('imgViewer'), img = $('imgViewerSrc'), stage = $('imgViewerStage'), closeBtn = $('imgViewerClose');
+  if (!box || !img || !stage || !closeBtn) return;
+  const MAX_ZOOM = 6, HOLD_MS = 320;
+  const ptr = new Map();
+  let s = 1, x = 0, y = 0, pinch = null, moved = false, startPt = { x: 0, y: 0 };
+  let lastTap = 0, lastX = 0, lastY = 0, holdT = 0, usedFs = false, openedAt = 0, onceOpts = null;
 
-  if (selectedKeys.size > 0) return;
+  function isOpen() { return box.style.display === 'flex'; }
+  function setHold(on) { box.classList.toggle('hold', !!on); }
+  function holdClear() { if (holdT) { clearTimeout(holdT); holdT = 0; } }
+  function apply() {
+    img.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0) scale(' + s + ')';
+    box.classList.toggle('zoomed', s > 1.01);
+  }
+  /* Ukuran dasar foto (skala 1) = memenuhi layar */
+  function fit() {
+    const W = stage.clientWidth, H = stage.clientHeight, nw = img.naturalWidth, nh = img.naturalHeight;
+    if (!W || !H || !nw || !nh) return;
+    const k = fitCoverMode(nw, nh, W, H) ? Math.max(W / nw, H / nh) : Math.min(W / nw, H / nh);
+    img.style.width = (nw * k) + 'px';
+    img.style.height = (nh * k) + 'px';
+  }
+  function clamp() {
+    if (s <= 1.001) { s = 1; x = 0; y = 0; return; }   /* ukuran dasar: foto pas satu layar dan terkunci, tidak bisa digeser */
+    const W = stage.clientWidth, H = stage.clientHeight, w = img.offsetWidth * s, h = img.offsetHeight * s;
+    const mx = Math.max(0, (w - W) / 2), my = Math.max(0, (h - H) / 2);
+    x = Math.min(mx, Math.max(-mx, x)); y = Math.min(my, Math.max(-my, y));
+    if (!isFinite(x)) x = 0;
+    if (!isFinite(y)) y = 0;
+  }
+  function reset() { s = 1; x = 0; y = 0; pinch = null; moved = false; ptr.clear(); lastTap = 0; holdClear(); setHold(false); apply(); }
+  /* Zoom dengan titik (cx, cy) di layar tetap berada di bawah jari */
+  function zoomAt(cx, cy, ns) {
+    ns = Math.min(MAX_ZOOM, Math.max(1, ns));
+    const r = stage.getBoundingClientRect();
+    const px = cx - (r.left + r.width / 2), py = cy - (r.top + r.height / 2);
+    const k = ns / s;
+    x = px - (px - x) * k; y = py - (py - y) * k; s = ns;
+    clamp(); apply();
+  }
+  function dist() { const a = Array.from(ptr.values()); return a.length < 2 ? 0 : Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); }
+  function center() { const a = Array.from(ptr.values()); return { x: (a[0].x + a[1].x) / 2, y: (a[0].y + a[1].y) / 2 }; }
 
-  $('imgViewerSrc').src = src;
+  function closeViewer() {
+    if (!isOpen() && !usedFs) return;
+    const cb = onceOpts && typeof onceOpts.onClose === 'function' ? onceOpts.onClose : null;
+    onceOpts = null;
+    box.style.display = 'none';
+    document.documentElement.classList.remove('iv-open');
+    setViewportCover(false);
+    box.classList.remove('once');
+    img.onload = null; img.onerror = null; img.removeAttribute('src');
+    img.style.width = ''; img.style.height = '';
+    reset();
+    if (usedFs) { usedFs = false; exitFullscreenSafe(); }
+    if (cb) { try { cb(); } catch (e) { console.warn(e); } }
+  }
+  window.imgViewerIsOnce = () => isOpen() && !!onceOpts;
+  window.imgViewerOpenedAt = () => openedAt;
+  window.closeImgViewer = closeViewer;
+  window.viewImage = (src, opts) => {
+    if (selectedKeys.size > 0) return;
+    if (!src || typeof src !== 'string') { return; }
+    if (isOpen()) closeViewer();
+    reset();
+    onceOpts = opts && opts.once ? opts : null;
+    box.classList.toggle('once', !!onceOpts);
+    img.style.width = ''; img.style.height = '';
+    img.onerror = () => { closeViewer(); };
+    img.onload = () => { fit(); clamp(); apply(); if (onceOpts && typeof onceOpts.onLoad === 'function') { try { onceOpts.onLoad(); } catch (e) { console.warn(e); } } };
+    img.src = src;
+    box.style.display = 'flex';
+    document.documentElement.classList.add('iv-open');   /* kunci layar di belakang: tidak bisa tergulir */
+    setViewportCover(true);
+    openedAt = Date.now();
+    usedFs = enterFullscreenSafe();   /* sembunyikan bilah status & navigasi browser agar foto benar-benar 1 layar penuh */
+    if (img.complete && img.naturalWidth) { fit(); clamp(); apply(); }
+  };
 
-  $('imgViewer').style.display = 'flex';
+  closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeViewer(); });
 
-};
-
-$('imgViewer').addEventListener('click', () => $('imgViewer').style.display = 'none');
+  stage.addEventListener('pointerdown', (e) => {
+    ptr.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { stage.setPointerCapture(e.pointerId); } catch (err) { /* abaikan */ }
+    if (ptr.size === 1) {
+      moved = false; startPt = { x: e.clientX, y: e.clientY };
+      /* tekan lama: sembunyikan tombol X selama jari masih menekan */
+      holdClear();
+      holdT = setTimeout(() => {
+        holdT = 0;
+        if (isOpen() && ptr.size === 1 && !moved) { setHold(true); moved = true; }
+      }, HOLD_MS);
+    }
+    if (ptr.size === 2) { holdClear(); setHold(true); pinch = { d: dist() || 1, s: s }; moved = true; }   /* mencubit: X ikut tersembunyi */
+  });
+  stage.addEventListener('pointermove', (e) => {
+    const p = ptr.get(e.pointerId); if (!p) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptr.size >= 2 && pinch) { const c = center(); zoomAt(c.x, c.y, pinch.s * dist() / pinch.d); moved = true; return; }
+    if (Math.abs(e.clientX - startPt.x) + Math.abs(e.clientY - startPt.y) > 8) { moved = true; holdClear(); }
+    if (moved && s > 1.001 && (dx || dy)) { x += dx; y += dy; clamp(); apply(); }   /* geser hanya saat di-zoom */
+  });
+  function up(e, cancel) {
+    const had = ptr.get(e.pointerId); ptr.delete(e.pointerId);
+    try { stage.releasePointerCapture(e.pointerId); } catch (err) { /* abaikan */ }
+    if (ptr.size < 2) pinch = null;
+    if (ptr.size === 1) { const r = Array.from(ptr.values())[0]; startPt = { x: r.x, y: r.y }; }  /* sisa satu jari: lanjut geser tanpa lompat */
+    if (ptr.size === 0) { holdClear(); setHold(false); }   /* jari diangkat: X muncul lagi (kecuali sedang zoom) */
+    if (s <= 1.01) { s = 1; }
+    clamp(); apply();
+    if (!had || cancel || ptr.size > 0 || moved) return;
+    /* ketukan tunggal di area gelap di luar foto = tutup */
+    const ir = img.getBoundingClientRect();
+    if (e.clientX < ir.left || e.clientX > ir.right || e.clientY < ir.top || e.clientY > ir.bottom) { closeViewer(); return; }
+    const now = Date.now();
+    if (now - lastTap < 320 && Math.abs(e.clientX - lastX) < 32 && Math.abs(e.clientY - lastY) < 32) {
+      lastTap = 0;
+      if (s > 1) { s = 1; x = 0; y = 0; apply(); } else zoomAt(e.clientX, e.clientY, 2.5);
+    } else { lastTap = now; lastX = e.clientX; lastY = e.clientY; }
+  }
+  stage.addEventListener('pointerup', (e) => up(e, false));
+  stage.addEventListener('pointercancel', (e) => up(e, true));
+  stage.addEventListener('lostpointercapture', (e) => { if (ptr.has(e.pointerId)) up(e, true); });
+  stage.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, s * (e.deltaY < 0 ? 1.18 : 1 / 1.18)); }, { passive: false });
+  ['dblclick', 'contextmenu', 'dragstart', 'selectstart', 'gesturestart', 'gesturechange'].forEach(t => { stage.addEventListener(t, (e) => { e.preventDefault(); }); box.addEventListener(t, (e) => { e.preventDefault(); }); });
+  window.addEventListener('resize', () => { if (isOpen()) { fit(); clamp(); apply(); } });
+  window.addEventListener('orientationchange', () => { setTimeout(() => { if (isOpen()) { fit(); clamp(); apply(); } }, 250); });
+  /* keluar dari layar penuh lewat tombol kembali = tutup penampil */
+  function onFs() {
+    if (usedFs && isOpen() && Date.now() - openedAt > 400 && !(document.fullscreenElement || document.webkitFullscreenElement)) { usedFs = false; closeViewer(); }
+    else if (isOpen()) setTimeout(() => { if (isOpen()) { fit(); clamp(); apply(); } }, 80);
+  }
+  document.addEventListener('fullscreenchange', onFs);
+  document.addEventListener('webkitfullscreenchange', onFs);
+})();
 
 
 
@@ -5886,13 +6005,16 @@ function buildViewOnce(m, isSent) {
 }
 let voCurrent = null;
 function openViewOnce(m) {
-  if (!m || !m.data || voSeen(m.key)) { showToast('Foto ini sudah dibuka'); return; }
-  voCurrent = { key: m.key, base: voBase(), grp: isGroupId(currentChat), gid: currentChat, from: m.from };
-  const c = voCurrent;
-  const img = $('voImg');
-  img.onload = () => { consumeViewOnce(c); };
-  img.src = m.data;
-  $('voViewer').style.display = 'flex';
+  if (!m || !m.data || voSeen(m.key)) { return; }
+  if (voCurrent) return;   /* sudah ada foto sekali lihat yang terbuka */
+  const c = { key: m.key, base: voBase(), grp: isGroupId(currentChat), gid: currentChat, from: m.from };
+  voCurrent = c;
+  window.viewImage(m.data, {
+    once: true,
+    onLoad: () => { consumeViewOnce(c); },   /* ditandai terbuka hanya setelah foto benar-benar tampil */
+    onClose: () => { voCurrent = null; try { rerenderCurrent(); } catch (e) {} }
+  });
+  if (!(window.imgViewerIsOnce && window.imgViewerIsOnce())) voCurrent = null;   /* penampil gagal terbuka */
 }
 async function consumeViewOnce(c) {
   if (!c || c.done) return;
@@ -5913,16 +6035,9 @@ async function consumeViewOnce(c) {
     await update(ref(db), up);
   } catch (e) { console.warn('Tandai sekali-lihat gagal:', e); }
 }
-function closeViewOnce() {
-  $('voViewer').style.display = 'none';
-  $('voImg').removeAttribute('src');
-  voCurrent = null;
-  try { rerenderCurrent(); } catch (e) {}
-}
-$('voClose').addEventListener('click', closeViewOnce);
-$('voViewer').addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && $('voViewer').style.display === 'flex') closeViewOnce(); });
-window.addEventListener('blur', () => { if ($('voViewer').style.display === 'flex') closeViewOnce(); });
+function closeViewOnce() { if (window.imgViewerIsOnce && window.imgViewerIsOnce() && window.closeImgViewer) window.closeImgViewer(); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') closeViewOnce(); });
+window.addEventListener('blur', () => { if (window.imgViewerIsOnce && window.imgViewerIsOnce() && Date.now() - window.imgViewerOpenedAt() > 800) closeViewOnce(); });
 function pickPhoto(once) { pendingViewOnce = !!once; $('voChooser').classList.remove('show'); $('fileInput').click(); }
 $('voOptNormal').addEventListener('click', () => pickPhoto(false));
 $('voOptOnce').addEventListener('click', () => pickPhoto(true));
@@ -5937,7 +6052,7 @@ async function sendGroupMessage(payload) {
 
   const g = groupsCache[gid];
 
-  if (!g || !g.members || !g.members[myId]) { showToast('Anda bukan anggota grup ini'); return false; }
+  if (!g || !g.members || !g.members[myId]) { return false; }
 
   try {
 
@@ -5975,19 +6090,19 @@ async function sendGroupMessage(payload) {
     Object.keys(g.members).forEach(u => { if (u !== myId) updates['unread/' + u + '/' + gid] = increment(1); });
         await update(ref(db), updates);
     return true;
-  } catch (err) { showToast('Gagal mengirim: ' + err.message); return false; }
+  } catch (err) { return false; }
 }
 async function sendMessage(payload) {
 
   stickBottomOnce = true;
 
-  if (!currentChat) { showToast('Silakan pilih kontak terlebih dahulu'); return false; }
+  if (!currentChat) { return false; }
 
   if (isGroupId(currentChat)) return sendGroupMessage(payload);
 
-  if (blockedCache[currentChat]) { showToast('Buka blokir kontak untuk mengirim pesan'); return false; }
+  if (blockedCache[currentChat]) { return false; }
 
-  if (blockedByOther) { showToast('Anda diblokir oleh kontak ini'); return false; }
+  if (blockedByOther) { return false; }
 
   const to = currentChat;
   const id = convId(myId, currentChat);
@@ -6021,7 +6136,7 @@ async function sendMessage(payload) {
     await update(ref(db), ups);
     return true;
 
-  } catch (err) { showToast('Gagal mengirim: ' + err.message); return false; }
+  } catch (err) { return false; }
 
 }
 
@@ -6099,7 +6214,7 @@ $('sendBtn').addEventListener('click', async (e) => {
 
 $('attachBtn').addEventListener('click', () => {
 
-  if (currentChat && blockedCache[currentChat]) { showToast('Buka blokir kontak untuk mengirim pesan'); return; }
+  if (currentChat && blockedCache[currentChat]) { return; }
 
   $('voChooser').classList.add('show');
 });
@@ -6123,16 +6238,14 @@ $('fileInput').addEventListener('change', async e => {
   const file = e.target.files[0];
   e.target.value = '';
   if (!file) return;
-  if (file.size > 20 * 1024 * 1024) { showToast('Ukuran gambar maksimal 20 MB'); return; }
-  showToast('Mengirim foto...');
+  if (file.size > 20 * 1024 * 1024) { return; }
   try {
     const data = await compressImage(file);
     const vo = pendingViewOnce; pendingViewOnce = false;
     const pl = vo ? { type: 'image', data, viewOnce: true } : { type: 'image', data };
     let ok = await sendMessage(pl);
     if (!ok) ok = await sendMessage(pl);
-    if (ok) showToast(vo ? 'Foto sekali lihat terkirim' : 'Foto berhasil dikirim');
-  } catch (err) { showToast('Gambar tidak bisa diproses'); }
+  } catch (err) { }
 });
 
 function buildRecWave() {
@@ -6161,9 +6274,9 @@ buildRecWave();
 
 $('micBtn').addEventListener('click', async () => {
 
-  if (!currentChat) { showToast('Silakan pilih kontak terlebih dahulu'); return; }
+  if (!currentChat) { return; }
 
-  if (blockedCache[currentChat]) { showToast('Buka blokir kontak untuk mengirim pesan'); return; }
+  if (blockedCache[currentChat]) { return; }
 
   if (!isRecording) await startRecording();
 
@@ -6219,17 +6332,15 @@ async function startRecording() {
 
       const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
 
-      if (blob.size < 200) { showToast('Durasi rekaman terlalu singkat'); resetInputState(); return; }
+      if (blob.size < 200) { resetInputState(); return; }
 
-      if (blob.size > 600 * 1024) { showToast('Ukuran rekaman terlalu besar. Silakan rekam dengan durasi lebih singkat'); resetInputState(); return; }
+      if (blob.size > 600 * 1024) { resetInputState(); return; }
 
       const reader = new FileReader();
 
       reader.onload = async ev => {
 
         const ok = await sendMessage({ type: 'audio', data: ev.target.result, duration: recSeconds });
-
-        if (ok) showToast('Pesan suara berhasil dikirim');
 
         resetInputState();
 
@@ -6267,7 +6378,6 @@ async function startRecording() {
 
   } catch (err) {
 
-    showToast('Tidak dapat mengakses mikrofon. Periksa izin aplikasi');
 
     resetInputState();
 
@@ -6379,7 +6489,7 @@ async function doCopyShare() {
 
   if (!shareData) return;
 
-  showToast((await copyText(shareData.link)) ? 'Tautan berhasil disalin' : 'Gagal menyalin. Silakan salin secara manual');
+  await copyText(shareData.link);
 
 }
 
@@ -6481,7 +6591,7 @@ async function makeInvite(gid) {
 
   const g = groupsCache[gid];
 
-  if (!g || g.createdBy !== myId) { showToast('Hanya pembuat grup yang dapat mengatur tautan'); return; }
+  if (!g || g.createdBy !== myId) { return; }
 
   const code = genInviteCode();
 
@@ -6525,7 +6635,7 @@ function renderInviteSection(gid, g) {
 
       $('giInvCreate').disabled = true;
 
-      try { await makeInvite(gid); showToast('Tautan undangan berhasil dibuat'); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+      try { await makeInvite(gid); } catch (err) { }
 
     };
 
@@ -6543,7 +6653,7 @@ function renderInviteSection(gid, g) {
 
   $('giInvShare').onclick = () => shareGroupLink(gid);
 
-  $('giInvCopy').onclick = async () => showToast((await copyText(groupLink(g.invite))) ? 'Tautan berhasil disalin' : 'Gagal menyalin tautan');
+  $('giInvCopy').onclick = async () => { await copyText(groupLink(g.invite)); };
 
   $('giInvReset').onclick = async () => {
 
@@ -6551,7 +6661,7 @@ function renderInviteSection(gid, g) {
 
     if (!ok) return;
 
-    try { await makeInvite(gid); showToast('Tautan baru berhasil dibuat'); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+    try { await makeInvite(gid); } catch (err) { }
 
   };
 
@@ -6561,7 +6671,7 @@ function renderInviteSection(gid, g) {
 
     if (!ok) return;
 
-    try { await revokeInvite(gid); showToast('Tautan undangan dinonaktifkan'); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+    try { await revokeInvite(gid); } catch (err) { }
 
   };
 
@@ -6611,13 +6721,13 @@ $('deepOk').addEventListener('click', async () => {
 
   const alias = $('deepAlias').value.trim();
 
-  if (needAlias && !alias) { showToast('Silakan masukkan nama kontak'); return; }
+  if (needAlias && !alias) { return; }
 
   const btn = $('deepOk'), label = btn.textContent;
 
   btn.disabled = true; btn.textContent = 'Memproses...';
 
-  try { await deepOnOk(alias); } catch (err) { showToast('Tindakan gagal: ' + err.message); }
+  try { await deepOnOk(alias); } catch (err) { }
 
   finally { btn.disabled = false; btn.textContent = label; }
 
@@ -6637,21 +6747,20 @@ async function openJoinPreview(code) {
 
     const cs = await get(ref(db, 'invites/' + code));
 
-    if (!cs.exists()) { showToast('Tautan undangan tidak valid atau telah dinonaktifkan'); return; }
+    if (!cs.exists()) { return; }
 
     const gid = String(cs.val());
 
     const gs = await get(ref(db, 'groups/' + gid));
 
-    if (!gs.exists()) { showToast('Grup tidak lagi tersedia'); return; }
+    if (!gs.exists()) { return; }
 
     const g = gs.val() || {};
 
-    if (g.invite !== code) { showToast('Tautan undangan ini sudah tidak berlaku'); return; }
+    if (g.invite !== code) { return; }
 
     if (g.members && g.members[myId]) {
 
-      showToast('Anda sudah menjadi anggota grup ini');
 
       groupsCache[gid] = groupsCache[gid] || g;
 
@@ -6679,11 +6788,10 @@ async function openJoinPreview(code) {
 
         closeDeep(); switchPane('paneChats'); renderChatList(); openChat(gid);
 
-        showToast('Anda telah bergabung ke "' + (g.name || 'Grup') + '"');
 
       } });
 
-  } catch (err) { showToast('Gagal membuka tautan: ' + err.message); }
+  } catch (err) { }
 
 }
 
@@ -6691,11 +6799,11 @@ async function openAddPreview(id) {
   id = await resolveUserId(id);
   try {
 
-    if (id === myId) { showToast('Ini adalah tautan kontak Anda sendiri'); return; }
+    if (id === myId) { return; }
 
     const us = await get(ref(db, 'users/' + id));
 
-    if (!us.exists()) { showToast('Pengguna tidak ditemukan'); return; }
+    if (!us.exists()) { return; }
 
     const u = us.val() || {};
 
@@ -6707,7 +6815,6 @@ async function openAddPreview(id) {
 
       contactsCache[id] = cs.val();
 
-      showToast('Kontak ini sudah ada di daftar Anda');
 
       switchPane('paneChats'); openChat(id);
 
@@ -6739,11 +6846,10 @@ async function openAddPreview(id) {
 
         closeDeep(); switchPane('paneChats'); openChat(id);
 
-        showToast('Kontak "' + alias + '" ditambahkan');
 
       } });
 
-  } catch (err) { showToast('Gagal membuka tautan: ' + err.message); }
+  } catch (err) { }
 
 }
 
@@ -6790,8 +6896,7 @@ $('copyIdBtn').addEventListener('click', async (e) => {
   try {
 
     await navigator.clipboard.writeText(dispId(myId));
-    showToast('ID berhasil disalin');
-  } catch (err) { showToast('ID Anda: ' + dispId(myId)); }
+  } catch (err) { }
 
 });
 
@@ -6820,7 +6925,7 @@ setInterval(() => {
 
 $('clearGroupBtn').addEventListener('click', async () => {
   const gid = currentInfoGid, g = groupsCache[gid];
-  if (!g || !isGroupMod(gid)) { showToast('Hanya admin dan pembuat grup yang dapat menghapus semua pesan'); return; }
+  if (!g || !isGroupMod(gid)) { return; }
   const ok = await confirmDialog({ title: 'Hapus semua pesan?', message: 'Seluruh pesan di grup "' + (g.name || 'grup') + '" akan dihapus permanen untuk semua anggota.', okText: 'Hapus semua' });
   if (!ok) return;
   const updates = {};
@@ -6831,8 +6936,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
     await update(ref(db), updates);
     msgCache['group_' + gid] = [];
     if (currentChat === gid) { currentMsgsAll = []; rerenderCurrent(); }
-    showToast('Semua pesan grup dihapus');
-  } catch (err) { showToast('Gagal menghapus: ' + err.message); }
+  } catch (err) { }
 });
 
 /* ============= TOMBOL BACK (HP / browser) =============
@@ -6870,8 +6974,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
       const bk = $('gmBack'); if (bk) bk.click(); else gmP.classList.remove('open');
       return true;
     }
-    if (shown('voViewer')) { closeViewOnce(); return true; }
-    if (shown('imgViewer')) { $('imgViewer').style.display = 'none'; return true; }
+    if (shown('imgViewer')) { if (window.closeImgViewer) window.closeImgViewer(); else $('imgViewer').style.display = 'none'; return true; }
     const yAdm = $('ytAdmin');
     if (yAdm && yAdm.classList.contains('open')) { yAdm.classList.remove('open'); return true; }
     const yPl = $('ytPlayer');
@@ -6903,7 +7006,6 @@ $('clearGroupBtn').addEventListener('click', async () => {
     const now = Date.now();
     if (now - lastRootBack < 2000) { lastRootBack = 0; history.back(); return; }
     lastRootBack = now;
-    showToast('Tekan sekali lagi untuk keluar');
     arm();
   });
   arm();
