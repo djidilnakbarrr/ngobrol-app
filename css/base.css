@@ -1415,26 +1415,6 @@
 
 
 
-    /* ---- Foto sekali lihat ---- */
-  .vo-bubble { display: flex; align-items: center; gap: 10px; min-width: 180px; padding: 10px 12px; border-radius: 10px; background: rgba(11,138,121,.10); border: 1.5px dashed #0b8a79; color: #075e54; cursor: pointer; margin-bottom: 2px; -webkit-user-select: none; user-select: none; }
-  .vo-bubble.used { border-color: #b6c2c7; background: rgba(0,0,0,.04); color: #667781; cursor: default; }
-  .vo-ico { width: 34px; height: 34px; border-radius: 50%; border: 2px dashed currentColor; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; flex-shrink: 0; }
-  .vo-txt b { display: block; font-size: 14px; }
-  .vo-txt span { display: block; font-size: 12px; opacity: .8; margin-top: 1px; }
-  #voViewer { display: none; position: fixed; inset: 0; background: #000; z-index: 260; flex-direction: column; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
-  #voViewer .vo-top { display: flex; align-items: center; justify-content: space-between; padding: calc(12px + env(safe-area-inset-top, 0px)) 16px 12px; color: #fff; font-size: 14px; }
-  #voViewer .vo-top button { background: rgba(255,255,255,.16); color: #fff; border: 0; border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 600; font-family: inherit; }
-  #voViewer .vo-stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
-  #voViewer img { max-width: 100%; max-height: 100%; pointer-events: none; -webkit-touch-callout: none; }
-  #voViewer .vo-note { color: rgba(255,255,255,.7); font-size: 12px; text-align: center; padding: 10px 16px calc(14px + env(safe-area-inset-bottom, 0px)); }
-  #voChooser { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 250; align-items: flex-end; justify-content: center; }
-  #voChooser.show { display: flex; }
-  #voChooser .vo-sheet { width: 100%; max-width: 480px; background: #fff; border-radius: 20px 20px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
-  #voChooser .vo-opt { display: flex; align-items: center; gap: 12px; width: 100%; padding: 13px 10px; border: 0; background: transparent; font-family: inherit; font-size: 15px; text-align: left; border-radius: 12px; color: #111b21; }
-  #voChooser .vo-opt:active { background: #f0f2f5; }
-  #voChooser .vo-opt small { display: block; color: #667781; font-size: 12.5px; margin-top: 1px; }
-  #voChooser .vo-cancel { width: 100%; margin-top: 6px; padding: 12px; border: 0; border-radius: 12px; background: #f0f2f5; font-family: inherit; font-size: 15px; font-weight: 600; color: #3b4a54; }
-
   #imgViewer {
 
     display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92);

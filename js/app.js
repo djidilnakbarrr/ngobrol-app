@@ -341,7 +341,7 @@ async function showIncoming({ chat, key, title, body }) {
   if (document.visibilityState === 'visible') showToast(title + ': ' + body);
   return shown;
 }
-const imgLabel = m => (m && m.viewOnce ? 'Foto sekali lihat' : 'Foto');
+const imgLabel = m => 'Foto';
 function previewOf(v) {
   if (v.type === 'image') return imgLabel(v);
   if (v.type === 'audio') return 'Pesan suara';
@@ -4121,7 +4121,7 @@ function setReply(msg) {
 
     from: msg.from,
 
-    text: msg.viewOnce ? 'Foto sekali lihat' : (msg.text || ''),
+    text: msg.text || '',
     type: msg.type || 'text',
     deleted: !!msg.deleted
   };
@@ -4205,7 +4205,6 @@ function msgSig(m) {
   let sig = [m.ts, m.deleted ? 1 : 0, m.type || 'text', m.text || '', m.from, m.duration || 0,
 
              m.data ? m.data.length : 0].join('|');
-  if (m.viewOnce) sig += '|vo' + (m.data ? 1 : 0) + (m.viewedAt || 0) + (m.viewedBy ? Object.keys(m.viewedBy).length : 0) + (voSeen(m.key) ? 1 : 0);
 
   if (m.replyTo) sig += '|r' + m.replyTo.key + (m.replyTo.deleted ? 1 : 0) + (m.replyTo.text || '');
 
@@ -4332,8 +4331,6 @@ function buildMsgWrap(m) {
 
       div.appendChild(span);
 
-    } else if (m.type === 'image' && m.viewOnce) {
-      div.appendChild(buildViewOnce(m, isSent));
     } else if (m.type === 'image') {
       const img = document.createElement('img');
 
@@ -4932,7 +4929,6 @@ async function fixGroupLast(gid) {
     type: latest.deleted ? 'deleted' : (latest.type || 'text'),
 
     text: latest.type === 'text' && !latest.deleted ? String(latest.text || '').slice(0, 80) : '',
-    viewOnce: !!latest.viewOnce,
     deleted: !!latest.deleted
   });
 
@@ -5848,87 +5844,6 @@ $('imgViewer').addEventListener('click', () => $('imgViewer').style.display = 'n
 
 
 
-/* ============= FOTO SEKALI LIHAT ============= */
-const VO_KEY = 'chat_vo_seen';
-let voSeenMap = {};
-try { voSeenMap = JSON.parse(localStorage.getItem(VO_KEY) || '{}'); } catch (e) { voSeenMap = {}; }
-function voSeen(key) { return !!(key && voSeenMap[key]); }
-function voMark(key) { voSeenMap[key] = 1; try { localStorage.setItem(VO_KEY, JSON.stringify(voSeenMap)); } catch (e) {} }
-let pendingViewOnce = false;
-function voBase() { return isGroupId(currentChat) ? 'groupChats/' + currentChat : 'chats/' + convId(myId, currentChat); }
-function buildViewOnce(m, isSent) {
-  const wrap = document.createElement('div');
-  const icon = n => '<div class="vo-ico">' + n + '</div>';
-  const grp = isGroupId(currentChat);
-  const others = grp && groupsCache[currentChat] && groupsCache[currentChat].members ? Object.keys(groupsCache[currentChat].members).filter(u => u !== m.from) : [];
-  const viewedN = m.viewedBy ? Object.keys(m.viewedBy).length : 0;
-  const gone = !m.data;
-  if (isSent) {
-    const opened = grp ? viewedN > 0 : (!!m.viewedAt || gone);
-    wrap.className = 'vo-bubble used';
-    wrap.innerHTML = icon('1') + '<div class="vo-txt"><b>Foto sekali lihat</b><span>' + (opened ? (grp ? 'Dibuka oleh ' + viewedN + ' dari ' + others.length : 'Dibuka') : 'Terkirim, belum dibuka') + '</span></div>';
-    return wrap;
-  }
-  const used = gone || voSeen(m.key) || !!m.viewedAt || !!(m.viewedBy && m.viewedBy[myId]);
-  if (used) {
-    wrap.className = 'vo-bubble used';
-    wrap.innerHTML = icon('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>') + '<div class="vo-txt"><b>Foto sekali lihat</b><span>Sudah dibuka</span></div>';
-    return wrap;
-  }
-  wrap.className = 'vo-bubble';
-  wrap.innerHTML = icon('1') + '<div class="vo-txt"><b>Foto sekali lihat</b><span>Ketuk untuk membuka</span></div>';
-  wrap.onclick = (e) => {
-    if (selectedKeys.size > 0 || Date.now() < suppressClickUntil) return;
-    e.stopPropagation();
-    openViewOnce(m);
-  };
-  return wrap;
-}
-let voCurrent = null;
-function openViewOnce(m) {
-  if (!m || !m.data || voSeen(m.key)) { showToast('Foto ini sudah dibuka'); return; }
-  voCurrent = { key: m.key, base: voBase(), grp: isGroupId(currentChat), gid: currentChat, from: m.from };
-  const c = voCurrent;
-  const img = $('voImg');
-  img.onload = () => { consumeViewOnce(c); };
-  img.src = m.data;
-  $('voViewer').style.display = 'flex';
-}
-async function consumeViewOnce(c) {
-  if (!c || c.done) return;
-  c.done = true;
-  voMark(c.key);   /* kunci lokal dulu: tidak bisa dibuka lagi di perangkat ini walau database gagal */
-  try {
-    const up = {};
-    if (!c.grp) {
-      up[c.base + '/' + c.key + '/data'] = null;
-      up[c.base + '/' + c.key + '/viewedAt'] = Date.now();
-    } else {
-      up[c.base + '/' + c.key + '/viewedBy/' + myId] = Date.now();
-      const mem = groupsCache[c.gid] && groupsCache[c.gid].members ? Object.keys(groupsCache[c.gid].members).filter(u => u !== c.from) : [];
-      const vb = (await get(ref(db, c.base + '/' + c.key + '/viewedBy'))).val() || {};
-      vb[myId] = 1;
-      if (mem.length && mem.every(u => vb[u])) up[c.base + '/' + c.key + '/data'] = null;   /* semua penerima sudah lihat: hapus fotonya */
-    }
-    await update(ref(db), up);
-  } catch (e) { console.warn('Tandai sekali-lihat gagal:', e); }
-}
-function closeViewOnce() {
-  $('voViewer').style.display = 'none';
-  $('voImg').removeAttribute('src');
-  voCurrent = null;
-  try { rerenderCurrent(); } catch (e) {}
-}
-$('voClose').addEventListener('click', closeViewOnce);
-$('voViewer').addEventListener('contextmenu', e => e.preventDefault());
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && $('voViewer').style.display === 'flex') closeViewOnce(); });
-window.addEventListener('blur', () => { if ($('voViewer').style.display === 'flex') closeViewOnce(); });
-function pickPhoto(once) { pendingViewOnce = !!once; $('voChooser').classList.remove('show'); $('fileInput').click(); }
-$('voOptNormal').addEventListener('click', () => pickPhoto(false));
-$('voOptOnce').addEventListener('click', () => pickPhoto(true));
-$('voOptCancel').addEventListener('click', () => $('voChooser').classList.remove('show'));
-$('voChooser').addEventListener('click', e => { if (e.target === $('voChooser')) $('voChooser').classList.remove('show'); });
-
 /* ============= SEND ============= */
 
 async function sendGroupMessage(payload) {
@@ -5965,7 +5880,7 @@ async function sendGroupMessage(payload) {
 
     const key = push(ref(db, 'groupChats/' + gid)).key;
 
-    const last = { key, from: myId, ts: msg.ts, type: msg.type || 'text', text: msg.type === 'text' ? String(msg.text || '').slice(0, 80) : '', viewOnce: !!msg.viewOnce };
+    const last = { key, from: myId, ts: msg.ts, type: msg.type || 'text', text: msg.type === 'text' ? String(msg.text || '').slice(0, 80) : '' };
 
     const updates = {};
 
@@ -6101,7 +6016,7 @@ $('attachBtn').addEventListener('click', () => {
 
   if (currentChat && blockedCache[currentChat]) { showToast('Buka blokir kontak untuk mengirim pesan'); return; }
 
-  $('voChooser').classList.add('show');
+  $('fileInput').click();
 });
 async function compressImage(file) {
   const url = URL.createObjectURL(file);
@@ -6127,11 +6042,10 @@ $('fileInput').addEventListener('change', async e => {
   showToast('Mengirim foto...');
   try {
     const data = await compressImage(file);
-    const vo = pendingViewOnce; pendingViewOnce = false;
-    const pl = vo ? { type: 'image', data, viewOnce: true } : { type: 'image', data };
+    const pl = { type: 'image', data };
     let ok = await sendMessage(pl);
     if (!ok) ok = await sendMessage(pl);
-    if (ok) showToast(vo ? 'Foto sekali lihat terkirim' : 'Foto berhasil dikirim');
+    if (ok) showToast('Foto berhasil dikirim');
   } catch (err) { showToast('Gambar tidak bisa diproses'); }
 });
 
@@ -6870,7 +6784,6 @@ $('clearGroupBtn').addEventListener('click', async () => {
       const bk = $('gmBack'); if (bk) bk.click(); else gmP.classList.remove('open');
       return true;
     }
-    if (shown('voViewer')) { closeViewOnce(); return true; }
     if (shown('imgViewer')) { $('imgViewer').style.display = 'none'; return true; }
     const yAdm = $('ytAdmin');
     if (yAdm && yAdm.classList.contains('open')) { yAdm.classList.remove('open'); return true; }
@@ -6880,7 +6793,6 @@ $('clearGroupBtn').addEventListener('click', async () => {
     if (open('deleteModal')) { hideDeleteModal(); return true; }
     if (open('deepModal')) { closeDeep(); return true; }
     if (open('notifSheet')) { closeNotifSheet(false); return true; }
-    if (open('voChooser')) { hide('voChooser'); return true; }
     if (open('chatMenu')) { hide('chatMenu'); return true; }
     if (open('newMenu')) { hide('newMenu'); return true; }
     const ov = Array.from(document.querySelectorAll('.modal-overlay.show')).pop();

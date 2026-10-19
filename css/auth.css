@@ -71,9 +71,6 @@
 .gate-text { color: #54656f; font-size: 14px; line-height: 1.55; text-align: center; margin: 0 0 18px; }
 #pwGateModal { z-index: 100000; }
 
-/* Ikon status foto sekali lihat */
-.vo-ico svg { width: 16px; height: 16px; display: block; }
-
 /* ===== Tampilan profesional layar Masuk / Daftar (hanya gaya, tanpa mengubah teks) ===== */
 #loginScreen {
   background:

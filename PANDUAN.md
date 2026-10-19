@@ -65,12 +65,6 @@ Status ini berarti browser mencatat izin notifikasi situs = ditolak (pernah ketu
 ## Agar notifikasi jalan di semua HP
 Folder sekarang berisi `manifest.webmanifest`, `icon-192.png`, `icon-512.png`, `apple-touch-icon.png`, dan `vercel.json` (agar service worker selalu versi terbaru). Semua file ini harus ikut diupload. Dengan manifest, aplikasi bisa dipasang ke Layar Utama (wajib di iPhone, disarankan di Android) sehingga notifikasi lebih andal.
 
-## Foto sekali lihat
-Ketuk tombol lampiran > **Foto sekali lihat**. Penerima melihat kotak "Foto sekali lihat"; setelah dibuka, foto langsung dihapus dari database (`data` menjadi kosong, `viewedAt` terisi) dan tidak bisa dibuka lagi. Pengirim melihat status "Terkirim, belum dibuka" lalu "Dibuka". Di grup, foto dihapus setelah semua anggota selain pengirim membukanya (`viewedBy/<id>`).
-- Rules database harus mengizinkan penerima menulis `data`, `viewedAt`, dan `viewedBy` pada `chats/*` dan `groupChats/*`, sama seperti `readAt`/`readBy`.
-- Web tidak bisa memblokir screenshot atau perekaman layar seperti aplikasi native; yang bisa dilakukan hanya menutup tampilan saat aplikasi ke latar belakang dan mematikan menu simpan/tekan lama. Penerima yang nakal tetap bisa memotret layar dengan HP lain.
-- Deploy ulang `functions` agar notifikasi menampilkan "Foto sekali lihat".
-
 ## Diarsipkan
 - Tekan lama percakapan (kontak maupun grup) lalu pilih **Arsipkan obrolan**. Chat pindah dari daftar utama ke baris **Diarsipkan** di paling atas; angka hijau = jumlah chat terarsip yang punya pesan belum dibaca. Toast "Urungkan" muncul sesaat setelah mengarsipkan.
 - Ketuk baris **Diarsipkan** untuk membuka halaman arsip. Di sana: tekan lama chat > **Keluarkan dari arsip**, atau menu titik tiga > **Keluarkan semua dari arsip**. Chat tetap diarsipkan saat pesan baru diterima.

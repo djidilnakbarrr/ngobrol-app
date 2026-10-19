@@ -19,7 +19,7 @@ const one = (path) => db.ref(path).once('value');
 const disp = (id) => String(id);
 
 function preview(m) {
-  if (m.type === 'image') return m.viewOnce ? 'Foto sekali lihat' : 'Foto';
+  if (m.type === 'image') return 'Foto';
   if (m.type === 'audio') return 'Pesan suara';
   return String(m.text || '').trim().slice(0, 240);
 }
