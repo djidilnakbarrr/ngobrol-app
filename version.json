@@ -1,7 +1,10 @@
 {
-  "version": "1.7.78",
+  "version": "1.7.80",
   "released": "2026-10-19",
   "notes": [
-    "Tambahan: sakelar lisensi jarak jauh (js/license-gate.js) yang dikendalikan lewat Firebase, independen dari pemeriksaan hash LICENSE.md yang sudah ada"
+    "Sinkronisasi versi aplikasi dan cache aset",
+    "Pembaruan hanya dinyatakan berhasil setelah file versi baru tersedia",
+    "Sakelar lisensi Firebase tetap tersedia; perlu aturan database produksi",
+    "Panel admin lisensi dipindahkan ke Setelan > Lainnya"
   ]
 }

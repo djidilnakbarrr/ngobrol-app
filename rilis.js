@@ -9,6 +9,10 @@ let html = fs.readFileSync('js/updater.js', 'utf8');
 if (!/const APP_VERSION = '[^']*';/.test(html)) { console.error('APP_VERSION tidak ditemukan di js/updater.js'); process.exit(1); }
 html = html.replace(/const APP_VERSION = '[^']*';/, "const APP_VERSION = '" + ver + "';");
 fs.writeFileSync('js/updater.js', html);
+// Semua aset lokal harus menggunakan cache-busting versi yang sama.
+let index = fs.readFileSync('index.html', 'utf8');
+index = index.replace(/(\?v=)\d+\.\d+\.\d+(?:\.\d+)?/g, '$1' + ver);
+fs.writeFileSync('index.html', index);
 const d = new Date(), p = n => String(n).padStart(2, '0');
 fs.writeFileSync('version.json', JSON.stringify({ version: ver, released: d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()), notes }, null, 2) + '\n');
-console.log('Versi ' + ver + ' siap. Unggah js/updater.js dan version.json.');
+console.log('Versi ' + ver + ' siap. Deploy seluruh folder aplikasi (termasuk index.html).');

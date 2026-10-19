@@ -31,7 +31,7 @@
     },
     'license-remote-disabled': {
       badge: 'Akses dinonaktifkan pemilik',
-      text: 'Pemilik aplikasi ini telah menonaktifkan akses dari jarak jauh (lisensi tidak aktif).',
+      text: 'Pemilik aplikasi ini telah menonaktifkan akses dari jarak jauh.',
       steps: ['Hubungi pemilik/penjual aplikasi untuk mengaktifkan kembali lisensi.', 'Muat ulang aplikasi setelah lisensi diaktifkan.']
     }
   };
