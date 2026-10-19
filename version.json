@@ -1,7 +1,7 @@
 {
-  "version": "1.7.76",
+  "version": "1.7.75",
   "released": "2026-10-19",
   "notes": [
-    "Baru: foto di obrolan kini terbuka layar penuh dan bisa di-zoom (cubit dua jari, ketuk dua kali, geser)"
+    "Perubahan: teks kredit \"by : iD1L\" dihapus dari layar obrolan (pribadi dan grup)"
   ]
 }

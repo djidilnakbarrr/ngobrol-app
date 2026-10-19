@@ -5834,91 +5834,17 @@ function buildVNPlayer(m, isSent) {
 
 
 
-/* ============= PENAMPIL FOTO LAYAR PENUH (cubit untuk zoom, geser, ketuk dua kali) ============= */
-(function setupImgViewer() {
-  const box = $('imgViewer'), img = $('imgViewerSrc'), stage = $('imgViewerStage'), closeBtn = $('imgViewerClose');
-  if (!box || !img || !stage || !closeBtn) return;
-  const MAX_ZOOM = 6;
-  const ptr = new Map();
-  let s = 1, x = 0, y = 0, pinch = null, moved = false, startPt = { x: 0, y: 0 };
-  let lastTap = 0, lastX = 0, lastY = 0;
+window.viewImage = (src) => {
 
-  function apply() {
-    img.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0) scale(' + s + ')';
-    box.classList.toggle('zoomed', s > 1.01);
-  }
-  function clamp() {
-    if (s <= 1) { s = 1; x = 0; y = 0; return; }
-    const W = stage.clientWidth, H = stage.clientHeight, w = img.offsetWidth * s, h = img.offsetHeight * s;
-    const mx = Math.max(0, (w - W) / 2), my = Math.max(0, (h - H) / 2);
-    x = Math.min(mx, Math.max(-mx, x)); y = Math.min(my, Math.max(-my, y));
-  }
-  function reset() { s = 1; x = 0; y = 0; pinch = null; moved = false; ptr.clear(); lastTap = 0; apply(); }
-  /* Zoom dengan titik (cx, cy) di layar tetap berada di bawah jari */
-  function zoomAt(cx, cy, ns) {
-    ns = Math.min(MAX_ZOOM, Math.max(1, ns));
-    const r = stage.getBoundingClientRect();
-    const px = cx - (r.left + r.width / 2), py = cy - (r.top + r.height / 2);
-    const k = ns / s;
-    x = px - (px - x) * k; y = py - (py - y) * k; s = ns;
-    clamp(); apply();
-  }
-  function dist() { const a = Array.from(ptr.values()); return a.length < 2 ? 0 : Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); }
-  function center() { const a = Array.from(ptr.values()); return { x: (a[0].x + a[1].x) / 2, y: (a[0].y + a[1].y) / 2 }; }
+  if (selectedKeys.size > 0) return;
 
-  function closeViewer() {
-    box.style.display = 'none';
-    img.onload = null; img.onerror = null; img.removeAttribute('src');
-    reset();
-  }
-  window.closeImgViewer = closeViewer;
-  window.viewImage = (src) => {
-    if (selectedKeys.size > 0) return;
-    if (!src || typeof src !== 'string') { showToast('Foto tidak bisa dibuka'); return; }
-    reset();
-    img.onerror = () => { closeViewer(); showToast('Foto tidak bisa dibuka'); };
-    img.onload = () => { clamp(); apply(); };
-    img.src = src;
-    box.style.display = 'flex';
-  };
+  $('imgViewerSrc').src = src;
 
-  closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeViewer(); });
+  $('imgViewer').style.display = 'flex';
 
-  stage.addEventListener('pointerdown', (e) => {
-    ptr.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    try { stage.setPointerCapture(e.pointerId); } catch (err) { /* abaikan */ }
-    if (ptr.size === 1) { moved = false; startPt = { x: e.clientX, y: e.clientY }; }
-    if (ptr.size === 2) { pinch = { d: dist() || 1, s: s }; moved = true; }
-  });
-  stage.addEventListener('pointermove', (e) => {
-    const p = ptr.get(e.pointerId); if (!p) return;
-    const dx = e.clientX - p.x, dy = e.clientY - p.y;
-    p.x = e.clientX; p.y = e.clientY;
-    if (ptr.size >= 2 && pinch) { const c = center(); zoomAt(c.x, c.y, pinch.s * dist() / pinch.d); moved = true; return; }
-    if (Math.abs(e.clientX - startPt.x) + Math.abs(e.clientY - startPt.y) > 8) moved = true;
-    if (s > 1) { x += dx; y += dy; clamp(); apply(); }
-  });
-  function up(e, cancel) {
-    const had = ptr.get(e.pointerId); ptr.delete(e.pointerId);
-    if (ptr.size < 2) pinch = null;
-    if (ptr.size === 1) { const r = Array.from(ptr.values())[0]; startPt = { x: r.x, y: r.y }; }  /* sisa satu jari: lanjut geser tanpa lompat */
-    if (s <= 1.01) { s = 1; x = 0; y = 0; apply(); }
-    if (!had || cancel || ptr.size > 0 || moved) return;
-    /* ketukan tunggal di area gelap di luar foto = tutup */
-    const ir = img.getBoundingClientRect();
-    if (e.clientX < ir.left || e.clientX > ir.right || e.clientY < ir.top || e.clientY > ir.bottom) { closeViewer(); return; }
-    const now = Date.now();
-    if (now - lastTap < 320 && Math.abs(e.clientX - lastX) < 32 && Math.abs(e.clientY - lastY) < 32) {
-      lastTap = 0;
-      if (s > 1) { s = 1; x = 0; y = 0; apply(); } else zoomAt(e.clientX, e.clientY, 2.5);
-    } else { lastTap = now; lastX = e.clientX; lastY = e.clientY; }
-  }
-  stage.addEventListener('pointerup', (e) => up(e, false));
-  stage.addEventListener('pointercancel', (e) => up(e, true));
-  stage.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, s * (e.deltaY < 0 ? 1.18 : 1 / 1.18)); }, { passive: false });
-  ['dblclick', 'contextmenu', 'dragstart', 'selectstart', 'gesturestart'].forEach(t => stage.addEventListener(t, (e) => { e.preventDefault(); }));
-  window.addEventListener('resize', () => { if (box.style.display === 'flex') { clamp(); apply(); } });
-})();
+};
+
+$('imgViewer').addEventListener('click', () => $('imgViewer').style.display = 'none');
 
 
 
@@ -6945,7 +6871,7 @@ $('clearGroupBtn').addEventListener('click', async () => {
       return true;
     }
     if (shown('voViewer')) { closeViewOnce(); return true; }
-    if (shown('imgViewer')) { if (window.closeImgViewer) window.closeImgViewer(); else $('imgViewer').style.display = 'none'; return true; }
+    if (shown('imgViewer')) { $('imgViewer').style.display = 'none'; return true; }
     const yAdm = $('ytAdmin');
     if (yAdm && yAdm.classList.contains('open')) { yAdm.classList.remove('open'); return true; }
     const yPl = $('ytPlayer');
