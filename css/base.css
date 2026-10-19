@@ -3301,7 +3301,10 @@ input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="r
    ========================================================================== */
 #toast {
   bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
-  z-index: 5000;
+  z-index: 2147483647 !important;   /* selalu paling atas, di atas semua panel, modal, dan Gemini */
   pointer-events: none;
 }
 #toast .toast-act { pointer-events: auto; }
+
+  /* tombol tambah kontak di tab Kontak: daftar diberi ruang bawah supaya kontak terakhir tidak tertutup tombol */
+  #contactList { padding-bottom: 92px; }

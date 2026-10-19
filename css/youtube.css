@@ -312,3 +312,21 @@ html.yt-adm .yt-admin-only { display: block; }
 .yt-adm-pane { flex: 0 0 auto; min-height: auto; }
 .yt-key-list { flex: 0 0 auto; min-height: auto; overflow: visible; }
 #setYtRow::after { display: none !important; }
+
+
+/* ---------- Panel admin Gemini: memakai tampilan yang sama dengan panel admin YouTube ---------- */
+#gmAdmin { position: fixed; inset: 0; z-index: 4350; display: none; align-items: center; justify-content: center; padding: 12px; background: rgba(8,20,26,.66); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+#gmAdmin.open { display: flex; animation: ytAdmFade .18s ease-out; }
+@media (max-width: 600px) {
+  #gmAdmin { padding: 0; background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+}
+#gmPaneAdd { overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 12px; }
+#gmPaneAdd .yt-adm-sec.first { margin-top: 6px; }
+#gmAdmin .yt-adm-help a { color: var(--brand, #075e54); font-weight: 700; text-decoration: none; }
+.yt-adm-help a { color: var(--brand, #075e54); font-weight: 700; text-decoration: none; }
+#gmAdmin .gm-seg { flex: 0 0 auto; }
+.gm-offnote { display: none; margin: 14px 16px 0; padding: 14px 16px; border-radius: 14px; background: #fdeceb; color: #9c2822; font-size: 13.5px; line-height: 1.55; font-weight: 600; }
+.yt-adm-card.svc-off .gm-offnote { display: block; }
+.yt-adm-card.svc-off #gmKeySecs, .yt-adm-card.svc-off .yt-adm-actions { display: none; }
+.yt-adm-card.compact .gm-offnote { margin: 8px 16px 0; }
+#gmKeyList.is-busy { pointer-events: none; opacity: .65; transition: opacity .15s; }

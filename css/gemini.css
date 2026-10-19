@@ -231,6 +231,14 @@
 .gm-tag.main { background: var(--brand-tint, #e8f5f2); color: var(--brand, #075e54); }
 .gm-tag.warn { background: #fff3dc; color: var(--gm-amber); }
 .gm-tag.off { background: var(--gm-soft-2); color: var(--gm-ink-3); }
+.gm-tag.st-using { background: #e3f6ec; color: var(--gm-green); }
+.gm-tag.st-standby { background: var(--gm-soft-2); color: var(--gm-ink-2); }
+.gm-tag.st-limit { background: #fdeceb; color: var(--gm-red); }
+.gm-tag.st-bad { background: #fff3dc; color: var(--gm-amber); }
+.gm-tag.st-off { background: var(--gm-soft-2); color: var(--gm-ink-3); }
+.gm-key-note { margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--gm-ink-3); font-weight: 600; }
+.gm-key.st-limit { border-color: #f1c9c6; }
+.gm-key.st-limit .gm-key-ico { background: #fdeceb; color: var(--gm-red); }
 .gm-key-bot { display: flex; align-items: center; gap: 4px; padding: 7px 8px 7px 14px; background: var(--gm-soft); border-top: 1px solid var(--gm-line); }
 .gm-sw { position: relative; flex: 0 0 auto; width: 42px; height: 24px; border: 0; padding: 0; border-radius: 999px; background: #c5d1d5; cursor: pointer; transition: background .18s; }
 .gm-sw::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .18s; }
@@ -413,7 +421,7 @@
    Notifikasi: gaya sama dengan toast aplikasi (putih, garis hijau, ikon info).
    Merah = galat, hijau = berhasil.
    ========================================================================== */
-.gm-toast { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 5000; display: flex; align-items: center; justify-content: flex-start; gap: 9px; width: max-content; max-width: min(86%, 340px); padding: 9px 16px 9px 12px; border-radius: 12px; background: #fff; color: #075e54; border: 1.5px solid #0b8a79; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: left; box-shadow: 0 0 0 4px rgba(11, 138, 121, .14), 0 10px 26px rgba(5, 74, 66, .16); opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 20px); transition: opacity .25s, transform .25s, visibility 0s linear .25s; }
+.gm-toast { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); z-index: 2147483647; display: flex; align-items: center; justify-content: flex-start; gap: 9px; width: max-content; max-width: min(86%, 340px); padding: 9px 16px 9px 12px; border-radius: 12px; background: #fff; color: #075e54; border: 1.5px solid #0b8a79; font-size: 13px; font-weight: 600; line-height: 1.4; text-align: left; box-shadow: 0 0 0 4px rgba(11, 138, 121, .14), 0 10px 26px rgba(5, 74, 66, .16); opacity: 0; visibility: hidden; pointer-events: none; transform: translate(-50%, 20px); transition: opacity .25s, transform .25s, visibility 0s linear .25s; }
 .gm-toast.show { opacity: 1; visibility: visible; transform: translate(-50%, 0); transition-delay: 0s; }
 .gm-toast svg { flex: 0 0 18px; width: 18px; height: 18px; color: #0b8a79; }
 .gm-toast span { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
@@ -497,5 +505,29 @@ html.gm-adm .gm-admin-only { display: block; }
 
 /* Saat layanan nonaktif, bagian kunci disembunyikan dan diganti catatan */
 .gm-offnote { display: none; padding: 14px 16px; border-radius: 14px; background: #fdeceb; color: #9c2822; font-size: 13.5px; line-height: 1.55; font-weight: 600; }
-.gm-card.svc-off .gm-offnote { display: block; }
-.gm-card.svc-off #gmKeySecs { display: none; }
+
+
+/* ---------- Lampiran foto dan file ---------- */
+.gm-box { flex-wrap: wrap; position: relative; }
+.gm-cbtn:disabled { opacity: .35; pointer-events: none; }
+.gm-pop { z-index: 8; }
+.gm-pop button { white-space: nowrap; }
+.gm-tray { flex: 0 0 100%; display: flex; gap: 10px; padding: 10px 8px 6px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.gm-tray::-webkit-scrollbar { display: none; }
+.gm-pc { position: relative; flex: 0 0 auto; display: flex; align-items: center; gap: 10px; height: 64px; max-width: 230px; padding: 0 16px 0 10px; border-radius: 16px; background: #f3f5f6; border: 1px solid var(--gm-line); }
+.gm-pc.img { width: 64px; padding: 0; }
+.gm-pc.img img { width: 64px; height: 64px; object-fit: cover; border-radius: 16px; display: block; }
+.gm-pc.load { opacity: .7; }
+.gm-px { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: #2b2b2b; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 0 0 2px #fff; }
+.gm-px svg { width: 12px; height: 12px; }
+.gm-fi { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 11px; background: #fff; border: 1px solid var(--gm-line); display: flex; align-items: center; justify-content: center; color: var(--gm-accent); }
+.gm-fi svg { width: 21px; height: 21px; }
+.gm-fn { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.gm-fn b { font-size: 13px; font-weight: 700; color: #111; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+.gm-fn small { font-size: 11.5px; color: #7a8a90; white-space: nowrap; }
+.gm-atts { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 86%; margin-bottom: 6px; }
+.gm-att.img img { display: block; max-width: 160px; max-height: 200px; border-radius: 16px; background: #f0f0f0; }
+.gm-att.file { display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 8px; border-radius: 16px; background: #f0f0f0; max-width: 100%; }
+.gm-att.file .gm-fn b { max-width: 190px; }
+.gm-box textarea { flex: 1 1 0%; width: 0; }
+.gm-cbtn:focus, .gm-send:focus { outline: none; }

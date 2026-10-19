@@ -562,13 +562,12 @@
   function isRevealed() { return $('ytKeyEye').getAttribute('aria-pressed') === 'true'; }
   function maskKey(k) { return k && k.length > 10 ? k.slice(0, 4) + '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + k.slice(-4) : ''; }
   var msgTimer = 0, msgClear = 0;
-  /* Notifikasi di panel: hilang otomatis (2 detik; 4 detik bila teksnya panjang). keep=true untuk pesan proses. */
+  /* Pop-up pesan di panel sudah dihapus; hanya penanda merah pada kolom input yang tersisa. */
   function admMsg(t, ok, keep) {
-    var m = $('ytAdmMsg'), f = $('ytAdmField');
+    var f = $('ytAdmField');
     clearTimeout(msgTimer); clearTimeout(msgClear);
-    if (!t) { m.classList.remove('show'); f.classList.remove('err'); msgClear = setTimeout(function () { m.textContent = ''; }, 200); return; }
-    m.textContent = t; m.classList.toggle('ok', !!ok); m.classList.add('show');
-    f.classList.toggle('err', !ok && $('ytPaneAdd').classList.contains('on'));
+    if (!t) { if (f) f.classList.remove('err'); return; }
+    if (f) f.classList.toggle('err', !ok && $('ytPaneAdd').classList.contains('on'));
     if (!keep) msgTimer = setTimeout(function () { admMsg(''); }, t.length > 45 ? 4000 : 2000);
   }
   var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';

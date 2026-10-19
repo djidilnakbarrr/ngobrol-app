@@ -769,21 +769,8 @@ async function deleteMyAccount() {
 
 
 
-function showToast(msg, action) {
-  const t = $('toast');
-  t.textContent = msg;
-  if (action && action.label && typeof action.fn === 'function') {
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'toast-act'; b.textContent = action.label;
-    b.addEventListener('click', () => { clearTimeout(window._toastTimer); t.classList.remove('show'); action.fn(); });
-    t.appendChild(b);
-  }
-  t.classList.add('show');
-  clearTimeout(window._toastTimer);
-  window._toastTimer = setTimeout(() => { t.classList.remove('show'); }, action ? 4800 : 2400);
-}
-
-
+/* Pop-up notifikasi dalam aplikasi sudah dihapus. Fungsi dibiarkan kosong agar semua pemanggil lama tetap aman. */
+function showToast(msg, action) {}
 
 window.showToast = showToast;
 /* ID akun baru: 4 huruf besar acak (tanpa I, L, O agar mudah dibaca dan dihafal). Akun lama tetap memakai ID angkanya. */
@@ -828,11 +815,13 @@ function renderGroupAvatar(el) {
 
 }
 
-function renderAvatar(el, name, photoUrl) {
+function renderAvatar(el, name, photoUrl, seed) {
 
   if (!el) return;
 
   el.classList.remove('group-avatar');
+
+  el.dataset.avseed = (seed == null ? '' : String(seed));
 
   const url = photoUrl || "";
 
@@ -861,6 +850,8 @@ function renderAvatar(el, name, photoUrl) {
     el.textContent = initials(name);
 
   }
+
+  try { if (window.paintAvatar) window.paintAvatar(el); } catch (e) {}
 
 }
 
@@ -1566,7 +1557,7 @@ function enterApp() {
 
   const cachedMyPhoto = getCachedPhoto(myId);
 
-  renderAvatar($('settingsAvatar'), myName, cachedMyPhoto);
+  renderAvatar($('settingsAvatar'), myName, cachedMyPhoto, myId);
 
 
   update(ref(db, 'users/' + myId), { name: myName, online: true, lastSeen: Date.now() })
@@ -1607,7 +1598,7 @@ function loadMyProfile() {
 
     if (photo) setCachedPhoto(myId, photo);
 
-    renderAvatar($('settingsAvatar'), myName, photo);
+    renderAvatar($('settingsAvatar'), myName, photo, myId);
 
 
   });
@@ -1894,7 +1885,7 @@ $('photoInput').addEventListener('change', async (e) => {
 
     if (usersCache[myId]) usersCache[myId].photo = dataUrl;
 
-    renderAvatar($('settingsAvatar'), myName, dataUrl);
+    renderAvatar($('settingsAvatar'), myName, dataUrl, myId);
 
 
     showToast('Foto profil berhasil diperbarui');
@@ -2166,7 +2157,7 @@ function onUsersRendered() {
 
   if (currentChat && !isGroupId(currentChat)) {
 
-    renderAvatar($('chatAvatar'), currentChatAlias, getPhotoFor(currentChat));
+    renderAvatar($('chatAvatar'), currentChatAlias, getPhotoFor(currentChat), currentChat);
 
   }
 
@@ -2701,7 +2692,7 @@ function buildChatRow(idUser) {
 
   `;
 
-  renderAvatar(row.querySelector('.avatar-lg'), name, getPhotoFor(idUser));
+  renderAvatar(row.querySelector('.avatar-lg'), name, getPhotoFor(idUser), idUser);
 
   attachChatRowMenu(row, idUser, name);
 
@@ -3029,7 +3020,7 @@ function renderContactList() {
 
       `;
 
-      renderAvatar(row.querySelector('.avatar-md'), name, getPhotoFor(id));
+      renderAvatar(row.querySelector('.avatar-md'), name, getPhotoFor(id), id);
 
       row.onclick = () => openChat(id);
 
@@ -3070,6 +3061,8 @@ function closeAddContactModal() { $('addContactModal').classList.remove('show');
 
 
 $('newChatFab').addEventListener('click', () => $('newMenu').classList.add('show'));
+
+$('newContactFab').addEventListener('click', () => $('newMenu').classList.add('show'));
 
 $('newMenuCancel').addEventListener('click', () => $('newMenu').classList.remove('show'));
 
@@ -3215,7 +3208,7 @@ $('confirmEditContact').addEventListener('click', async () => {
 
       $('chatName').textContent = alias;
 
-      renderAvatar($('chatAvatar'), alias, getPhotoFor(target));
+      renderAvatar($('chatAvatar'), alias, getPhotoFor(target), target);
 
     }
 
@@ -3369,7 +3362,7 @@ function buildMemberRow(id, opts) {
 
     </div>`;
 
-  renderAvatar(row.querySelector('.avatar-md'), name, getPhotoFor(id));
+  renderAvatar(row.querySelector('.avatar-md'), name, getPhotoFor(id), id);
 
   if (opts.onAction) {
 
@@ -3890,7 +3883,7 @@ $('blockedListBtn').addEventListener('click', () => {
 
       `;
 
-      renderAvatar(row.querySelector('.avatar-md'), name, getPhotoFor(id));
+      renderAvatar(row.querySelector('.avatar-md'), name, getPhotoFor(id), id);
 
       row.querySelector('button').addEventListener('click', async () => {
 
@@ -3956,7 +3949,7 @@ function openChat(idUser) {
 
   } else {
 
-    renderAvatar($('chatAvatar'), currentChatAlias, getPhotoFor(idUser));
+    renderAvatar($('chatAvatar'), currentChatAlias, getPhotoFor(idUser), idUser);
 
     $('chatStatus').textContent = usersCache[idUser] && usersCache[idUser].online ? 'online' : 'offline';
 
@@ -5350,7 +5343,7 @@ function buildVNPlayer(m, isSent) {
 
   const authorId = isSent ? myId : m.from;
 
-  renderAvatar(avatar, isSent ? myName : displayName(m.from), getPhotoFor(authorId));
+  renderAvatar(avatar, isSent ? myName : displayName(m.from), getPhotoFor(authorId), authorId);
 
   const mic = document.createElement('div');
 
@@ -6369,7 +6362,7 @@ function openShare(d) {
 
   const av = $('shareAvatar');
 
-  if (d.kind === 'group') renderGroupAvatar(av); else renderAvatar(av, d.name || '?', d.photo || '');
+  if (d.kind === 'group') renderGroupAvatar(av); else renderAvatar(av, d.name || '?', d.photo || '', d.uid);
 
   $('shareName').textContent = d.name || '';
 
@@ -6425,7 +6418,7 @@ $('shareMyContact').addEventListener('click', () => {
 
   openShare({ kind: 'user', title: 'Bagikan Kontak Saya', sub: 'Undang teman lewat satu link',
 
-    name: myName, photo: getPhotoFor(myId), meta: 'ID ' + myId,
+    name: myName, photo: getPhotoFor(myId), uid: myId, meta: 'ID ' + myId,
 
     note: 'Siapa pun yang membuka link ini dapat menambahkan Anda sebagai kontak.',
 
@@ -6449,7 +6442,7 @@ $('menuShareContact').addEventListener('click', () => {
 
   openShare({ kind: 'user', title: 'Bagikan kontak', sub: 'Kirim kontak ini kepada teman Anda',
 
-    name: nm, photo: getPhotoFor(id), meta: 'ID ' + id,
+    name: nm, photo: getPhotoFor(id), uid: id, meta: 'ID ' + id,
 
     note: 'Siapa pun yang membuka link ini dapat menambahkan kontak ini.',
 
@@ -6595,7 +6588,7 @@ function showDeep(cfg) {
 
   const av = $('deepAvatar');
 
-  if (cfg.kind === 'group') renderGroupAvatar(av); else renderAvatar(av, cfg.name, cfg.photo || '');
+  if (cfg.kind === 'group') renderGroupAvatar(av); else renderAvatar(av, cfg.name, cfg.photo || '', cfg.uid);
 
   $('deepName').textContent = cfg.name;
 
@@ -6725,7 +6718,7 @@ async function openAddPreview(id) {
 
     }
 
-    showDeep({ kind: 'user', title: 'Tambah kontak', sub: 'Kontak ini dibagikan lewat link', name: u.name || dispId(id), photo: u.photo || '',
+    showDeep({ kind: 'user', title: 'Tambah kontak', sub: 'Kontak ini dibagikan lewat link', name: u.name || dispId(id), photo: u.photo || '', uid: id,
 
       meta: 'ID ' + id + (u.username ? '  ·  @' + u.username : ''), alias: u.name || '', okText: 'Tambah',
 

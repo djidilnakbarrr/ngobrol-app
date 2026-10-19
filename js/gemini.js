@@ -12,7 +12,7 @@
     { id: 'gemini-pro-latest', name: 'Pro', sub: 'Paling pintar' }
   ];
   var DEFAULT_MODEL = MODELS[0].id;
-  var SYSTEM = 'Kamu adalah Gemini, asisten AI di dalam aplikasi obrolan Ngobrol. Jawab dengan bahasa yang dipakai pengguna (default Bahasa Indonesia), ramah, jelas, dan ringkas. Gunakan daftar atau blok kode hanya bila membantu.';
+  var SYSTEM = 'Kamu adalah Gemini, asisten AI di dalam aplikasi obrolan Ngobrol. Jawab dengan bahasa yang dipakai pengguna (default Bahasa Indonesia), ramah, jelas, dan ringkas. Gunakan daftar atau blok kode hanya bila membantu. Pengguna bisa melampirkan foto dan file; isi file teks, ZIP, dan dokumen diberikan sebagai teks. Bila ada lampiran, jawab berdasarkan isinya.';
   var MAX_KEEP = 60;      /* jumlah pesan yang disimpan di perangkat */
   var MAX_SEND = 24;      /* jumlah pesan terakhir yang dikirim sebagai konteks */
 
@@ -26,6 +26,9 @@
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
     close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
     key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3L21 2M16 7l3 3M14 9l2 2"/></svg>',
+    photo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/></svg>',
+    camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V9a1 1 0 011-1z"/><circle cx="12" cy="13" r="3.6"/></svg>',
+    file: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
     send: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.993.993 0 00-1.39.91L2 9.12c0 .5.37.93.87.99L17 12 2.87 13.88c-.5.07-.87.5-.87 1l.01 4.61c0 .71.73 1.2 1.39.91z"/></svg>',
     stop: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2.5"/></svg>',
@@ -48,7 +51,7 @@
   /* ---------- Status ---------- */
   var KEYS = [], OFF = [], PRIMARY = '', MODEL = DEFAULT_MODEL, META = null;
   var admin = { is: false };
-  var badKeys = {};       /* kunci yang ditolak atau limit selama sesi ini: { kunci: 'limit' | 'invalid' } */
+  var tmpBad = {};        /* kunci gagal sementara (sesi ini): { kunci: { until, kind } } */
   var msgs = [];          /* { role: 'user' | 'model', text, err } */
   var busy = false, ctrl = null, synced = false, myId = '';
   var reveal = false;
@@ -61,14 +64,116 @@
   function gateKnown() { return !window.GMGate || window.GMGate.isKnown(); }
   function offErr() { return { kind: 'off', message: 'Gemini sedang dinonaktifkan oleh admin.' }; }
 
-  function activeKeys() { return KEYS.filter(function (k) { return OFF.indexOf(k) === -1; }); }
-  function usableKeys() { return activeKeys().filter(function (k) { return !badKeys[k]; }); }
-  function orderedKeys() {
-    var u = usableKeys();
-    if (PRIMARY && u.indexOf(PRIMARY) !== -1) u = [PRIMARY].concat(u.filter(function (k) { return k !== PRIMARY; }));
-    return u;
+  /* ---------- Banyak API key: sama seperti YouTube ----------
+     Hanya SATU kunci yang dipakai (kunci utama, atau kunci aktif yang menetap). Kunci siaga tidak disentuh sama sekali
+     (kuotanya utuh). Hanya bila kunci yang dipakai limit harian atau ditolak, aplikasi pindah ke kunci berikutnya dan
+     menetap di sana. Status limit disimpan di perangkat dan reset otomatis saat hari kuota baru (tengah malam Pasifik). */
+  var EXH = 'gm:exhausted', ACT = 'gm:active';
+  var memExh = { day: '', model: '', keys: {} };   /* kuota Gemini dihitung per model: status limit hanya berlaku untuk model yang sama */
+  var memAct = { day: '', key: '' };
+  function pacificDay() {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date()); }
+    catch (e) { return new Date().toISOString().slice(0, 10); }
   }
-  function maskKey(k) { return k.length > 12 ? k.slice(0, 6) + '••••••••••••' + k.slice(-4) : '••••••••'; }
+  function resetText() {
+    try {
+      var now = new Date();
+      var pt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(now);
+      var g = function (t) { for (var i = 0; i < pt.length; i++) if (pt[i].type === t) return +pt[i].value; return 0; };
+      var since = ((g('hour') % 24) * 3600 + g('minute') * 60 + g('second')) * 1000;
+      var at = new Date(now.getTime() + 86400000 - since);
+      var time = new Intl.DateTimeFormat('id-ID', { hour: '2-digit', minute: '2-digit', hour12: false }).format(at).replace(':', '.');
+      var tz = ''; try { new Intl.DateTimeFormat('id-ID', { timeZoneName: 'short' }).formatToParts(at).forEach(function (x) { if (x.type === 'timeZoneName') tz = ' ' + x.value; }); } catch (e) { /* tanpa zona */ }
+      var same = at.getDate() === now.getDate() && at.getMonth() === now.getMonth();
+      return (same ? 'hari ini' : 'besok') + ' sekitar pukul ' + time + tz;
+    } catch (e) { return 'otomatis besok'; }
+  }
+  function exhLoad() {
+    var day = pacificDay(), out = {}, k;
+    if (memExh.day === day && memExh.model === MODEL) for (k in memExh.keys) out[k] = 1;
+    try { var o = JSON.parse(localStorage.getItem(EXH) || '{}'); if (o && o.day === day && o.model === MODEL && o.keys) for (k in o.keys) out[k] = 1; } catch (e) { /* diabaikan */ }
+    return out;
+  }
+  function markExhausted(k) {
+    var day = pacificDay();
+    if (memExh.day !== day || memExh.model !== MODEL) memExh = { day: day, model: MODEL, keys: {} };
+    memExh.keys[k] = 1;
+    try { localStorage.setItem(EXH, JSON.stringify({ day: day, model: MODEL, keys: exhLoad() })); } catch (e) { /* diabaikan */ }
+    keysChanged();
+  }
+  function actLoad() {
+    var day = pacificDay();
+    if (memAct.day === day && memAct.key) return memAct.key;
+    try { var o = JSON.parse(localStorage.getItem(ACT) || '{}'); if (o && o.day === day && o.key) return o.key; } catch (e) { /* diabaikan */ }
+    return '';
+  }
+  function actSave(k) {
+    memAct = { day: pacificDay(), key: k };
+    try { localStorage.setItem(ACT, JSON.stringify(memAct)); } catch (e) { /* diabaikan */ }
+  }
+  /* 'off' | 'limit' | 'bad' | 'ok' */
+  function keyState(k) {
+    if (OFF.indexOf(k) !== -1) return 'off';
+    if (exhLoad()[k]) return 'limit';
+    var t = tmpBad[k]; if (t && t.until > Date.now()) return 'bad';
+    return 'ok';
+  }
+  function activeKeys() { return KEYS.filter(function (k) { return OFF.indexOf(k) === -1; }); }
+  function allOff() { return KEYS.length > 0 && KEYS.every(function (k) { return OFF.indexOf(k) !== -1; }); }
+  function usableKeys() { return KEYS.filter(function (k) { return keyState(k) === 'ok'; }); }
+  /* Urutan percobaan: yang sehat dulu (kunci utama atau kunci yang menetap di depan), yang sempat bermasalah paling akhir.
+     Kunci limit dan nonaktif tidak pernah dicoba. */
+  function tryOrder() {
+    var good = [], bad = [], act = actLoad();
+    KEYS.forEach(function (k) { var st = keyState(k); if (st === 'ok') good.push(k); else if (st === 'bad') bad.push(k); });
+    var first = good.indexOf(PRIMARY) !== -1 ? PRIMARY : act;
+    var i = good.indexOf(first);
+    if (i > 0) { good.splice(i, 1); good.unshift(first); }
+    return good.concat(bad);
+  }
+  function currentKey() { return allOff() ? '' : (tryOrder()[0] || ''); }
+  function pickPrimary(list, off, except) {
+    var on = list.filter(function (k) { return k !== except && off.indexOf(k) === -1; });
+    var ok = on.filter(function (k) { return !exhLoad()[k]; });
+    return (ok[0] || on[0] || '');
+  }
+  /* Kunci utama = pilihan admin selama aktif dan belum limit; bila tidak, kunci yang sedang dipakai menggantikannya */
+  function mainKey() {
+    var pOn = !!PRIMARY && OFF.indexOf(PRIMARY) === -1;
+    if (pOn && keyState(PRIMARY) !== 'limit') return PRIMARY;
+    var cur = allOff() ? '' : currentKey();
+    if (cur) return cur;
+    return pOn ? PRIMARY : pickPrimary(KEYS, OFF, PRIMARY);
+  }
+  /* Admin: simpan kunci utama pengganti ke database bila kunci utama limit/nonaktif dan ada kunci sehat. Hanya kolom "primary" ditulis. */
+  var autoSig = '';
+  function autoMain() {
+    try {
+      var b = window.__ngobrolFB;
+      if (!b || !admin.is || !loaded || !gmOn() || !KEYS.length) return;
+      var want = mainKey();
+      if (!want || want === PRIMARY || KEYS.indexOf(want) === -1 || OFF.indexOf(want) !== -1 || keyState(want) !== 'ok') return;
+      if (PRIMARY && OFF.indexOf(PRIMARY) === -1 && keyState(PRIMARY) !== 'limit') return;
+      var sig = want + '|' + KEYS.length + '|' + OFF.length;
+      if (autoSig === sig) return;
+      autoSig = sig;
+      b.set(b.ref(b.db, 'config/gemini/primary'), want).catch(function () { /* tanpa izin atau offline: dicoba lagi saat keadaan berubah */ });
+    } catch (e) { /* diabaikan */ }
+  }
+  function keysChanged() {
+    try { if ($('gmAdmin') && $('gmAdmin').classList.contains('open')) renderAdmin(); } catch (e) { /* panel belum siap */ }
+    autoMain();
+  }
+  /* Alasan bila tidak ada kunci yang bisa dipakai saat ini */
+  function noUsableError() {
+    var on = activeKeys();
+    if (!KEYS.length) return { kind: 'nokey', message: 'API key belum diatur.' };
+    if (!on.length) return { kind: 'nokey', message: 'Semua API key dinonaktifkan.' };
+    if (on.some(function (k) { return keyState(k) === 'limit'; })) return { kind: 'limit', message: '' };
+    var t = tmpBad[on[0]];
+    return { kind: t && t.kind === 'invalid' ? 'invalid' : 'rate', message: '' };
+  }
+  function maskKey(k) { return k && k.length > 10 ? k.slice(0, 4) + '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' + k.slice(-4) : ''; }
 
   /* ---------- Util ---------- */
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -103,12 +208,8 @@
     return out.join('').replace(/\u0000(\d+)\u0000/g, function (_, i) { return blocks[+i] || ''; });
   }
 
-  var toastT;
-  function toast(t, bad) {
-    var el = $('gmToast'); if (!el || !t) return;
-    el.innerHTML = I.info + '<span>' + esc(t) + '</span>'; el.classList.toggle('bad', !!bad); el.classList.add('show');
-    clearTimeout(toastT); toastT = setTimeout(function () { el.classList.remove('show'); }, bad ? 6500 : 2400);
-  }
+  /* Pop-up notifikasi dihapus: fungsi dibiarkan kosong agar pemanggil lama tetap aman. */
+  function toast() {}
   function copyText(t) {
     function done() { toast('Disalin'); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
@@ -125,7 +226,7 @@
   function oldKey() { return 'ngobrolGemini_' + (myId || 'tamu'); }
   function titleOf(list) {
     for (var i = 0; i < list.length; i++) {
-      if (list[i].role === 'user') { var t = String(list[i].text).replace(/\s+/g, ' ').trim(); return t.length > 48 ? t.slice(0, 48).trim() + '\u2026' : t; }
+      if (list[i].role === 'user') { var t = String(list[i].text || (list[i].files && list[i].files[0] && list[i].files[0].name) || '').replace(/\s+/g, ' ').trim(); if (!t) continue; return t.length > 48 ? t.slice(0, 48).trim() + '\u2026' : t; }
     }
     return 'Obrolan baru';
   }
@@ -143,6 +244,9 @@
     /* Selalu mulai dari obrolan baru; obrolan lama hanya terbuka bila dipilih dari riwayat. */
     curId = uid(); msgs = [];
   }
+  function persist() {
+    try { localStorage.setItem(storeKey(), JSON.stringify(chats, function (k, v) { return k === '_parts' ? undefined : v; })); } catch (e) { /* penyimpanan penuh: abaikan */ }
+  }
   function saveHist() {
     var clean = msgs.filter(function (m) { return !m.err; }).slice(-MAX_KEEP), idx = -1;
     chats.forEach(function (c, i) { if (c.id === curId) idx = i; });
@@ -153,7 +257,7 @@
       chats.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
       chats = chats.slice(0, MAX_CHATS);
     }
-    try { localStorage.setItem(storeKey(), JSON.stringify(chats)); } catch (e) { /* penyimpanan penuh: abaikan */ }
+    persist();
     renderDrawer();
   }
 
@@ -232,7 +336,7 @@
     msgs.forEach(function (m, i) { if (m.role !== 'user') last = i; });
     msgs.forEach(function (m, i) {
       if (m.role === 'user') {
-        h += '<div class="gm-msg me"><div class="gm-ub">' + esc(m.text) + '</div><span class="gm-time">' + fmtTime(m.ts) + '</span></div>';
+        h += '<div class="gm-msg me">' + attHtml(m.files) + (m.text ? '<div class="gm-ub">' + esc(m.text) + '</div>' : '') + '<span class="gm-time">' + fmtTime(m.ts) + '</span></div>';
       } else if (m.err) {
         h += '<div class="gm-msg">' + aiHead(m.ts) + '<div class="gm-ai-body err">' + I.alert + '<span>' + esc(m.text) + '</span></div><div class="gm-acts"><button type="button" class="gm-act" data-gm="retry">' + I.retry + 'Coba lagi</button></div></div>';
       } else {
@@ -248,11 +352,23 @@
 
   /* ---------- Panggilan API ---------- */
   function buildContents() {
-    var list = msgs.filter(function (m) { return !m.err && m.text; }).slice(-MAX_SEND), out = [];
-    list.forEach(function (m) {
-      var role = m.role === 'user' ? 'user' : 'model';
-      if (out.length && out[out.length - 1].role === role) out[out.length - 1].parts[0].text += '\n' + m.text;
-      else out.push({ role: role, parts: [{ text: m.text }] });
+    var list = msgs.filter(function (m) { return !m.err && (m.text || (m.files && m.files.length)); }).slice(-MAX_SEND), out = [], budget = LIM.inline, keep = {}, i;
+    /* lampiran terbaru dikirim utuh; yang lama (atau melebihi batas ukuran) cukup disebut namanya */
+    for (i = list.length - 1; i >= 0; i--) {
+      var pm = list[i];
+      if (pm.role === 'user' && pm._parts && pm._parts.length) { var sz = partsSize(pm._parts); if (sz <= budget) { budget -= sz; keep[i] = 1; } }
+    }
+    list.forEach(function (m, i) {
+      var role = m.role === 'user' ? 'user' : 'model', parts = [];
+      if (role === 'user' && m.files && m.files.length) {
+        if (keep[i]) parts = m._parts.slice();
+        else parts.push({ text: '[Lampiran sebelumnya: ' + m.files.map(function (f) { return f.name; }).join(', ') + ' (isinya tidak lagi tersedia)]' });
+      }
+      var t = m.text || (role === 'user' && keep[i] ? 'Tolong lihat lampiran ini lalu jelaskan isinya.' : '');
+      if (t) parts.push({ text: t });
+      if (!parts.length) return;
+      if (out.length && out[out.length - 1].role === role) out[out.length - 1].parts = out[out.length - 1].parts.concat(parts);
+      else out.push({ role: role, parts: parts });
     });
     while (out.length && out[0].role !== 'user') out.shift();
     return out;
@@ -261,13 +377,27 @@
   var BASE = 'https://generativelanguage.googleapis.com/v1beta/';
   var OVR = {};   /* model hasil deteksi otomatis: { pilihan admin: id model yang benar-benar tersedia } */
 
+  /* Golongkan galat Gemini: limit (kuota harian habis), rate (batas per menit), invalid (kunci ditolak), model, error */
   function classify(status, j) {
-    var msg = (j && j.error && j.error.message) || ('HTTP ' + status), low = String(msg).toLowerCase(), kind = 'error';
-    if (status === 429 || low.indexOf('quota') !== -1 || low.indexOf('rate limit') !== -1) kind = 'limit';
+    var err = (j && j.error) || {}, msg = err.message || ('HTTP ' + status), low = String(msg).toLowerCase(), kind = 'error', retry = 0;
+    var blob = low;
+    try { blob += ' ' + JSON.stringify(err.details || []).toLowerCase(); } catch (e) { /* diabaikan */ }
+    try {
+      (err.details || []).forEach(function (d) {
+        var m = d && d.retryDelay && /^([\d.]+)s$/.exec(String(d.retryDelay));
+        if (m) retry = Math.max(retry, +m[1]);
+      });
+    } catch (e) { /* diabaikan */ }
+    var exhausted = status === 429 || err.status === 'RESOURCE_EXHAUSTED' || low.indexOf('quota') !== -1 || low.indexOf('rate limit') !== -1;
+    if (exhausted) {
+      if (/perday|per day|daily|per_day/.test(blob)) kind = 'limit';                         /* kuota harian habis */
+      else if (/perminute|per minute|per_minute|rate limit/.test(blob)) kind = 'rate';       /* terlalu cepat */
+      else kind = 'rate?';                                                                   /* belum jelas: coba lagi lalu anggap limit sementara */
+    }
     else if (status === 400 && (low.indexOf('api key') !== -1 || low.indexOf('api_key') !== -1)) kind = 'invalid';
     else if (status === 401 || status === 403) kind = 'invalid';
     else if (status === 404) kind = 'model';
-    return { kind: kind, message: msg, status: status };
+    return { kind: kind, message: msg, status: status, retry: retry };
   }
 
   /* Satu permintaan. Mengembalikan JSON, atau melempar { kind, message, status } */
@@ -329,34 +459,60 @@
     return t;
   }
 
-  /* Coba kunci satu per satu; kunci yang limit atau tidak valid dilewati */
+  function wait(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+  /* Pakai satu kunci saja. Hanya bila kunci itu limit harian atau ditolak, pindah ke kunci berikutnya dan menetap di sana.
+     Kunci siaga yang lain tidak disentuh. Batas per menit bukan kuota habis: coba lagi kunci YANG SAMA setelah jeda singkat. */
   function ask() {
     if (!gmOn()) return Promise.reject(offErr());
-    var keys = orderedKeys(), tried = 0, lastKind = '';
-    if (!keys.length && activeKeys().length) { badKeys = {}; keys = orderedKeys(); }
-    var body = { systemInstruction: { parts: [{ text: SYSTEM }] }, contents: buildContents(), generationConfig: { temperature: 0.8, maxOutputTokens: 2048 } };
-    function next() {
-      var k = keys.shift();
-      if (!k) {
-        if (!tried) throw { kind: 'nokey', message: 'Tidak ada API key yang bisa dipakai saat ini.' };
-        throw { kind: lastKind === 'invalid' ? 'invalid' : 'limit', message: '' };
+    var pool = tryOrder();
+    if (!pool.length) return Promise.reject(noUsableError());
+    var body = { systemInstruction: { parts: [{ text: SYSTEM }] }, contents: buildContents(), generationConfig: { temperature: 0.8, maxOutputTokens: 8192 } };
+    var lastErr = null, retries = {}, tried = {};
+    function attempt(i) {
+      if (i >= pool.length) {
+        /* daftar habis: cek kunci yang belum dicoba (mis. ditambah admin saat permintaan berjalan) */
+        var more = tryOrder().filter(function (x) { return !tried[x] && pool.indexOf(x) === -1; });
+        if (more.length) { pool = pool.concat(more); return attempt(i); }
+        return Promise.reject(lastErr || noUsableError());
       }
-      tried++;
+      if (!gmOn()) return Promise.reject(offErr());
+      var k = pool[i], st = keyState(k);
+      if (st === 'off' || st === 'limit') return attempt(i + 1);   /* berubah saat permintaan lain berjalan */
+      tried[k] = 1;
       return callGemini(k, body, ctrl.signal).catch(function (e) {
         if (e && e.kind === 'model') return resolveModel(k, ctrl.signal).then(function (m) { return callGemini(k, body, ctrl.signal, m); });
         throw e;
-      }).then(extractText, function (e) {
-        if (e && (e.kind === 'limit' || e.kind === 'invalid')) { badKeys[k] = e.kind; lastKind = e.kind; return next(); }
-        throw e;
+      }).then(function (j) {
+        var t = extractText(j);
+        var moved = actLoad() !== k;
+        if (moved) actSave(k);
+        var wasBad = !!tmpBad[k]; delete tmpBad[k];
+        if (moved || wasBad) keysChanged();
+        return t;
+      }, function (e) {
+        if (!e || !e.kind || e.kind === 'error' || e.kind === 'model' || e.kind === 'blocked' || e.kind === 'off') throw e;   /* jaringan atau galat non-kunci: jangan ganti kunci */
+        if (e.kind === 'rate' || e.kind === 'rate?') {
+          var n = retries[k] = (retries[k] || 0) + 1;
+          if (n <= 2) return wait(Math.min(8000, e.retry ? Math.ceil(e.retry * 1000) + 300 : 1500 * n)).then(function () { return attempt(i); });
+          if (e.kind === 'rate') { lastErr = { kind: 'rate', message: '' }; throw lastErr; }   /* batas per menit: kunci tetap sehat, kunci siaga tidak disentuh */
+          /* tetap gagal tanpa kejelasan: anggap limit sementara (10 menit) lalu pindah */
+          tmpBad[k] = { until: Date.now() + 600000, kind: 'limit' }; lastErr = { kind: 'limit', message: '' }; keysChanged();
+          return attempt(i + 1);
+        }
+        lastErr = e;
+        if (e.kind === 'limit') markExhausted(k);
+        else { tmpBad[k] = { until: Date.now() + 600000, kind: 'invalid' }; keysChanged(); }
+        return attempt(i + 1);
       });
     }
-    return Promise.resolve().then(next);
+    return Promise.resolve().then(function () { return attempt(0); });
   }
 
   function errText(e) {
     if (!e) return 'Terjadi kesalahan. Coba lagi.';
     if (e.name === 'AbortError') return '';
     switch (e.kind) {
+      case 'rate': return 'Terlalu banyak permintaan ke Gemini. Tunggu sebentar lalu coba lagi.';
       case 'limit': return 'Kuota Gemini sedang habis. Coba lagi nanti' + (admin.is ? ', atau tambahkan API key lain lewat ikon kunci.' : '.');
       case 'invalid': return admin.is ? 'API key Gemini tidak valid. Perbarui lewat ikon kunci di kanan atas.' : 'API key Gemini bermasalah. Silakan hubungi admin aplikasi.';
       case 'model': return admin.is ? 'Model Gemini tidak tersedia untuk kunci ini' + (e.message ? ' (' + e.message + ')' : '') + '. Coba model lain lewat ikon kunci.' : 'Model Gemini sedang tidak tersedia. Silakan hubungi admin aplikasi.';
@@ -368,12 +524,13 @@
   }
 
   function updSend() {
-    var s = $('gmSend'), has = !!$('gmInput').value.trim(), on = gmOn() && activeKeys().length > 0;
+    var s = $('gmSend'), has = !!$('gmInput').value.trim() || pending.length > 0, on = gmOn() && activeKeys().length > 0;
     s.hidden = !(busy || (has && on));
     s.classList.toggle('stop', busy);
     s.innerHTML = busy ? I.stop : I.send;
     s.setAttribute('aria-label', busy ? 'Hentikan' : 'Kirim');
-    s.disabled = busy ? false : !on;
+    s.disabled = busy ? false : (!on || pendingLoading());
+    var pl = $('gmPlus'); if (pl) pl.disabled = !on;
   }
   function setBusy(v) { busy = v; updSend(); }
 
@@ -389,38 +546,47 @@
 
   function send(text) {
     text = String(text || '').trim();
-    if (!text || busy || !gmOn() || !activeKeys().length) return;
-    msgs.push({ role: 'user', text: text, ts: Date.now() }); saveHist();
+    if (busy || !gmOn() || !activeKeys().length) return;
+    if (pendingLoading()) { toast('Tunggu sebentar, lampiran sedang diproses.'); return; }
+    var ready = pendingReady();
+    if (!text && !ready.length) return;
+    var m = { role: 'user', text: text, ts: Date.now() };
+    if (ready.length) {
+      m.files = ready.map(function (x) { return { name: x.name, size: x.size, kind: x.kind, label: x.label, thumb: x.thumb || '' }; });
+      m._parts = ready.reduce(function (a, x) { return a.concat(x.parts); }, []);
+    }
+    msgs.push(m); saveHist();
+    pending = []; renderTray();
     $('gmInput').value = ''; fit(); updSend();
     run();
   }
   function retry() {
     if (busy || !gmOn()) return;
     while (msgs.length && msgs[msgs.length - 1].err) msgs.pop();
-    badKeys = {};
+    tmpBad = {};
     run();
   }
   function regen() {
     if (busy || !gmOn()) return;
     while (msgs.length && msgs[msgs.length - 1].role !== 'user') msgs.pop();
-    saveHist(); badKeys = {};
+    saveHist(); tmpBad = {};
     run();
   }
   function stopRun() { runTok++; if (busy && ctrl) ctrl.abort(); ctrl = null; busy = false; }
   function newChat() {
     stopRun();
     if (msgs.length) saveHist();
-    curId = uid(); msgs = []; closeDrawer(); closePop(); setBusy(false); render(); scrollEnd(false);
+    curId = uid(); msgs = []; pending = []; renderTray(); closeDrawer(); closePop(); setBusy(false); render(); scrollEnd(false);
   }
   function openChat(id) {
     var c = null; chats.forEach(function (x) { if (x.id === id) c = x; });
     if (!c) return;
     stopRun();
-    curId = c.id; msgs = c.msgs.slice(); closeDrawer(); setBusy(false); render(); scrollEnd(false);
+    curId = c.id; msgs = c.msgs.slice(); pending = []; renderTray(); closeDrawer(); setBusy(false); render(); scrollEnd(false);
   }
   function delChat(id) {
     chats = chats.filter(function (c) { return c.id !== id; });
-    try { localStorage.setItem(storeKey(), JSON.stringify(chats)); } catch (e) { /* abaikan */ }
+    persist();
     if (id === curId) { stopRun(); curId = uid(); msgs = []; setBusy(false); render(); } else renderDrawer();
     toast('Obrolan dihapus');
   }
@@ -450,6 +616,349 @@
     $('gmDlgT').textContent = title; $('gmDlgD').textContent = text; dlgAct = act; $('gmDlg').hidden = false;
   }
   function hideDlg() { $('gmDlg').hidden = true; dlgAct = null; }
+
+  /* ---------- Lampiran: foto dan file ---------- */
+  var MAX_FILES = 8;
+  var LIM = { bin: 12 * 1048576, text: 5 * 1048576, zip: 40 * 1048576, inline: 15000000, textTotal: 600000, textOne: 150000 };
+  var ZIP_TEXT_BUDGET = 300000, ZIP_ONE_MAX = 2 * 1048576, ZIP_ONE_CHARS = 100000;
+  var pending = [];       /* lampiran yang belum dikirim: { id, name, size, kind, label, thumb, parts, loading } */
+
+  var TEXT_EXT = {};
+  ('txt md markdown csv tsv json jsonl ndjson ipynb xml html htm xhtml css scss sass less js mjs cjs jsx ts tsx vue svelte astro py pyw rb php java kt kts swift c h cc cpp cxx hpp cs go rs dart lua pl pm sh bash zsh fish bat cmd ps1 sql yml yaml toml ini cfg conf env log gradle properties tex srt vtt diff patch r scala vb asm tf proto graphql gql ejs hbs pug twig njk liquid webmanifest svg rst adoc gitignore gitattributes editorconfig dockerignore htaccess lock').split(' ').forEach(function (e) { TEXT_EXT[e] = 1; });
+  var TEXT_NAMES = { dockerfile: 1, makefile: 1, license: 1, licence: 1, readme: 1, procfile: 1, gemfile: 1, rakefile: 1, changelog: 1, authors: 1, codeowners: 1 };
+  var IMG_EXT = { jpg: 1, jpeg: 1, png: 1, webp: 1, gif: 1, bmp: 1, heic: 1, heif: 1, avif: 1, jfif: 1, tif: 1, tiff: 1 };
+  var AUD = { mp3: 'audio/mp3', wav: 'audio/wav', aac: 'audio/aac', m4a: 'audio/mp4', ogg: 'audio/ogg', oga: 'audio/ogg', opus: 'audio/ogg', flac: 'audio/flac', aif: 'audio/aiff', aiff: 'audio/aiff' };
+  var VID = { mp4: 'video/mp4', mpeg: 'video/mpeg', mpg: 'video/mpeg', mov: 'video/quicktime', avi: 'video/x-msvideo', flv: 'video/x-flv', webm: 'video/webm', wmv: 'video/x-ms-wmv', '3gp': 'video/3gpp', mkv: 'video/x-matroska' };
+  var OFFICE = { docx: 1, pptx: 1, xlsx: 1 };
+  var NO_EXT = { rar: 'RAR', '7z': '7Z', tar: 'TAR', gz: 'GZ', tgz: 'TGZ', bz2: 'BZ2', xz: 'XZ', doc: 'DOC', xls: 'XLS', ppt: 'PPT', exe: 'EXE', apk: 'APK', iso: 'ISO', dmg: 'DMG' };
+  var ZIP_BIN = /\.(png|jpe?g|gif|webp|bmp|ico|icns|heic|avif|tiff?|psd|mp3|wav|aac|m4a|ogg|flac|mp4|mov|avi|mkv|webm|pdf|zip|rar|7z|gz|tgz|tar|bz2|xz|exe|dll|so|dylib|class|jar|war|bin|dat|o|a|obj|pyc|woff2?|ttf|otf|eot|doc|xls|ppt|docx|xlsx|pptx|odt|ods|db|sqlite|sqlite3|wasm|map|min\.js)$/i;
+  var ZIP_JUNK = /(^|\/)(node_modules|\.git|__macosx|\.idea|\.vscode|dist|build|\.next|venv|\.venv|__pycache__)\/|(^|\/)(\.ds_store|thumbs\.db|package-lock\.json|yarn\.lock|pnpm-lock\.yaml|npm-shrinkwrap\.json)$|(^|\/)\.env(\.|$)/i;
+
+  function extOf(n) { var m = /\.([A-Za-z0-9]+)$/.exec(String(n || '')); return m ? m[1].toLowerCase() : ''; }
+  function baseOf(n) { var p = String(n || '').split('/'); return p[p.length - 1].toLowerCase(); }
+  function fmtSize(b) { b = +b || 0; return b < 1024 ? b + ' B' : b < 1048576 ? (b / 1024).toFixed(b < 10240 ? 1 : 0).replace('.', ',') + ' KB' : (b / 1048576).toFixed(1).replace('.', ',') + ' MB'; }
+  function isTextName(name) { var e = extOf(name), b = baseOf(name); return !!(TEXT_EXT[e] || TEXT_NAMES[b] || TEXT_NAMES[b.replace(/\.[^.]*$/, '')] || (b.charAt(0) === '.' && !e)); }
+  function hasNul(u8) { var n = Math.min(u8.length, 4000); for (var i = 0; i < n; i++) if (u8[i] === 0) return true; return false; }
+  function decodeText(u8) {
+    var t = new TextDecoder('utf-8').decode(u8);
+    return t.charCodeAt(0) === 0xFEFF ? t.slice(1) : t;
+  }
+  function fail2(msg) { return Promise.reject({ message: msg }); }
+  function readBuf(file) {
+    if (file.arrayBuffer) return file.arrayBuffer();
+    return new Promise(function (res, rej) { var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = function () { rej(new Error('Gagal membaca file')); }; r.readAsArrayBuffer(file); });
+  }
+  function readB64(file) {
+    return new Promise(function (res, rej) {
+      var r = new FileReader();
+      r.onload = function () { var s = String(r.result || ''), i = s.indexOf(','); res(i === -1 ? '' : s.slice(i + 1)); };
+      r.onerror = function () { rej({ message: 'Gagal membaca file ' + file.name }); };
+      r.readAsDataURL(file);
+    });
+  }
+
+  /* --- foto: diperkecil dan dikompres agar ringan dikirim --- */
+  function loadImg(file) {
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () { URL.revokeObjectURL(u); res(im); };
+      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('decode')); };
+      im.src = u;
+    });
+  }
+  function scaled(im, max, q) {
+    var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
+    if (!w || !h) throw new Error('decode');
+    var r = Math.min(1, max / Math.max(w, h)), c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * r)); c.height = Math.max(1, Math.round(h * r));
+    var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+    var d = c.toDataURL('image/jpeg', q);
+    if (d.indexOf('data:image/jpeg') !== 0) throw new Error('decode');
+    return d;
+  }
+  function imageFile(file) {
+    var ext = extOf(file.name), type = (file.type || '').toLowerCase();
+    return loadImg(file).then(function (im) {
+      var big = scaled(im, 1600, 0.85), th = scaled(im, 160, 0.7);
+      return { kind: 'image', label: 'Foto', thumb: th, parts: [{ inlineData: { mimeType: 'image/jpeg', data: big.split(',')[1] } }] };
+    }, function () {
+      /* browser tidak bisa membuka gambarnya (mis. HEIC): kirim apa adanya bila Gemini mendukung dan ukurannya wajar */
+      var mime = (ext === 'heic' || type === 'image/heic') ? 'image/heic' : (ext === 'heif' || type === 'image/heif') ? 'image/heif' : '';
+      if (!mime) return fail2('Foto ' + file.name + ' tidak bisa dibuka. Gunakan JPG atau PNG.');
+      if (file.size > LIM.bin) return fail2('Foto terlalu besar (maksimal ' + fmtSize(LIM.bin) + ').');
+      return readB64(file).then(function (b) { return { kind: 'image', label: 'Foto', thumb: '', parts: [{ inlineData: { mimeType: mime, data: b } }] }; });
+    });
+  }
+
+  function binFile(file, mime, kind, label) {
+    if (file.size > LIM.bin) return fail2(label + ' terlalu besar (maksimal ' + fmtSize(LIM.bin) + ').');
+    if (!file.size) return fail2('File ' + file.name + ' kosong.');
+    return readB64(file).then(function (b) { return { kind: kind, label: label, thumb: '', parts: [{ inlineData: { mimeType: mime, data: b } }] }; });
+  }
+
+  function textPart(name, body, cut) {
+    return { text: '[Lampiran: ' + name + ']\n' + body + (cut ? '\n…(isi dipotong karena terlalu panjang)' : '') + '\n[Akhir lampiran: ' + name + ']' };
+  }
+  function textFile(file) {
+    if (file.size > LIM.text) return fail2('File teks terlalu besar (maksimal ' + fmtSize(LIM.text) + ').');
+    if (!file.size) return fail2('File ' + file.name + ' kosong.');
+    return readBuf(file).then(function (buf) {
+      var u8 = new Uint8Array(buf);
+      if (hasNul(u8)) return fail2('File ' + file.name + ' bukan teks dan format ini belum bisa dibaca Gemini.');
+      var t = decodeText(u8), cut = t.length > LIM.textOne;
+      if (cut) t = t.slice(0, LIM.textOne);
+      return { kind: 'text', label: (extOf(file.name) || 'Teks').toUpperCase(), thumb: '', parts: [textPart(file.name, t, cut)] };
+    });
+  }
+
+  /* --- ZIP: dibaca langsung di perangkat (tanpa pustaka luar) --- */
+  function u16(v, o) { return v.getUint16(o, true); }
+  function u32(v, o) { return v.getUint32(o, true); }
+  function u64(v, o) { return v.getUint32(o, true) + v.getUint32(o + 4, true) * 4294967296; }
+  function readZip(buf) {
+    var v = new DataView(buf), n = buf.byteLength, eocd = -1, i;
+    for (i = n - 22; i >= Math.max(0, n - 22 - 65535); i--) if (u32(v, i) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error('bukan zip');
+    var count = u16(v, eocd + 10), cdSize = u32(v, eocd + 12), cdOff = u32(v, eocd + 16);
+    if (count === 0xFFFF || cdOff === 0xFFFFFFFF || cdSize === 0xFFFFFFFF) {
+      var loc = eocd - 20;
+      if (loc >= 0 && u32(v, loc) === 0x07064b50) {
+        var z = u64(v, loc + 8);
+        if (z + 56 <= n && u32(v, z) === 0x06064b50) { count = u64(v, z + 32); cdOff = u64(v, z + 48); }
+      }
+    }
+    var out = [], p = cdOff, td = new TextDecoder('utf-8');
+    for (i = 0; i < count && p + 46 <= n; i++) {
+      if (u32(v, p) !== 0x02014b50) break;
+      var flags = u16(v, p + 8), method = u16(v, p + 10), cs = u32(v, p + 20), us = u32(v, p + 24), nl = u16(v, p + 28), el = u16(v, p + 30), cl = u16(v, p + 32), lo = u32(v, p + 42);
+      if (p + 46 + nl + el > n) break;
+      var name = td.decode(new Uint8Array(buf, p + 46, nl)), q = p + 46 + nl, end = q + el;
+      while (q + 4 <= end) {
+        var id = u16(v, q), sz = u16(v, q + 2);
+        if (id === 1) { var r = q + 4; if (us === 0xFFFFFFFF) { us = u64(v, r); r += 8; } if (cs === 0xFFFFFFFF) { cs = u64(v, r); r += 8; } if (lo === 0xFFFFFFFF) lo = u64(v, r); }
+        q += 4 + sz;
+      }
+      out.push({ name: name.replace(/\\/g, '/'), flags: flags, method: method, cs: cs, us: us, lo: lo });
+      p += 46 + nl + el + cl;
+    }
+    return out;
+  }
+  function entryBytes(buf, e) {
+    try {
+      var v = new DataView(buf), o = e.lo;
+      if (o + 30 > buf.byteLength || u32(v, o) !== 0x04034b50) return Promise.reject(new Error('rusak'));
+      var s = o + 30 + u16(v, o + 26) + u16(v, o + 28), data = new Uint8Array(buf, s, e.cs);
+      if (e.method === 0) return Promise.resolve(data);
+      if (e.method === 8 && typeof DecompressionStream !== 'undefined' && typeof Blob !== 'undefined' && Blob.prototype.stream) {
+        return new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer().then(function (b) { return new Uint8Array(b); });
+      }
+    } catch (err) { return Promise.reject(err); }
+    return Promise.reject(new Error('metode tidak didukung'));
+  }
+  function readEntries(buf, ents, budget, perChars) {
+    /* baca isi teks entri dengan urutan kecil dulu agar lebih banyak berkas muat */
+    var chain = Promise.resolve();
+    ents.slice().sort(function (a, b) { return a.us - b.us; }).forEach(function (e) {
+      chain = chain.then(function () {
+        if (budget <= 0) { e.skip = 'melebihi batas'; return; }
+        return entryBytes(buf, e).then(function (u8) {
+          if (hasNul(u8)) { e.skip = 'biner'; return; }
+          var t = decodeText(u8), lim = Math.min(perChars, budget);
+          if (t.length > lim) { t = t.slice(0, lim) + '\n…(dipotong)'; }
+          budget -= t.length; e.text = t;
+        }).catch(function () { e.skip = 'gagal dibaca'; });
+      });
+    });
+    return chain;
+  }
+  function zipFile(file) {
+    if (file.size > LIM.zip) return fail2('ZIP terlalu besar (maksimal ' + fmtSize(LIM.zip) + ').');
+    return readBuf(file).then(function (buf) {
+      var ents;
+      try { ents = readZip(buf); } catch (e) { return fail2('ZIP tidak bisa dibaca: file rusak atau tidak lengkap.'); }
+      var files = ents.filter(function (e) { return !/\/$/.test(e.name); });
+      if (!files.length) return fail2('ZIP ini kosong.');
+      var cand = [];
+      files.forEach(function (e) {
+        var low = e.name.toLowerCase();
+        if (ZIP_JUNK.test(low)) { e.skip = 'diabaikan'; return; }
+        if (e.flags & 1) { e.skip = 'terenkripsi'; return; }
+        if (!isTextName(low) && ZIP_BIN.test(low)) { e.skip = 'biner'; return; }
+        if (e.us > ZIP_ONE_MAX) { e.skip = 'terlalu besar'; return; }
+        cand.push(e);
+      });
+      return readEntries(buf, cand, ZIP_TEXT_BUDGET, ZIP_ONE_CHARS).then(function () {
+        var list = files.slice(0, 250).map(function (e) { return '- ' + e.name + ' (' + fmtSize(e.us) + ')' + (e.skip ? ' [' + e.skip + ']' : ''); }).join('\n');
+        if (files.length > 250) list += '\n…dan ' + (files.length - 250) + ' berkas lainnya';
+        var body = files.filter(function (e) { return e.text != null; }).map(function (e) { return '=== ' + e.name + ' ===\n' + e.text; }).join('\n\n');
+        var read = files.filter(function (e) { return e.text != null; }).length;
+        var t = '[Lampiran ZIP: ' + file.name + ', ' + files.length + ' berkas, ' + read + ' berkas teks terbaca]\nDaftar berkas:\n' + list + (body ? '\n\nIsi berkas teks:\n' + body : '\n\n(Tidak ada berkas teks yang bisa dibaca.)') + '\n[Akhir lampiran ZIP]';
+        return { kind: 'zip', label: 'ZIP', thumb: '', parts: [{ text: t }] };
+      });
+    });
+  }
+
+  /* --- Word, PowerPoint, Excel (docx, pptx, xlsx) --- */
+  function xmlDoc(u8) { return new DOMParser().parseFromString(decodeText(u8), 'application/xml'); }
+  function paraText(p, tag, br) {
+    var out = '', walk = function (n) {
+      for (var c = n.firstChild; c; c = c.nextSibling) {
+        if (c.nodeType !== 1) continue;
+        if (c.nodeName === tag) out += c.textContent;
+        else if (c.nodeName === 'w:tab') out += '\t';
+        else if (c.nodeName === br) out += '\n';
+        else walk(c);
+      }
+    };
+    walk(p); return out;
+  }
+  function colIdx(ref) { var m = /^([A-Z]+)/.exec(ref || ''), n = 0; if (!m) return -1; for (var i = 0; i < m[1].length; i++) n = n * 26 + (m[1].charCodeAt(i) - 64); return n - 1; }
+  function officeFile(file) {
+    var ext = extOf(file.name);
+    if (file.size > LIM.zip) return fail2('File terlalu besar (maksimal ' + fmtSize(LIM.zip) + ').');
+    return readBuf(file).then(function (buf) {
+      var ents;
+      try { ents = readZip(buf); } catch (e) { return fail2('Dokumen ' + file.name + ' tidak bisa dibaca (rusak atau terkunci).'); }
+      var byName = {}; ents.forEach(function (e) { byName[e.name] = e; });
+      function get(n) { return byName[n] ? entryBytes(buf, byName[n]).then(xmlDoc) : Promise.resolve(null); }
+      var job;
+      if (ext === 'docx') {
+        job = get('word/document.xml').then(function (d) {
+          if (!d) throw new Error('x');
+          var ps = d.getElementsByTagName('w:p'), out = [];
+          for (var i = 0; i < ps.length; i++) out.push(paraText(ps[i], 'w:t', 'w:br'));
+          return out.join('\n');
+        });
+      } else if (ext === 'pptx') {
+        var slides = ents.map(function (e) { var m = /^ppt\/slides\/slide(\d+)\.xml$/.exec(e.name); return m ? { n: +m[1], e: e } : null; }).filter(Boolean).sort(function (a, b) { return a.n - b.n; });
+        if (!slides.length) return fail2('Isi presentasi ' + file.name + ' tidak ditemukan.');
+        job = slides.reduce(function (pr, s) {
+          return pr.then(function (acc) {
+            return entryBytes(buf, s.e).then(xmlDoc).then(function (d) {
+              var ps = d.getElementsByTagName('a:p'), out = [];
+              for (var i = 0; i < ps.length; i++) { var t = paraText(ps[i], 'a:t', 'a:br'); if (t.trim()) out.push(t); }
+              acc.push('--- Slide ' + s.n + ' ---\n' + out.join('\n')); return acc;
+            });
+          });
+        }, Promise.resolve([])).then(function (a) { return a.join('\n\n'); });
+      } else {
+        var sheets = ents.map(function (e) { var m = /^xl\/worksheets\/sheet(\d+)\.xml$/.exec(e.name); return m ? { n: +m[1], e: e } : null; }).filter(Boolean).sort(function (a, b) { return a.n - b.n; });
+        if (!sheets.length) return fail2('Isi spreadsheet ' + file.name + ' tidak ditemukan.');
+        job = get('xl/sharedStrings.xml').then(function (sd) {
+          var shared = [];
+          if (sd) { var sis = sd.getElementsByTagName('si'); for (var i = 0; i < sis.length; i++) { var ts = sis[i].getElementsByTagName('t'), s = ''; for (var j = 0; j < ts.length; j++) s += ts[j].textContent; shared.push(s); } }
+          return sheets.reduce(function (pr, sh) {
+            return pr.then(function (acc) {
+              return entryBytes(buf, sh.e).then(xmlDoc).then(function (d) {
+                var rows = d.getElementsByTagName('row'), out = [];
+                for (var i = 0; i < rows.length; i++) {
+                  var cells = rows[i].getElementsByTagName('c'), line = [];
+                  for (var j = 0; j < cells.length; j++) {
+                    var c = cells[j], t = c.getAttribute('t'), vEl = c.getElementsByTagName('v')[0], val = '';
+                    if (t === 'inlineStr') { var ie = c.getElementsByTagName('t')[0]; val = ie ? ie.textContent : ''; }
+                    else if (vEl) { val = t === 's' ? (shared[+vEl.textContent] || '') : vEl.textContent; }
+                    var ci = colIdx(c.getAttribute('r')); if (ci < 0) ci = line.length;
+                    while (line.length < ci) line.push('');
+                    line[ci] = val;
+                  }
+                  if (line.length) out.push(line.join('\t'));
+                }
+                acc.push('--- Lembar ' + sh.n + ' ---\n' + out.join('\n')); return acc;
+              });
+            });
+          }, Promise.resolve([])).then(function (a) { return a.join('\n\n'); });
+        });
+      }
+      return job.then(function (t) {
+        t = String(t || '').trim();
+        if (!t) return fail2('Dokumen ' + file.name + ' tidak berisi teks yang bisa dibaca.');
+        var cut = t.length > LIM.textOne; if (cut) t = t.slice(0, LIM.textOne);
+        return { kind: 'doc', label: ext.toUpperCase(), thumb: '', parts: [textPart(file.name, t, cut)] };
+      }, function (e) { return fail2((e && e.message && e.message !== 'x') ? e.message : 'Dokumen ' + file.name + ' tidak bisa dibaca (rusak, terkunci, atau formatnya tidak dikenal).'); });
+    });
+  }
+
+  /* Format tidak dikenal: dicoba sebagai teks, jika bukan teks ditolak dengan pesan jelas */
+  function sniffFile(file) {
+    var ext = extOf(file.name);
+    if (NO_EXT[ext]) return fail2('Format ' + NO_EXT[ext] + ' belum didukung. Ubah ke ZIP, PDF, atau teks lalu kirim lagi.');
+    if (!file.size) return fail2('File ' + file.name + ' kosong.');
+    if (file.size > LIM.text) return fail2('Format file ini belum didukung Gemini.');
+    return readBuf(file.slice(0, 8000)).then(function (b) {
+      var u8 = new Uint8Array(b);
+      if (hasNul(u8)) return fail2('Format ' + (ext ? '.' + ext : 'file ini') + ' belum didukung Gemini.');
+      return textFile(file);
+    });
+  }
+
+  function processFile(file) {
+    var ext = extOf(file.name), type = (file.type || '').toLowerCase();
+    if (type === 'image/svg+xml' || ext === 'svg') return textFile(file);
+    if (/^image\//.test(type) || IMG_EXT[ext]) return imageFile(file);
+    if (ext === 'zip' || type === 'application/zip' || type === 'application/x-zip-compressed' || type === 'application/x-zip') return zipFile(file);
+    if (OFFICE[ext]) return officeFile(file);
+    if (ext === 'pdf' || type === 'application/pdf') return binFile(file, 'application/pdf', 'pdf', 'PDF');
+    if (AUD[ext] || /^audio\//.test(type)) return binFile(file, AUD[ext] || type, 'audio', 'Audio');
+    if (VID[ext] || /^video\//.test(type)) return binFile(file, VID[ext] || type, 'video', 'Video');
+    if (isTextName(file.name) || /^text\//.test(type) || /json|xml|javascript|x-sh/.test(type)) return textFile(file);
+    return sniffFile(file);
+  }
+
+  function partsSize(parts) { var n = 0; (parts || []).forEach(function (p) { n += p.inlineData ? p.inlineData.data.length : (p.text ? p.text.length : 0); }); return n; }
+  function pendingReady() { return pending.filter(function (x) { return !x.loading; }); }
+  function pendingLoading() { return pending.some(function (x) { return x.loading; }); }
+  function canAttach() { return gmOn() && activeKeys().length > 0 && synced; }
+
+  function iconFor(kind) { return kind === 'image' ? I.photo : I.file; }
+  var KIND_LABEL = { image: 'Foto', zip: 'ZIP', pdf: 'PDF', audio: 'Audio', video: 'Video', text: 'Teks', doc: 'Dokumen' };
+  function safeThumb(t) { return /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(String(t || '')) ? t : ''; }
+
+  function renderTray() {
+    var t = $('gmTray'); if (!t) return;
+    if (!pending.length) { t.hidden = true; t.innerHTML = ''; return; }
+    t.hidden = false;
+    t.innerHTML = pending.map(function (x) {
+      var th = safeThumb(x.thumb);
+      return '<div class="gm-pc' + (x.loading ? ' load' : '') + (th ? ' img' : '') + '">' +
+        (th ? '<img alt="' + esc(x.name) + '" src="' + th + '">' : '<span class="gm-fi">' + iconFor(x.kind) + '</span><span class="gm-fn"><b>' + esc(x.name) + '</b><small>' + (x.loading ? 'Memproses…' : esc((x.label || KIND_LABEL[x.kind] || 'File') + ' • ' + fmtSize(x.size))) + '</small></span>') +
+        '<button type="button" class="gm-px" data-rm="' + x.id + '" aria-label="Hapus lampiran ' + esc(x.name) + '">' + I.close + '</button></div>';
+    }).join('');
+    t.scrollLeft = t.scrollWidth;
+  }
+  function clearPending() { pending = []; renderTray(); updSend(); }
+
+  function addFiles(list) {
+    var files = Array.prototype.slice.call(list || []);
+    if (!files.length) return;
+    if (!canAttach()) { toast('Gemini belum aktif, lampiran tidak bisa ditambahkan.', true); return; }
+    var room = MAX_FILES - pending.length;
+    if (room <= 0) { toast('Maksimal ' + MAX_FILES + ' lampiran per pesan.', true); return; }
+    if (files.length > room) { toast('Hanya ' + room + ' lampiran pertama yang ditambahkan.', true); files = files.slice(0, room); }
+    files.forEach(function (f) {
+      var it = { id: uid(), name: f.name || 'file', size: f.size || 0, kind: 'file', label: '', thumb: '', parts: [], loading: true };
+      pending.push(it);
+      Promise.resolve().then(function () { return processFile(f); }).then(function (r) {
+        var used = 0; pending.forEach(function (x) { if (x !== it && !x.loading) used += partsSize(x.parts); });
+        var add = partsSize(r.parts), txt = r.parts.length && r.parts[0].text != null;
+        if (!txt && used + add > LIM.inline) throw { message: 'Total lampiran terlalu besar. Kirim sebagian dulu.' };
+        if (txt) { var tu = 0; pending.forEach(function (x) { if (x !== it && !x.loading && x.parts[0] && x.parts[0].text != null) tu += x.parts[0].text.length; }); if (tu + add > LIM.textTotal) throw { message: 'Total teks lampiran terlalu panjang. Kirim sebagian dulu.' }; }
+        it.parts = r.parts; it.kind = r.kind; it.label = r.label; it.thumb = r.thumb || ''; it.loading = false;
+      }).catch(function (e) {
+        pending = pending.filter(function (x) { return x !== it; });
+        toast((e && e.message) || 'File tidak bisa dibaca.', true);
+      }).then(function () { renderTray(); updSend(); });
+    });
+    renderTray(); updSend();
+  }
+
+  function attHtml(files) {
+    if (!files || !files.length) return '';
+    return '<div class="gm-atts">' + files.map(function (f) {
+      var th = safeThumb(f.thumb);
+      if (th) return '<div class="gm-att img"><img alt="' + esc(f.name) + '" src="' + th + '"></div>';
+      return '<div class="gm-att file"><span class="gm-fi">' + iconFor(f.kind) + '</span><span class="gm-fn"><b>' + esc(f.name) + '</b><small>' + esc((f.label || KIND_LABEL[f.kind] || 'File') + ' • ' + fmtSize(f.size)) + '</small></span></div>';
+    }).join('') + '</div>';
+  }
 
   /* ---------- Menu plus ---------- */
   function closePop() { var p = $('gmPop'); if (p) p.hidden = true; }
@@ -507,7 +1016,7 @@
     return list.map(function (x) { return String(x || '').trim(); }).filter(function (x) { if (x.length < 10 || seen[x]) return false; seen[x] = 1; return true; });
   }
   function resetCfg() {
-    KEYS = []; OFF = []; PRIMARY = ''; META = null; badKeys = {}; OVR = {}; loaded = false;
+    KEYS = []; OFF = []; PRIMARY = ''; META = null; tmpBad = {}; OVR = {}; loaded = false;
   }
   function applyConfig(v) {
     META = v;
@@ -519,13 +1028,15 @@
     if (/^gemini-2\.(5|0)-pro/.test(model)) model = 'gemini-pro-latest';
     else if (/^gemini-2\.(5|0)-flash-lite/.test(model)) model = 'gemini-flash-lite-latest';
     else if (/^gemini-2\.(5|0)/.test(model)) model = 'gemini-flash-latest';
-    if (list.join('|') !== KEYS.join('|') || off.join('|') !== OFF.join('|')) badKeys = {};
-    if (model !== MODEL) OVR = {};
+    var changed = list.join('|') !== KEYS.join('|') || off.join('|') !== OFF.join('|') || prim !== PRIMARY;
+    if (changed) { tmpBad = {}; if (loaded) actSave(''); }   /* pengaturan diubah admin: mulai ulang pilihan kunci */
+    if (model !== MODEL) { OVR = {}; tmpBad = {}; if (loaded) actSave(''); }
     KEYS = list; OFF = off; PRIMARY = prim; MODEL = model;
     loaded = true; synced = true;
     if ($('gmPanel').classList.contains('open')) render();
     if ($('gmAdmin').classList.contains('open')) renderAdmin();
     syncSend();
+    autoMain();
   }
   /* Berlangganan daftar kunci. Hanya berjalan saat sakelar aktif dan sudah terkonfirmasi database. */
   function detachConfig() {
@@ -555,9 +1066,9 @@
     detachConfig();
     stopRun();
     resetCfg(); synced = false;
-    msgs = []; chats = []; curId = '';
+    msgs = []; chats = []; curId = ''; pending = [];
     try {
-      closeDrawer(); closePop(); hideCtx(); hideDlg();
+      renderTray(); closeDrawer(); closePop(); hideCtx(); hideDlg();
       $('gmInput').value = ''; fit();
       render();
       if ($('gmAdmin').classList.contains('open')) renderAdmin();
@@ -580,20 +1091,33 @@
         if (!admin.is) closeAdmin();
         syncService();
         if ($('gmPanel').classList.contains('open')) render();
+        autoMain();
       }, function () {});
     });
   }
 
   /* ---------- Pengaturan admin ---------- */
-  function setStatus(t, kind) { if (t) toast(t, kind === 'bad'); }
-  function setReveal(v) {
-    reveal = v;
-    var i = $('gmKeyInput'), b = $('gmEye');
-    var maskOk = false; try { maskOk = !!(window.CSS && CSS.supports && CSS.supports('-webkit-text-security', 'disc')); } catch (e) { /* abaikan */ }
-    if (maskOk) { i.type = 'text'; i.classList.toggle('gm-secret', !v); } else { i.type = v ? 'text' : 'password'; i.classList.remove('gm-secret'); }
-    b.innerHTML = v ? I.eye : I.eyeOff;
-    b.setAttribute('aria-label', v ? 'Sembunyikan kunci' : 'Tampilkan kunci');
+  /* Pesan di panel admin: hanya penanda merah pada kolom input (sama seperti YouTube) */
+  var msgTimer = 0;
+  function admMsg(t, ok, keep) {
+    var f = $('gmAdmField');
+    clearTimeout(msgTimer);
+    if (!t) { if (f) f.classList.remove('err'); return; }
+    if (f) f.classList.toggle('err', !ok && $('gmPaneAdd').classList.contains('on'));
+    if (!keep) msgTimer = setTimeout(function () { admMsg(''); }, t.length > 45 ? 4000 : 2000);
   }
+  function setStatus(t, kind) { admMsg(t, kind !== 'bad'); }
+  var MASK_OK = (function () { try { return !!(window.CSS && CSS.supports && CSS.supports('-webkit-text-security', 'disc')); } catch (e) { return false; } })();
+  function setReveal(show) {
+    var i = $('gmKeyInput'), b = $('gmEye');
+    /* Teks biasa + penyamaran CSS agar browser tidak menawarkan "Simpan sandi". Cadangan: type=password */
+    if (MASK_OK) { i.type = 'text'; i.classList.toggle('yt-secret', !show); } else { i.type = show ? 'text' : 'password'; i.classList.remove('yt-secret'); }
+    b.innerHTML = show ? I.eye : I.eyeOff;
+    b.setAttribute('aria-pressed', show ? 'true' : 'false');
+    b.setAttribute('aria-label', show ? 'Sembunyikan kunci' : 'Tampilkan kunci');
+    b.title = show ? 'Sembunyikan kunci' : 'Tampilkan kunci';
+  }
+  function isRevealed() { return $('gmEye').getAttribute('aria-pressed') === 'true'; }
 
   function saveConfig(next) {
     var b = window.__ngobrolFB;
@@ -608,7 +1132,7 @@
     });
   }
   function cfg(over) { return Object.assign({ keys: KEYS.slice(), off: OFF.slice(), primary: PRIMARY, model: MODEL }, over || {}); }
-  function fail(e) { setStatus(e && e.message ? e.message : 'Gagal menyimpan. Periksa koneksi dan aturan database.', 'bad'); }
+  function fail(e) { admMsg(e && e.message ? e.message : 'Gagal menyimpan. Periksa koneksi dan aturan database.', false); }
 
   /* ---------- Sakelar layanan (admin) ---------- */
   function syncService() {
@@ -633,56 +1157,116 @@
     return 'Pengaturan gagal disimpan. Periksa koneksi internet.';
   }
   function setService(on) {
-    if (svcBusy || !admin.is || !window.GMGate) return;
+    if (svcBusy || locked || !admin.is || !window.GMGate) return;
     if (on === gmOn()) return;
     svcBusy = true; syncService();
     window.GMGate.set(on).then(function () {
-      toast(on ? 'Gemini diaktifkan untuk semua pengguna.' : 'Gemini dinonaktifkan untuk semua pengguna.');
-    }).catch(function (e) { toast(svcError(e), true); })
+      admMsg(on ? 'Gemini diaktifkan untuk semua pengguna.' : 'Gemini dinonaktifkan untuk semua pengguna.', true);
+    }).catch(function (e) { admMsg(svcError(e), false); })
       .then(function () { svcBusy = false; syncService(); });
   }
 
-    var askDel = '', askT;
+  var STATE_LABEL = { using: 'Sedang dipakai', standby: 'Siaga', limit: 'LIMIT', bad: 'Bermasalah', off: 'Nonaktif' };
+  var CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+  function stateNote(k, st) {
+    if (st === 'using') return 'Semua permintaan Gemini lewat kunci ini.';
+    if (st === 'standby') return 'Cadangan: belum dipakai, kuota masih utuh.';
+    if (st === 'limit') return 'Kuota harian habis. Pulih ' + resetText() + '.';
+    if (st === 'bad') { var t = tmpBad[k]; return t && t.kind === 'limit' ? 'Terlalu banyak permintaan. Dicoba lagi otomatis.' : 'Ditolak Google (kunci salah atau API belum aktif). Dicoba lagi otomatis.'; }
+    return 'Dinonaktifkan. Tidak dipakai.';
+  }
+  function ago(iso) {
+    var t = Date.parse(iso); if (!t) return '';
+    var sec = Math.max(1, (Date.now() - t) / 1000);
+    var u = [[31536000, 'tahun'], [2592000, 'bulan'], [604800, 'minggu'], [86400, 'hari'], [3600, 'jam'], [60, 'menit']];
+    for (var i = 0; i < u.length; i++) if (sec >= u[i][0]) return Math.floor(sec / u[i][0]) + ' ' + u[i][1] + ' lalu';
+    return 'baru saja';
+  }
+  var locked = false;   /* true selama ada penyimpanan berjalan: ketukan ganda diabaikan agar data tidak tertimpa */
+  function setLocked(on) {
+    locked = !!on;
+    ['gmAddBtn', 'gmAdX', 'gmTabKeys', 'gmTabAdd'].forEach(function (i) { var el = $(i); if (el) el.disabled = on; });
+    $('gmKeyList').classList.toggle('is-busy', !!on);
+  }
+  /* Jalankan satu penyimpanan: kunci dikunci selama berjalan, lalu pesan sukses atau galat */
+  function act(make, okMsg) {
+    if (locked) return;
+    setLocked(true); admMsg('');
+    var p; try { p = make(); } catch (e) { p = Promise.reject(e); }
+    Promise.resolve(p).then(function () { if (okMsg) admMsg(okMsg, true); }).catch(fail).then(function () { setLocked(false); });
+  }
+
   function renderAdmin() {
     $('gmModels').innerHTML = MODELS.map(function (m) { return '<button type="button" data-m="' + m.id + '" class="' + (m.id === MODEL ? 'on' : '') + '">' + m.name + '<small>' + m.sub + '</small></button>'; }).join('');
-    var act = activeKeys().length, lim = KEYS.filter(function (k) { return OFF.indexOf(k) === -1 && badKeys[k]; }).length;
-    $('gmStats').innerHTML = '<div class="gm-stat"><b>' + KEYS.length + '</b><span>Total</span></div><div class="gm-stat ok"><b>' + (act - lim) + '</b><span>Siap pakai</span></div><div class="gm-stat' + (lim ? ' warn' : '') + '"><b>' + (KEYS.length - act + lim) + '</b><span>Tidak aktif</span></div>';
-    $('gmKeyCnt').textContent = KEYS.length ? KEYS.length + ' kunci' : '';
-    var list = $('gmKeyList');
-    if (!KEYS.length) { list.innerHTML = '<div class="gm-empty">' + I.key + 'Belum ada API key.<br>Tambahkan kunci di bawah untuk mengaktifkan Gemini.</div>'; }
-    else {
-      var main = PRIMARY && OFF.indexOf(PRIMARY) === -1 ? PRIMARY : (activeKeys()[0] || '');
-      list.innerHTML = KEYS.map(function (k, i) {
-        var off = OFF.indexOf(k) !== -1, isMain = !off && k === main, tags = '';
-        if (isMain) tags += '<span class="gm-tag main">Utama</span>';
-        else if (!off) tags += '<span class="gm-tag">Cadangan</span>';
-        if (off) tags += '<span class="gm-tag off">Nonaktif</span>';
-        if (badKeys[k] === 'limit') tags += '<span class="gm-tag warn">Kuota habis</span>';
-        if (badKeys[k] === 'invalid') tags += '<span class="gm-tag warn">Ditolak</span>';
-        return '<div class="gm-key' + (isMain ? ' main' : '') + (off ? ' off' : '') + '"><div class="gm-key-top"><div class="gm-key-ico">' + I.key + '</div><div class="gm-key-i"><div class="gm-key-v">' + esc(maskKey(k)) + '</div><div class="gm-tags">' + tags + '</div></div></div>' +
-          '<div class="gm-key-bot"><button type="button" class="gm-sw" role="switch" aria-checked="' + (!off) + '" data-a="toggle" data-i="' + i + '" aria-label="' + (off ? 'Aktifkan kunci' : 'Nonaktifkan kunci') + '"></button><span class="gm-swt">' + (off ? 'Nonaktif' : 'Aktif') + '</span><span class="gm-sp"></span>' +
-          (!off && !isMain ? '<button type="button" class="gm-link" data-a="main" data-i="' + i + '">Jadikan utama</button>' : '') +
-          '<button type="button" class="gm-link danger' + (askDel === k ? ' ask' : '') + '" data-a="del" data-i="' + i + '">' + (askDel === k ? 'Ketuk lagi untuk hapus' : I.trash + 'Hapus') + '</button></div></div>';
-      }).join('');
-    }
-    var m = META || {};
-    $('gmMeta').textContent = KEYS.length && m.updatedAt ? 'Terakhir diubah oleh ' + (m.updatedByName || 'admin') + ', ' + new Date(m.updatedAt).toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+    var n = KEYS.length, on = activeKeys().length;
+    var lim = KEYS.filter(function (k) { return keyState(k) === 'limit'; }).length;
+    $('gmStTotal').textContent = n; $('gmStOn').textContent = on; $('gmStLimit').textContent = lim;
+    $('gmAdmCount').textContent = n + ' dari 10 terpakai'; $('gmTabCnt').textContent = n;
+    var cur = currentKey(), main = mainKey();
+    $('gmKeyList').innerHTML = n ? KEYS.map(function (k, i) {
+      var st = keyState(k), isOn = OFF.indexOf(k) === -1;
+      if (st === 'ok') st = k === cur ? 'using' : 'standby';
+      return '<div class="yt-key-row st-' + st + (isOn ? '' : ' is-off') + '">' +
+        '<div class="yt-key-top"><div class="yt-key-no">' + (i + 1) + '</div>' +
+        '<div class="yt-key-info"><span class="yt-key-mask">' + esc(maskKey(k)) + '</span><span class="yt-key-badge ' + st + '">' + STATE_LABEL[st] + '</span>' +
+        '<span class="yt-key-note">' + esc(stateNote(k, st)) + '</span></div>' +
+        (k === main ? '<span class="yt-key-prim">' + CHECK + 'Utama</span>' : '<button type="button" class="yt-key-use" data-i="' + i + '" aria-label="Jadikan kunci ' + (i + 1) + ' sebagai kunci utama">Pakai</button>') + '</div>' +
+        '<div class="yt-key-bar"><div class="yt-key-sw"><button type="button" class="yt-sw" role="switch" data-i="' + i + '" aria-checked="' + (isOn ? 'true' : 'false') + '" aria-label="' + (isOn ? 'Nonaktifkan' : 'Aktifkan') + ' kunci ' + (i + 1) + '"></button>' +
+        '<span class="yt-key-swlbl">' + (isOn ? 'Kunci aktif' : 'Kunci nonaktif') + '</span></div>' +
+        '<button type="button" class="yt-key-del" data-i="' + i + '" aria-label="Hapus kunci ' + (i + 1) + '">' + I.trash + '<span>Hapus</span></button></div></div>';
+    }).join('') : '<div class="yt-key-empty">Belum ada API key.<br>Tempel kunci pertama Anda di bawah.</div>';
+    var m = META || {}, meta = '';
+    if (n && m.updatedAt) meta = 'Terakhir diubah oleh ' + (m.updatedByName || m.updatedBy || 'admin') + ', ' + ago(new Date(m.updatedAt).toISOString());
+    $('gmAdmMeta').textContent = meta; $('gmAdmMeta').style.display = meta ? '' : 'none';
+  }
+  function setTab(t) {
+    var add = t === 'add';
+    $('gmTabKeys').setAttribute('aria-selected', add ? 'false' : 'true'); $('gmTabAdd').setAttribute('aria-selected', add ? 'true' : 'false');
+    $('gmPaneKeys').classList.toggle('on', !add); $('gmPaneAdd').classList.toggle('on', add);
+    $('gmAdActions').hidden = !add; $('gmAdCard').classList.toggle('has-actions', add);
+    if ($('gmAdScroll')) $('gmAdScroll').scrollTop = 0;
+    admMsg('');
+  }
+  /* Tempelkan panel persis pada area layar yang terlihat, agar tidak bergeser atau tertutup keyboard */
+  var pinned = false;
+  function pinApply() {
+    var vv = window.visualViewport, el = $('gmAdmin'), card = $('gmAdCard');
+    if (!vv || !el) return;
+    el.style.left = vv.offsetLeft + 'px'; el.style.top = vv.offsetTop + 'px';
+    el.style.width = vv.width + 'px'; el.style.height = vv.height + 'px';
+    el.style.right = 'auto'; el.style.bottom = 'auto';
+    card.classList.toggle('compact', vv.height < 560);
+  }
+  function pinOn() {
+    var vv = window.visualViewport; if (!vv) return;
+    if (!pinned) { pinned = true; vv.addEventListener('resize', pinApply); vv.addEventListener('scroll', pinApply); }
+    pinApply();
+  }
+  function pinOff() {
+    var vv = window.visualViewport, el = $('gmAdmin');
+    if (vv && pinned) { vv.removeEventListener('resize', pinApply); vv.removeEventListener('scroll', pinApply); }
+    pinned = false;
+    if (el) ['left', 'top', 'width', 'height', 'right', 'bottom'].forEach(function (p) { el.style.removeProperty(p); });
+    var c = $('gmAdCard'); if (c) c.classList.remove('compact');
   }
   function openAdmin() {
     if (!admin.is) return;
-    askDel = ''; $('gmKeyInput').value = ''; setReveal(false); setStatus(''); syncService(); renderAdmin();
-    $('gmAdmin').classList.add('open');
+    syncService();
+    $('gmKeyInput').value = ''; setReveal(false);
+    renderAdmin(); setTab(KEYS.length ? 'keys' : 'add'); $('gmAdmin').classList.add('open'); pinOn();
   }
-  function closeAdmin() { var a = $('gmAdmin'); if (a) a.classList.remove('open'); }
+  function closeAdmin() { var a = $('gmAdmin'); if (a) a.classList.remove('open'); closeConfirm(); admMsg(''); pinOff(); }
 
   function addKey() {
-    var inp = $('gmKeyInput'), k = inp.value.replace(/\s+/g, '');
-    var btn = $('gmAddBtn');
-    if (k.length < 20) { setStatus('API key terlalu pendek. Tempel kunci lengkap dari Google AI Studio.', 'bad'); return; }
-    if (KEYS.indexOf(k) !== -1) { setStatus('Kunci ini sudah ada di daftar.', 'bad'); return; }
-    btn.disabled = true; btn.textContent = 'Menguji kunci'; setStatus('');
+    if (locked) return;
+    var inp = $('gmKeyInput'), k = inp.value.trim().replace(/^["'`]+|["'`]+$/g, '').replace(/\s+/g, '');   /* buang tanda kutip bila tertempel */
+    if (!k) { admMsg('Masukkan API key.'); return; }
+    if (k.length < 20) { admMsg('Format API key tidak valid.'); return; }
+    if (KEYS.indexOf(k) !== -1) { admMsg('Kunci ini sudah ada dalam daftar.'); return; }
+    if (KEYS.length >= 10) { admMsg('Maksimal 10 API key.'); return; }
+    setLocked(true); admMsg('Memeriksa kunci...', true, true);
     var okState = 'ok';
-    listModels(k).catch(function (e) { if (e && e.kind === 'limit') { okState = 'limit'; return null; } throw e; }).then(function (ids) {
+    listModels(k).catch(function (e) { if (e && (e.kind === 'limit' || e.kind === 'rate' || e.kind === 'rate?')) { if (e.kind === 'limit') okState = 'limit'; return null; } throw e; }).then(function (ids) {
       var model = MODEL;
       if (ids) {
         if (ids.indexOf(MODEL) === -1) {
@@ -693,38 +1277,63 @@
       }
       /* uji generate sungguhan agar kunci benar-benar terbukti bisa dipakai */
       return callGemini(k, { contents: [{ role: 'user', parts: [{ text: 'Balas hanya: ok' }] }], generationConfig: { maxOutputTokens: 16 } }, undefined, model).then(function () { return model; }, function (e) {
-        if (e && e.kind === 'limit') { okState = 'limit'; return model; }
+        if (e && (e.kind === 'limit' || e.kind === 'rate' || e.kind === 'rate?')) { if (e.kind === 'limit') okState = 'limit'; return model; }
         throw e;
       });
     }).then(function (model) {
       var next = cfg({ keys: KEYS.concat([k]) });
-      if (!PRIMARY && !KEYS.length) next.primary = k;
+      if (!mainKey()) next.primary = k;   /* belum ada kunci utama yang bisa dipakai: kunci baru jadi utama */
       return saveConfig(next).then(function () {
+        if (okState === 'limit') markExhausted(k);
         inp.value = '';
-        setStatus(okState === 'limit' ? 'Kunci tersimpan, tetapi kuotanya sedang habis.' : 'Kunci valid dan berhasil disimpan (' + model + ').', okState === 'limit' ? '' : 'ok');
+        setTab('keys');
+        admMsg(okState === 'limit' ? 'Kunci ditambahkan, tetapi kuota hari ini sudah habis. Akan dipakai lagi saat kuota pulih.' : 'Kunci berhasil ditambahkan.', true);
       });
     }).catch(function (e) {
-      if (e && e.kind === 'invalid') setStatus('Kunci ditolak Google: ' + e.message, 'bad');
-      else if (e && e.kind === 'model') setStatus('Model tidak tersedia: ' + (e.message || '') + ' Coba pilih model lain.', 'bad');
-      else if (e && e.message && e.message.indexOf('Failed to fetch') !== -1) setStatus('Tidak bisa terhubung ke Google. Periksa koneksi internet.', 'bad');
+      if (e && e.kind === 'invalid') admMsg('API key tidak valid.');
+      else if (e && e.kind === 'model') admMsg('Model tidak tersedia. Coba pilih model lain.');
+      else if (e && e.message && e.message.indexOf('Failed to fetch') !== -1) admMsg('Tidak bisa terhubung ke Google. Periksa koneksi internet.');
       else fail(e);
-    }).then(function () { btn.disabled = false; btn.textContent = 'Uji dan simpan kunci'; });
+    }).then(function () { setLocked(false); });
   }
 
-  function adminClick(e) {
-    var t = e.target.closest('[data-a],[data-m]'); if (!t) return;
-    if (t.dataset.m) { if (t.dataset.m !== MODEL) saveConfig(cfg({ model: t.dataset.m })).then(function () { setStatus('Model diganti.', 'ok'); }, fail); return; }
-    var k = KEYS[+t.dataset.i], a = t.dataset.a;
-    if (!k) return;
-    if (a === 'main') saveConfig(cfg({ primary: k })).then(function () { setStatus('Kunci utama diganti.', 'ok'); }, fail);
-    else if (a === 'toggle') {
-      var off = OFF.indexOf(k) !== -1 ? OFF.filter(function (x) { return x !== k; }) : OFF.concat([k]);
-      saveConfig(cfg({ off: off })).then(function () { setStatus(off.indexOf(k) !== -1 ? 'Kunci dinonaktifkan.' : 'Kunci diaktifkan.', 'ok'); }, fail);
-    } else if (a === 'del') {
-      if (askDel !== k) { askDel = k; renderAdmin(); clearTimeout(askT); askT = setTimeout(function () { askDel = ''; renderAdmin(); }, 3000); return; }
-      askDel = ''; clearTimeout(askT);
-      saveConfig(cfg({ keys: KEYS.filter(function (x) { return x !== k; }), primary: PRIMARY === k ? '' : PRIMARY })).then(function () { setStatus('Kunci dihapus.', 'ok'); }, fail);
-    }
+  function toggleKey(i) {
+    if (locked) return;
+    var k = KEYS[i]; if (k == null) return;
+    var off = OFF.indexOf(k) === -1 ? OFF.concat([k]) : OFF.filter(function (x) { return x !== k; });
+    var turnOff = off.indexOf(k) !== -1, np = PRIMARY, promoted = false;
+    if (turnOff && k === PRIMARY) { np = pickPrimary(KEYS, off, k); promoted = !!np; }   /* kunci utama dinonaktifkan: kunci aktif berikutnya jadi utama */
+    else if (!turnOff && !mainKey()) { np = k; promoted = true; }                          /* belum ada kunci utama: yang pertama diaktifkan jadi utama */
+    act(function () { return saveConfig(cfg({ off: off, primary: np })); },
+      'Kunci ' + (i + 1) + (turnOff ? ' dinonaktifkan.' : ' diaktifkan.') + (promoted && KEYS.indexOf(np) >= 0 ? ' Kunci ' + (KEYS.indexOf(np) + 1) + ' jadi utama.' : ''));
+  }
+  function setPrimary(i) {
+    if (locked) return;
+    var k = KEYS[i]; if (k == null || (k === PRIMARY && OFF.indexOf(k) === -1)) return;
+    var wasOff = OFF.indexOf(k) !== -1, lim = keyState(k) === 'limit';
+    act(function () { return saveConfig(cfg({ primary: k, off: OFF.filter(function (x) { return x !== k; }) })); },
+      wasOff ? 'Kunci ' + (i + 1) + ' diaktifkan dan dijadikan utama.' : lim ? 'Kunci ' + (i + 1) + ' jadi utama, tetapi sedang limit.' : 'Kunci ' + (i + 1) + ' dijadikan utama.');
+  }
+  var pendingDel = null;
+  function askDelete(i) {
+    var k = KEYS[i]; if (k == null) return;
+    pendingDel = k;
+    $('gmCfIco').innerHTML = I.alert;
+    $('gmCfKey').textContent = 'Kunci ' + (i + 1) + '  \u00b7  ' + maskKey(k);
+    $('gmCfOk').disabled = false; $('gmCfNo').disabled = false;
+    $('gmAdConfirm').classList.add('open');
+    setTimeout(function () { $('gmCfNo').focus(); }, 40);
+  }
+  function closeConfirm() { pendingDel = null; var c = $('gmAdConfirm'); if (c) c.classList.remove('open'); }
+  function doDelete() {
+    var k = pendingDel; if (k == null || locked) return;
+    setLocked(true);
+    $('gmCfOk').disabled = true; $('gmCfNo').disabled = true; $('gmCfOk').textContent = 'Menghapus...';
+    var rest = KEYS.filter(function (x) { return x !== k; });
+    saveConfig(cfg({ keys: rest, primary: k === PRIMARY ? pickPrimary(rest, OFF, k) : PRIMARY }))
+      .then(function () { closeConfirm(); admMsg('Kunci dihapus.', true); })
+      .catch(function (e) { closeConfirm(); fail(e); })
+      .then(function () { $('gmCfOk').textContent = 'Ya, hapus'; setLocked(false); });
   }
 
   /* ---------- Inisialisasi ---------- */
@@ -732,7 +1341,7 @@
     if (!$('gmPanel') || !$('gmFab')) return;
     $('gmFab').innerHTML = spark();
     $('gmPillIc').innerHTML = spark();
-    $('gmAdLogo').innerHTML = spark();
+    $('gmAdLogo').innerHTML = I.key;
     $('gmMenu').innerHTML = I.menu;
     $('gmNew').innerHTML = I.chat;
     $('gmSrchBtn').innerHTML = I.search;
@@ -742,8 +1351,9 @@
     $('gmClearAll').insertAdjacentHTML('afterbegin', I.trash);
     $('gmNew2').insertAdjacentHTML('afterbegin', I.compose);
     $('gmPlus').innerHTML = I.plus;
-    $('gmPopNew').insertAdjacentHTML('afterbegin', I.compose);
-    $('gmPopCopy').insertAdjacentHTML('afterbegin', I.copy);
+    $('gmPopPhoto').insertAdjacentHTML('afterbegin', I.photo);
+    $('gmPopCam').insertAdjacentHTML('afterbegin', I.camera);
+    $('gmPopFile').insertAdjacentHTML('afterbegin', I.file);
     $('gmAdX').innerHTML = I.close;
     $('gmDown').innerHTML = I.down;
     updSend();
@@ -800,23 +1410,48 @@
       else if (a === 'more') { showAll = !showAll; renderDrawer(); }
     });
     $('gmPlus').addEventListener('click', function (e) { e.stopPropagation(); togglePop(); });
-    $('gmPopNew').addEventListener('click', newChat);
-    $('gmPopCopy').addEventListener('click', function () {
-      closePop();
-      if (!msgs.length) { toast('Belum ada obrolan untuk disalin'); return; }
-      copyText(msgs.filter(function (m) { return !m.err; }).map(function (m) { return (m.role === 'user' ? 'Saya' : 'Gemini') + ': ' + m.text; }).join('\n\n'));
+    [['gmPopPhoto', 'gmFilePhoto'], ['gmPopCam', 'gmFileCam'], ['gmPopFile', 'gmFileAny']].forEach(function (pr) {
+      var inp = $(pr[1]);
+      $(pr[0]).addEventListener('click', function (e) { e.stopPropagation(); closePop(); if (!canAttach()) { toast('Gemini belum aktif, lampiran tidak bisa ditambahkan.', true); return; } inp.value = ''; inp.click(); });
+      inp.addEventListener('change', function () { var fl = Array.prototype.slice.call(inp.files || []); inp.value = ''; addFiles(fl); });
     });
+    $('gmTray').addEventListener('click', function (e) {
+      var b = e.target.closest ? e.target.closest('[data-rm]') : null; if (!b) return;
+      var id = b.getAttribute('data-rm'); pending = pending.filter(function (x) { return x.id !== id; }); renderTray(); updSend();
+    });
+    $('gmInput').addEventListener('paste', function (e) {
+      var fl = e.clipboardData && e.clipboardData.files; if (fl && fl.length) { e.preventDefault(); addFiles(fl); }
+    });
+    var wrap = document.querySelector('#gmPanel .gm-wrap');
+    if (wrap) {
+      wrap.addEventListener('dragover', function (e) { if (e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') !== -1) e.preventDefault(); });
+      wrap.addEventListener('drop', function (e) { if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length) { e.preventDefault(); addFiles(e.dataTransfer.files); } });
+    }
     document.addEventListener('click', function (e) { if (!e.target.closest('#gmPop')) closePop(); });
     $('gmAdX').addEventListener('click', closeAdmin);
     $('gmAdmin').addEventListener('click', function (e) { if (e.target === $('gmAdmin')) closeAdmin(); });
-    $('gmEye').addEventListener('click', function () { setReveal(!reveal); });
+    $('gmEye').addEventListener('click', function () { setReveal(!isRevealed()); $('gmKeyInput').focus(); });
+    setReveal(false);
     $('gmAddBtn').addEventListener('click', addKey);
     $('gmKeyInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addKey(); } });
-    $('gmAdmin').addEventListener('click', adminClick);
+    $('gmTabKeys').addEventListener('click', function () { setTab('keys'); });
+    $('gmTabAdd').addEventListener('click', function () { setTab('add'); });
+    $('gmKeyList').addEventListener('click', function (e) {
+      var u = e.target.closest('.yt-key-use'); if (u) { setPrimary(+u.dataset.i); return; }
+      var w = e.target.closest('.yt-sw'); if (w) { toggleKey(+w.dataset.i); return; }
+      var d = e.target.closest('.yt-key-del'); if (d) askDelete(+d.dataset.i);
+    });
+    $('gmModels').addEventListener('click', function (e) {
+      var b = e.target.closest('[data-m]'); if (!b || b.dataset.m === MODEL) return;
+      act(function () { return saveConfig(cfg({ model: b.dataset.m })); }, 'Model diganti.');
+    });
+    $('gmAdConfirm').addEventListener('click', function (e) { if (e.target === $('gmAdConfirm')) closeConfirm(); });
+    $('gmCfNo').addEventListener('click', closeConfirm);
+    $('gmCfOk').addEventListener('click', doDelete);
 
     $('gmSend').addEventListener('click', function () {
       if (busy) { if (ctrl) ctrl.abort(); return; }
-      if ($('gmInput').value.trim()) send($('gmInput').value); else $('gmInput').focus();
+      if ($('gmInput').value.trim() || pending.length) send($('gmInput').value); else $('gmInput').focus();
     });
     $('gmInput').addEventListener('input', function () { fit(); syncSend(); });
     $('gmInput').addEventListener('keydown', function (e) {
@@ -835,8 +1470,10 @@
     });
     document.addEventListener('keydown', function (e) {
       if (e.key !== 'Escape') return;
-      if (!$('gmDlg').hidden) hideDlg();
+      if (!$('gmPop').hidden) closePop();
+      else if (!$('gmDlg').hidden) hideDlg();
       else if (!$('gmCtxBg').hidden) hideCtx();
+      else if ($('gmAdConfirm').classList.contains('open')) closeConfirm();
       else if ($('gmAdmin').classList.contains('open')) closeAdmin();
       else if ($('gmPanel').classList.contains('drawer-open')) closeDrawer();
       else if ($('gmPanel').classList.contains('open')) close();
