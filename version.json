@@ -1,7 +1,7 @@
 {
-  "version": "1.7.80",
+  "version": "1.7.81",
   "released": "2026-10-19",
   "notes": [
-    "Penampil foto kini pas satu layar dan terkunci: tidak bisa tergeser saat ukuran normal, geser hanya aktif saat di-zoom"
+    "Penampil foto menutup seluruh layar HP (sampai area poni atas) dan terkunci: tidak bergeser ke atas, bawah, atau samping"
   ]
 }

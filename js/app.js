@@ -5796,6 +5796,18 @@ function fitCoverMode(nw, nh, W, H) {
   const r = (nw / nh) / (W / H);
   return r > 0.92 && r < 1.08;   /* hanya bila rasio nyaris sama: terpotong paling banyak sekitar 8% */
 }
+/* Selama penampil foto terbuka, izinkan konten menutup area poni/status bar (viewport-fit=cover) agar foto benar-benar menutup seluruh layar HP.
+   Setelah ditutup, meta viewport dikembalikan persis seperti semula sehingga bagian lain aplikasi tidak berubah. */
+let vpOrig = null;
+function setViewportCover(on) {
+  try {
+    const m = document.querySelector('meta[name="viewport"]'); if (!m) return;
+    if (on) {
+      if (vpOrig === null) vpOrig = m.getAttribute('content') || '';
+      if (!/viewport-fit\s*=\s*cover/.test(vpOrig)) m.setAttribute('content', vpOrig + ', viewport-fit=cover');
+    } else if (vpOrig !== null) { m.setAttribute('content', vpOrig); vpOrig = null; }
+  } catch (err) { /* abaikan */ }
+}
 function enterFullscreenSafe() {
   try {
     const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
@@ -5865,6 +5877,7 @@ function exitFullscreenSafe() {
     onceOpts = null;
     box.style.display = 'none';
     document.documentElement.classList.remove('iv-open');
+    setViewportCover(false);
     box.classList.remove('once');
     img.onload = null; img.onerror = null; img.removeAttribute('src');
     img.style.width = ''; img.style.height = '';
@@ -5888,6 +5901,7 @@ function exitFullscreenSafe() {
     img.src = src;
     box.style.display = 'flex';
     document.documentElement.classList.add('iv-open');   /* kunci layar di belakang: tidak bisa tergulir */
+    setViewportCover(true);
     openedAt = Date.now();
     usedFs = enterFullscreenSafe();   /* sembunyikan bilah status & navigasi browser agar foto benar-benar 1 layar penuh */
     if (img.complete && img.naturalWidth) { fit(); clamp(); apply(); }
